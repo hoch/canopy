@@ -1,0 +1,271 @@
+<html>
+<head>
+  <title>Canopy &#9835;</title>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  
+  <script src="bower_components/webcomponentsjs/webcomponents.js"></script>
+  <link rel="import" href="bower_components/core-drawer-panel/core-drawer-panel.html">
+
+  <script src="codemirror/lib/codemirror.js"></script>
+  <link rel="stylesheet" href="codemirror/lib/codemirror.css">
+  <script src="codemirror/mode/javascript/javascript.js"></script>
+
+  <script src="js/events.js"></script>
+
+  <style>
+
+        html, body {
+          height: 100%;
+        }
+      
+        body {
+          font-family: sans-serif;
+          color: #FFF;
+          margin: 0;
+          -webkit-tap-highlight-color: rgba(0,0,0,0);
+        }
+        
+        [drawer] {
+          width: 800px;
+          background-color: #B99588;
+          border-right: 1px solid #ccc;
+        }
+        
+        [main] {
+          background-color: #4F7DC9;
+        }
+        
+        button {
+          width: 160px;
+          height: 40px;
+          font-size: 16px;
+          margin: 8px;
+        }
+
+        #i-console {
+          color: #fff;
+          background-color: #B99588;
+          height: 200px;
+        }
+
+        #i-waveform {
+          width: 1200px;
+          height: 200px;
+        }
+
+        paper-button.colored {
+          color: #4285f4;
+        }
+
+        paper-button[raised].colored {
+          background: #4285f4;
+          color: #fff;
+        }
+
+        paper-button.custom > core-icon {
+          margin-right: 4px;
+        }
+
+        paper-button.hover:hover {
+          background: #eee;
+        }
+
+        paper-button.blue-ripple::shadow #ripple {
+          color: #4285f4;
+        }
+        
+      </style>
+  
+</head>
+
+<body unresolved>
+
+  <button onclick="executeCode()">RUN</button>
+  <div id="i-code-editor"></div>
+  <canvas id="i-waveform"></canvas>
+  <p>Drag left/right to pan. Use wheel to zoom in/out.</p>
+  <button onclick="zoomIn()">+</button>
+  <button onclick="zoomOut()">-</button>
+  <button onclick="panLeft(441)"><</button>
+  <button onclick="panRight(441)">></button>
+  <div id="i-console"></div>
+
+  <script>
+    var editorDOM = document.querySelector('#i-code-editor');
+    var consoleDOM = document.querySelector('#i-console');
+    var waveformDOM = document.querySelector('#i-waveform');
+
+    var context2D = waveformDOM.getContext('2d');
+    context2D.canvas.width = 1200;
+    context2D.canvas.height = 200;
+
+    var contextRT = new AudioContext();
+
+    var lastRenderedChannelData = null;
+    var zoomFactor = 1.0;
+    var drawStart = 0;
+
+    function zoomIn() {
+      zoomFactor *= 1.5;
+      drawWaveform(lastRenderedChannelData);
+    }
+
+    function zoomOut() {
+      zoomFactor *= 0.75;
+      drawWaveform(lastRenderedChannelData);
+    }
+
+    function zoom(delta) {
+      if (delta < 0) {
+        zoomFactor *= 1.25;
+      } else if (delta > 0) {
+        zoomFactor *= 0.75;
+      }
+      drawWaveform(lastRenderedChannelData);
+    }
+
+    function panLeft(deltaX) {
+      drawStart -= deltaX;
+      if (drawStart < 0)
+        drawStart = 0;
+      drawWaveform(lastRenderedChannelData);
+    }
+
+    function panRight(deltaX) {
+      drawStart += deltaX;
+      drawWaveform(lastRenderedChannelData);
+    }
+
+    function pan(deltaX) {
+      drawStart -= deltaX;
+      if (drawStart < 0)
+        drawStart = 0;
+      drawWaveform(lastRenderedChannelData); 
+    }
+
+    function drawWaveform(channelData) {
+      
+      context2D.clearRect(0, 0, context2D.canvas.width, context2D.canvas.height);
+
+      var currentIndexDouble = drawStart;      
+
+      for (var i = 0; i < context2D.canvas.width; i++) {
+        
+        var index = Math.round(currentIndexDouble);
+        
+        // draw waveform
+        var amp;
+        if (index < channelData.length) {
+          amp = Math.abs(channelData[index]) * context2D.canvas.height;
+        } else {
+          amp = 0.0;
+        }
+        var y_offset = (context2D.canvas.height - amp) * 0.5;
+        context2D.fillStyle = "#666";
+        context2D.fillRect(i, y_offset, 1, amp);
+
+        context2D.fillStyle = "#000";
+        if (index % 100 === 0) {
+          context2D.fillRect(i, 0, 1, 15);
+        } else if (index % 25 === 0) {
+          context2D.fillRect(i, 0, 1, 5);
+        }
+
+        currentIndexDouble += 1 / zoomFactor;
+      }
+    }
+
+
+    var prevX = 0, dX = 0;
+
+    var mouseHandler = new MouseResponder('waveform', waveformDOM, 
+      function (sender, action, data) {
+        // console.log(action, data);
+        switch (action) {
+          case 'clicked':
+            prevX = data.x;
+            deltaX = 0;
+            break;
+          case 'dragged':
+            dX = data.x - prevX;
+            pan(dX);
+            prevX = data.x;
+            break;
+          case 'wheelmoved':
+            // console.log(data.wheelDelta);
+            zoom(data.wheelDelta);
+            break;
+        }
+      }
+    );
+
+
+
+    function sampleCode() {
+// Edit the code below and 'Run' it.
+var osc1 = context.createOscillator();
+var osc2 = context.createOscillator();
+osc1.frequency.value = 0.1;
+osc2.frequency.value = 440;
+osc1.connect(osc2.frequency);
+osc2.connect(context.destination);
+osc1.start();
+osc2.start();
+    }
+
+    var myCodeMirror = CodeMirror(editorDOM, {
+      value: sampleCode.toString().slice(24, -1),
+      mode: 'javascript'
+    });
+
+    // Spawns a task with the code from CodeMirror editor.
+    var spawnTask = (function () {
+
+      function Task(str) {
+        this.injectTaskFromString(str);
+      }
+
+      Task.prototype.injectTaskFromString = function (str) {
+        var header = 'var context = new OfflineAudioContext(2, 44100, 44100);';
+        var footer = 'context.oncomplete = this.onRenderComplete; context.startRendering();';
+        
+        // WARNING: be careful with Function. It is same with 'eval()'.
+        this.task = new Function('', header + str + footer);
+
+      };
+
+      Task.prototype.run = function () {
+        try {
+          this.task();  
+        } catch (e) {
+          var message = '[' + e.name + '] ' + e.message;
+          consoleDOM.textContent = message;
+          console.log(e.stack);
+        }
+      };
+
+      Task.prototype.onRenderComplete = function (event) {
+        var source = contextRT.createBufferSource();
+        source.buffer = event.renderedBuffer;
+        source.connect(contextRT.destination);
+        source.start();
+        lastRenderedChannelData = event.renderedBuffer.getChannelData(0);
+        drawWaveform(lastRenderedChannelData);
+      };
+
+      return function (str) {
+        new Task(str).run();  
+      };
+
+    })();
+
+    function executeCode() {
+      spawnTask(myCodeMirror.getValue());
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "canopy",
+  "version": "0.0.0",
+  "homepage": "https://github.com/hoch/canopy",
+  "authors": [
+    "Hongchan Choi"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#~0.5.4"
+  }
+}
