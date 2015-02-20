@@ -29,7 +29,7 @@ gulp.task('serve', function () {
 
 // gh-pages integration
 gulp.task('deploy', function () {
-  return gulp.src('./app/**/*')
+  return gulp.src('app/**/*')
     .pipe(deploy());
 });
 
