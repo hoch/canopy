@@ -1,3 +1,19 @@
+(function (exports, undefined) {
+  'use strict';
+
+  var sqrt = Math.sqrt;
+  var abs = function (real, imag) {
+    return Math.sqrt(real * real + imag * imag);
+  };
+
+  var ComplexArray
+
+
+
+
+})();
+
+
 'use strict';
 
 !function(exports, undefined) {
@@ -113,5 +129,5 @@
     // ArrayType will not necessarily be iterable: make it so.
     return iterable(mags)
   }
-  
+
 }(typeof exports === 'undefined' && (this.complex_array = {}) || exports)

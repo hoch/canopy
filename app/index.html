@@ -245,15 +245,19 @@
       
       spectrogramData = new complex_array.ComplexArray(256);
 
-      var frame = 0;
+      // var frame = 0;
       
-      // for (var frame = 0; frame < ~~(44100 / 128); frame++) {
+      for (var frame = 0; frame < 2; frame++) {
+
+        console.log('frame = ' + frame);
+
+        console.log('= signal =');
 
         spectrogramData.map(function (value, i, n) {
           // value.real = hanning[i] * lastRenderedChannelData[frame * 128 + i];
           // value.real = blackman[i] * lastRenderedChannelData[frame * 128 + i];
           value.real = lastRenderedChannelData[frame * 128 + i];
-          // console.log(value.real);
+          console.log(value.real);
         });
         
         spectrogramData.FFT();
@@ -261,6 +265,14 @@
         var nyquist = spectrogramData.real.length * 0.5;
         var real = spectrogramData.real;
         var imag = spectrogramData.imag;
+
+        console.log('= real =');
+
+        for (var i = 0; i < spectrogramData.real.length; i++) {
+          console.log(spectrogramData.real[i]);
+        }
+
+        console.log('= imag =');
 
         for (var i = 0; i < spectrogramData.imag.length; i++) {
           console.log(spectrogramData.imag[i]);
@@ -274,12 +286,13 @@
           var value = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]) * magScale;
           var db = Math.max(minDecibel, 20 * Math.log10(value));
           db = 1.0 + (db * 0.01);
+          db = Math.min(1.0, Math.max(0.0, db));
           // console.log(db);
           contextSpec.fillStyle = 'rgba(0, 0, 0, ' + db + ')';
           contextSpec.fillRect(frame * 5, i * 5, 5, 5);
         }
 
-      // }
+      }
     }
 
     function render(ctx, channelData, startPosition, hopSize, interval, viewWidth, viewHeight) {
