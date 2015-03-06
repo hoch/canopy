@@ -133,6 +133,20 @@
       return window_;
     }
 
+    function createBlackmanWindow(length) {
+      var alpha = 0.16;
+      var a0 = 0.5 * (1 - alpha);
+      var a1 = 0.5;
+      var a2 = 0.5 * alpha;
+      var window_ = new Float32Array(length);
+      for (var i = 0; i < length; i++) {
+        var x = i / length;
+        var cos = Math.cos(Math.PI * 2 * x);
+        window_[i] = a0 - a1 * cos + a2 * cos;
+      }
+      return window_;
+    }
+
 
     /**
      * Render waveform view based on parameters.
@@ -218,6 +232,7 @@
     }
 
     var hanning = createHanningWindow(256);
+    var blackman = createBlackmanWindow(256);
 
     function renderSpectrogram(canvasID, data) {
       var contextSpec = spectrogramDOM.getContext('2d');
@@ -230,32 +245,41 @@
       
       spectrogramData = new complex_array.ComplexArray(256);
 
-      // var frame = 0;
+      var frame = 0;
       
-      for (var frame = 0; frame < ~~(44100 / 128); frame++) {
+      // for (var frame = 0; frame < ~~(44100 / 128); frame++) {
 
         spectrogramData.map(function (value, i, n) {
-          value.real = hanning[i] * lastRenderedChannelData[frame * 128 + i];
-          // value.real = lastRenderedChannelData[frame * 128 + i];
+          // value.real = hanning[i] * lastRenderedChannelData[frame * 128 + i];
+          // value.real = blackman[i] * lastRenderedChannelData[frame * 128 + i];
+          value.real = lastRenderedChannelData[frame * 128 + i];
+          // console.log(value.real);
         });
         
-
         spectrogramData.FFT();
 
         var nyquist = spectrogramData.real.length * 0.5;
         var real = spectrogramData.real;
         var imag = spectrogramData.imag;
+
+        for (var i = 0; i < spectrogramData.imag.length; i++) {
+          console.log(spectrogramData.imag[i]);
+        }
+
+        imag[0] = 0.0; // To blow above the nyquist.
+        var magScale = 1.0 / 256;
+        var minDecibel = -120;
         
         for (var i = 0; i < nyquist; i++) {
-          var value = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]);
-          // var db = 100 + 20 * Math.log10(value); // -100 ~ 12
-          // var value2 = db;
-          // console.log(value);
-          contextSpec.fillStyle = 'rgba(0, 0, 0, ' + value + ')';
+          var value = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]) * magScale;
+          var db = Math.max(minDecibel, 20 * Math.log10(value));
+          db = 1.0 + (db * 0.01);
+          // console.log(db);
+          contextSpec.fillStyle = 'rgba(0, 0, 0, ' + db + ')';
           contextSpec.fillRect(frame * 5, i * 5, 5, 5);
         }
 
-      }
+      // }
     }
 
     function render(ctx, channelData, startPosition, hopSize, interval, viewWidth, viewHeight) {
@@ -317,17 +341,21 @@
 
     function sampleCode() {
 // Edit the code below and 'Run' it.
+// var osc1 = context.createOscillator();
+// var modGain = context.createGain();
+// var osc2 = context.createOscillator();
+// osc1.connect(modGain);
+// modGain.connect(osc2.frequency);
+// osc2.connect(context.destination);
+// osc1.frequency.value = 33;
+// modGain.gain.value = 3735;
+// osc2.frequency.value = 77;
+// osc1.start();
+// osc2.start();
 var osc1 = context.createOscillator();
-var modGain = context.createGain();
-var osc2 = context.createOscillator();
-osc1.connect(modGain);
-modGain.connect(osc2.frequency);
-osc2.connect(context.destination);
-osc1.frequency.value = 33;
-modGain.gain.value = 3735;
-osc2.frequency.value = 77;
+osc1.frequency.value = 1000;
+osc1.connect(context.destination);
 osc1.start();
-osc2.start();
 }
 
     var myCodeMirror = CodeMirror(editorDOM, {
