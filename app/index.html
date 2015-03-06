@@ -23,6 +23,9 @@
   <link rel="stylesheet" href="codemirror/lib/codemirror.css">
   <script src="codemirror/mode/javascript/javascript.js"></script>
 
+  <script src="js/complex_array.js"></script>
+  <script src="js/fft.js"></script>
+  <script src="js/fft_image.js"></script>
   <script src="js/events.js"></script>
 
   <style>
@@ -92,6 +95,7 @@
     <div vertical layout flex>
       <div id="i-viewer" flex>
         <canvas id="i-waveform-a"></canvas>
+        <canvas id="i-specgram-a"></canvas>
       </div>
       <div id="i-viewer-info" style="height:400px"></div>
     </div>
@@ -101,20 +105,33 @@
     var editorDOM = document.querySelector('#i-editor');
     var consoleDOM = document.querySelector('#i-editor-console');
     var waveformDOM = document.querySelector('#i-waveform-a');
+    var spectrogramDOM = document.querySelector('#i-specgram-a');
 
     var context2D = waveformDOM.getContext('2d');
     context2D.canvas.width = 1200;
-    context2D.canvas.height = 200;
+    context2D.canvas.height = 300;
 
     var contextRT = new AudioContext();
 
     var lastRenderedChannelData = null;
+    var spectrogramData = null;
     
     var zoomLevel = 0;
     var sampleHopSize = 1;
     var xInterval = 1;
-    var sampleIndexOffset = 0;    
+    var sampleIndexOffset = 0;
 
+
+    function createHanningWindow(length) {
+      var phase = 0;
+      var delta = 2 * Math.PI / length;
+      var window_ = new Float32Array(length);
+      for (var i = 0; i < length; i++) {
+        window_[i] = 0.5 * (1.0 - Math.cos(phase));
+        phase += delta;
+      }
+      return window_;
+    }
 
 
     /**
@@ -200,6 +217,47 @@
       
     }
 
+    var hanning = createHanningWindow(256);
+
+    function renderSpectrogram(canvasID, data) {
+      var contextSpec = spectrogramDOM.getContext('2d');
+      var width = 1200;
+      var height = 300;
+      spectrogramDOM.width = width;
+      spectrogramDOM.height = height;
+      contextSpec.strokeStyle = 'blue';
+      contextSpec.clearRect(0, 0, width, height);
+      
+      spectrogramData = new complex_array.ComplexArray(256);
+
+      // var frame = 0;
+      
+      for (var frame = 0; frame < ~~(44100 / 128); frame++) {
+
+        spectrogramData.map(function (value, i, n) {
+          value.real = hanning[i] * lastRenderedChannelData[frame * 128 + i];
+          // value.real = lastRenderedChannelData[frame * 128 + i];
+        });
+        
+
+        spectrogramData.FFT();
+
+        var nyquist = spectrogramData.real.length * 0.5;
+        var real = spectrogramData.real;
+        var imag = spectrogramData.imag;
+        
+        for (var i = 0; i < nyquist; i++) {
+          var value = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]);
+          // var db = 100 + 20 * Math.log10(value); // -100 ~ 12
+          // var value2 = db;
+          // console.log(value);
+          contextSpec.fillStyle = 'rgba(0, 0, 0, ' + value + ')';
+          contextSpec.fillRect(frame * 5, i * 5, 5, 5);
+        }
+
+      }
+    }
+
     function render(ctx, channelData, startPosition, hopSize, interval, viewWidth, viewHeight) {
       renderView(ctx, channelData, startPosition, hopSize, interval, viewWidth, viewHeight);
       renderRuler(ctx, startPosition, hopSize, interval, viewWidth);
@@ -257,7 +315,6 @@
     );
 
 
-
     function sampleCode() {
 // Edit the code below and 'Run' it.
 var osc1 = context.createOscillator();
@@ -271,7 +328,7 @@ modGain.gain.value = 3735;
 osc2.frequency.value = 77;
 osc1.start();
 osc2.start();
-    }
+}
 
     var myCodeMirror = CodeMirror(editorDOM, {
       value: sampleCode.toString().slice(24, -1),
@@ -291,7 +348,6 @@ osc2.start();
         
         // WARNING: be careful with Function. It is same with 'eval()'.
         this.task = new Function('', header + str + footer);
-
       };
 
       Task.prototype.run = function () {
@@ -311,6 +367,7 @@ osc2.start();
         source.start();
         lastRenderedChannelData = event.renderedBuffer.getChannelData(0);
         updateView();
+        renderSpectrogram('i-spectragram-a', spectrogramData);
       };
 
       return function (str) {
