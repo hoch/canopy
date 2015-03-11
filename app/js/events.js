@@ -39,9 +39,8 @@ MouseResponder.prototype = {
 
   dragged: function (event) {
     event.preventDefault();
-    if (event.timeStamp - this._prevTS < 16.7) {
+    if (event.timeStamp - this._prevTS < 16.7)
       return;
-    }
     this._prevTS = event.timeStamp;
     var p = this.getEventData(event);
     this.callback(this.senderId, 'dragged', p);
