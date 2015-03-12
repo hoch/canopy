@@ -21,11 +21,23 @@
   var rulerColor = '#37474F';
   var rulerGridColor = '#CFD8DC';
   var rulerGridLineWidth = 1.0;
+  var rulerFont = '9px Arial';
   var waveformColor = '#03A9F4';
+  var waveformCenterLineColor = '#B0BEC5';
   var waveformLineWidth = 1.0;
   
   var needsRedraw = false;
 
+  // in Samples.
+  var viewStart = 0;
+  var viewEnd = 0;
+  // var viewLength = 128;
+  var viewAnchor = 64;
+
+  var bufferLength = 0;
+  var pixelsPerSample = 0;
+  var grids = [2500, 500, 250, 100, 25]; // samples
+  var gridSize; // sample
 
   function clearView() {
     ctx.fillStyle = clearColor;
@@ -33,85 +45,132 @@
   }
 
   function drawRuler() {
+    
+    var nextGrid = viewStart + gridSize - (viewStart % gridSize);
+    var x = 0;
+
     ctx.fillStyle = rulerColor;
     ctx.strokeStyle = rulerGridColor;
     ctx.lineWidth = rulerGridLineWidth;
     
     ctx.fillRect(0, 0, width, rulerHeight);
+    
     ctx.beginPath();
-    var index = sampleOffset;
-    for (var x = 0; x < width; x++) {
-      // TOFIX: the ruler disappears in a certain zoom setting.
-      var flooredIndex = ~~(index);
-      if (flooredIndex % 1024 === 0) {
-        ctx.moveTo(x, 15);
-        ctx.lineTo(x, 28.5);
-      } else if (flooredIndex % 128 === 0) {
+    ctx.fillStyle = rulerGridColor;
+    ctx.font = rulerFont;
+
+    for (var i = viewStart; i < viewEnd; i++) {
+      // Draw a grid when the buffer index passes the grid position.
+      if (i >= nextGrid) {
+        ctx.fillText(nextGrid, x, 15);
         ctx.moveTo(x, 20);
         ctx.lineTo(x, 28.5);
+        nextGrid += gridSize;
       }
-      index += zoomFactor;
+      x += pixelsPerSample;
     }
     ctx.stroke();
   }
 
-  function drawWaveform() {
-    if (renderedBuffer) {
-      ctx.strokeStyle = ctx.fillStyle = waveformColor;
-      ctx.lineWidth = waveformLineWidth;
+  // function drawWaveform() {
+  //   if (renderedBuffer) {
+  //     ctx.strokeStyle = ctx.fillStyle = waveformColor;
+  //     ctx.lineWidth = waveformLineWidth;
 
-      var length = renderedBuffer.length;
-      var waveformHeight = height - rulerHeight - 1;
-      var y_length, y_offset;
+  //     var length = renderedBuffer.length;
+  //     var waveformHeight = height - rulerHeight - 1;
+  //     var y_length, y_offset;
 
-      ctx.save();
-      ctx.translate(0, rulerHeight + 1);
-      ctx.beginPath();
-      if (zoomFactor >= 2) {
-        // When zooming out. Draw blob based on absolute amplitude.
-        var index = sampleOffset;
-        for (var x = 0; x < width; x++) {
-          if (index < length) {
-            y_length = Math.abs(renderedBuffer[index]) * waveformHeight;
-          } else {
-            y_length = 0.0;
-          }
-          y_offset = (waveformHeight - y_length) * 0.5;
-          ctx.moveTo(x, y_offset);
-          ctx.lineTo(x, y_offset + y_length);
-          index += zoomFactor;
-        }
-      } else {
-        // When zooming in. Use line drawing between samples.
-        var interval = 1 / zoomFactor;
-        var numSamples = Math.min(width, (length - sampleOffset) * zoomFactor);
-        var x_offset = 0;
-        for (i = 0; i < numSamples; i++) {
-          if (i < length) {
-            y_offset = renderedBuffer[sampleOffset + i] * 0.5 + 0.5;
-          } else {
-            y_offset = 0.5;
-          }
-          y_offset *= waveformHeight;
-          ctx.lineTo(x_offset, y_offset);
-          ctx.fillRect(x_offset - 1, y_offset - 1, 3, 3);
-          x_offset += interval;
-        }
-      }
-      ctx.stroke();
-      ctx.restore();
+  //     ctx.save();
+  //     ctx.translate(0, rulerHeight + 1);
+  //     ctx.beginPath();
+  //     if (zoomFactor >= 2) {
+  //       // When zooming out. Draw blob based on absolute amplitude.
+  //       var index = sampleOffset;
+  //       for (var x = 0; x < width; x++) {
+  //         if (index < length) {
+  //           y_length = Math.abs(renderedBuffer[index]) * waveformHeight;
+  //         } else {
+  //           y_length = 0.0;
+  //         }
+  //         y_offset = (waveformHeight - y_length) * 0.5;
+  //         ctx.moveTo(x, y_offset);
+  //         ctx.lineTo(x, y_offset + y_length);
+  //         index += zoomFactor;
+  //       }
+  //     } else {
+  //       // When zooming in. Use line drawing between samples.
+  //       var interval = 1 / zoomFactor;
+  //       var numSamples = Math.min(width, (length - sampleOffset) * zoomFactor);
+  //       var x_offset = 0;
+  //       for (i = 0; i < numSamples; i++) {
+  //         if (i < length) {
+  //           y_offset = renderedBuffer[sampleOffset + i] * 0.5 + 0.5;
+  //         } else {
+  //           y_offset = 0.5;
+  //         }
+  //         y_offset *= waveformHeight;
+  //         ctx.lineTo(x_offset, y_offset);
+  //         ctx.fillRect(x_offset - 1, y_offset - 1, 3, 3);
+  //         x_offset += interval;
+  //       }
+  //     }
+  //     ctx.stroke();
+  //     ctx.restore();
             
-    } else {
-      console.log('Canopy(!) Invalid audio buffer. Cannot be rendered.');
-    }
-  }
+  //   } else {
+  //     console.log('Canopy(!) Invalid audio buffer. Cannot be rendered.');
+  //   }
+  // }
 
+  function drawWaveform2() {
+
+    if (!renderedBuffer) {
+      console.log('Canopy(!) Invalid audio buffer. Cannot be rendered.'); 
+      return;
+    }
+
+    var waveformHeight = height - rulerHeight - 1;
+    var x = 0, px = 0, y_offset;
+
+    ctx.save();
+    ctx.translate(0, rulerHeight + 1);
+
+    // Draw center line.
+    ctx.beginPath();
+    ctx.strokeStyle = waveformCenterLineColor;
+    ctx.moveTo(0, waveformHeight * 0.5);
+    ctx.lineTo(width, waveformHeight * 0.5);
+    ctx.stroke();
+
+    // Draw waveform.
+    ctx.beginPath();
+    ctx.strokeStyle = ctx.fillStyle = waveformColor;
+    ctx.lineWidth = waveformLineWidth;
+    for (var i = viewStart; i < viewEnd; i++) {
+      // Draw only when the advance is bigger than one pixel.
+      if (x - px >= 1) {
+        y_offset = renderedBuffer[i] * 0.5 + 0.5;
+        y_offset *= waveformHeight;
+        ctx.lineTo(x, y_offset);
+        // Draw sample dots beyond 2x zoom.
+        if (pixelsPerSample > 2)
+          ctx.fillRect(x - 1.5, y_offset - 1.5, 3, 3);
+        px = x;
+      }
+      x += pixelsPerSample;
+    }
+    ctx.stroke();
+    
+    ctx.restore();
+  }
 
   // Render!
   function render() {
     if (needsRedraw) {
       clearView();
-      drawWaveform();
+      // drawWaveform();
+      drawWaveform2();
       drawRuler();
       // renderScrollBar();
       // updateStat();
@@ -129,25 +188,38 @@
 
   Canopy.View.setBuffer = function (buffer) {
     renderedBuffer = buffer.getChannelData(0);
+    viewStart = 0;
+    viewEnd = bufferLength = renderedBuffer.length;
+    pixelsPerSample = width / (viewEnd - viewStart);
+    var gridLevel = ~~(10 * Math.log10(pixelsPerSample + 1));
+    // console.log(gridLevel);
+    gridSize = grids[Math.min(4, gridLevel)];
     needsRedraw = true;
   };
 
-  Canopy.View.zoom = function (delta) {
-    delta = delta < 0 ? 1 : -1;
-    zoomLevel += delta;
-    zoomFactor = Math.pow(2, zoomLevel);  
+  Canopy.View.zoom = function (deltaY, x) {
+    var deltaFactor = deltaY / pixelsPerSample / width;
+    viewStart -= ~~(deltaFactor * x);
+    viewEnd += ~~(deltaFactor * (width - x));
+    viewStart = Math.max(viewStart, 0);
+    viewEnd = Math.min(viewEnd, bufferLength);
+    pixelsPerSample = width / (viewEnd - viewStart);
+
+    var gridLevel = ~~(10 * Math.log10(pixelsPerSample + 1));
+    // console.log(gridLevel);
+    gridSize = grids[Math.min(4, gridLevel)];
     needsRedraw = true;
   };
 
   Canopy.View.pan = function (deltaX) {
-    // TOFIX: Pan should be locked when the entire waveform fits in the view.
-    // TOFIX: This isn't right. If mouse moves slowly, rounding causes the weird 
-    // effect.
-    sampleOffset += Math.round(deltaX * zoomFactor);
-    sampleOffset = Math.max(0, sampleOffset);
+    // TOFIX: remove aliasing!!
+    var delta = ~~(deltaX / pixelsPerSample);
+    if (viewStart + delta < 0 || viewEnd + delta > bufferLength)
+      return;
+    viewStart += delta;
+    viewEnd += delta;
     needsRedraw = true;
   };
-
 
   /* Event handlers */  
   window.onresize = function () {
@@ -156,6 +228,7 @@
   };
 
   var prevX = 0, dX = 0;
+  var prevY = 0, dY = 0;
 
   var mouseHandler = new MouseResponder('waveform', Canopy.waveformDOM, 
     function (sender, action, data) {
@@ -163,15 +236,21 @@
       switch (action) {
         case 'clicked':
           prevX = data.x;
-          deltaX = 0;
+          prevY = data.y;
+          dX = 0;
+          dY = 0;
           break;
         case 'dragged':
           dX = prevX - data.x;
-          Canopy.View.pan(dX);
+          dY = prevY - data.y;
+          // TOFIX: latch: X or Y?
+          if (dX * dX >= dY * dY) {
+            Canopy.View.pan(dX); 
+          } else {
+            Canopy.View.zoom(dY * 10, data.x);
+          }          
           prevX = data.x;
-          break;
-        case 'wheelmoved':
-          Canopy.View.zoom(data.wheelDelta);
+          prevY = data.y;
           break;
       }
     }
