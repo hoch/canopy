@@ -4,18 +4,22 @@
   Canopy.View = {};
 
   var ctx = Canopy.waveformDOM.getContext('2d');
+  // var ctxSpec = Canopy.spectrogramDOM.getContext('2d');
 
   var width;
   var height = 384;
 
   var rulerHeight = 30;
 
+  // var specgramWidth;
+  // var specgramHeight = 384;
+  
 
   // Local variables
   var zoomLevel = -1;
   var zoomFactor = 0.5; // = 2 ^ zoomLevel
   var sampleOffset = 0;
-  var renderedBuffer = null;  
+  var renderedBuffer = null;
 
   var clearColor = '#ECEFF1';
   var rulerColor = '#37474F';
@@ -25,7 +29,7 @@
   var waveformColor = '#03A9F4';
   var waveformCenterLineColor = '#B0BEC5';
   var waveformLineWidth = 1.0;
-  
+
   var needsRedraw = false;
 
   // in Samples.
@@ -37,6 +41,7 @@
   var bufferLength = 0;
   var pixelsPerSample = 0;
   var grids = [2500, 500, 250, 100, 25]; // samples
+  var gridLevel = 0;
   var gridSize; // sample
 
   function clearView() {
@@ -45,7 +50,6 @@
   }
 
   function drawRuler() {
-    
     var nextGrid = viewStart + gridSize - (viewStart % gridSize);
     var x = 0;
 
@@ -72,61 +76,10 @@
     ctx.stroke();
   }
 
-  // function drawWaveform() {
-  //   if (renderedBuffer) {
-  //     ctx.strokeStyle = ctx.fillStyle = waveformColor;
-  //     ctx.lineWidth = waveformLineWidth;
-
-  //     var length = renderedBuffer.length;
-  //     var waveformHeight = height - rulerHeight - 1;
-  //     var y_length, y_offset;
-
-  //     ctx.save();
-  //     ctx.translate(0, rulerHeight + 1);
-  //     ctx.beginPath();
-  //     if (zoomFactor >= 2) {
-  //       // When zooming out. Draw blob based on absolute amplitude.
-  //       var index = sampleOffset;
-  //       for (var x = 0; x < width; x++) {
-  //         if (index < length) {
-  //           y_length = Math.abs(renderedBuffer[index]) * waveformHeight;
-  //         } else {
-  //           y_length = 0.0;
-  //         }
-  //         y_offset = (waveformHeight - y_length) * 0.5;
-  //         ctx.moveTo(x, y_offset);
-  //         ctx.lineTo(x, y_offset + y_length);
-  //         index += zoomFactor;
-  //       }
-  //     } else {
-  //       // When zooming in. Use line drawing between samples.
-  //       var interval = 1 / zoomFactor;
-  //       var numSamples = Math.min(width, (length - sampleOffset) * zoomFactor);
-  //       var x_offset = 0;
-  //       for (i = 0; i < numSamples; i++) {
-  //         if (i < length) {
-  //           y_offset = renderedBuffer[sampleOffset + i] * 0.5 + 0.5;
-  //         } else {
-  //           y_offset = 0.5;
-  //         }
-  //         y_offset *= waveformHeight;
-  //         ctx.lineTo(x_offset, y_offset);
-  //         ctx.fillRect(x_offset - 1, y_offset - 1, 3, 3);
-  //         x_offset += interval;
-  //       }
-  //     }
-  //     ctx.stroke();
-  //     ctx.restore();
-            
-  //   } else {
-  //     console.log('Canopy(!) Invalid audio buffer. Cannot be rendered.');
-  //   }
-  // }
-
-  function drawWaveform2() {
+  function drawWaveform() {
 
     if (!renderedBuffer) {
-      console.log('Canopy(!) Invalid audio buffer. Cannot be rendered.'); 
+      // console.log('Canopy(!) Invalid audio buffer. Cannot be rendered.'); 
       return;
     }
 
@@ -165,36 +118,110 @@
     ctx.restore();
   }
 
+  function drawMiniMap() {
+    // Copy minimap from offscreen.
+    // Then draw the current view port on it.
+  }
+
+  // function createBlackmanWindow(length) {
+  //   var alpha = 0.16;
+  //   var a0 = 0.5 * (1 - alpha);
+  //   var a1 = 0.5;
+  //   var a2 = 0.5 * alpha;
+  //   var twoPI = Math.PI * 2.0;
+  //   var window_ = new Float32Array(length);
+  //   for (var i = 0; i < length; i++) {
+  //     var x = i / length;
+  //     window_[i] = a0 - a1 * Math.cos(twoPI * x) + a2 * Math.cos(twoPI * 2 * x);
+  //   }
+  //   return window_;
+  // }
+
+  // var blackman = createBlackmanWindow(512);
+
+  // function drawSpecgram() {
+
+  //   ctxSpec.fillStyle = clearColor;
+  //   ctxSpec.fillRect(0, 0, specgramWidth, height);
+
+  //   var fftOrder = 9;
+  //   var fftSize = Math.pow(2, fftOrder); // 512
+  //   var hopSize = fftSize / 2; // 256
+
+  //   var fft = new FFT(fftOrder);
+  //   var outr = new Float32Array(fft.N);
+  //   var outi = new Float32Array(fft.N);
+
+  //   var magbuffer = new Float32Array(fft.N / 2);
+
+  //   var numIter = ~~(bufferLength / hopSize);
+  //   // var numIter = 12;
+  //   var magScale = 1 / fftSize;
+
+  //   for (var i = 0; i < numIter; i++) {
+  //     var subarray = renderedBuffer.subarray(i * hopSize, i * hopSize + fftSize);
+  //     var source = new Float32Array(fftSize);
+  //     // apply window
+  //     for (var j = 0; j < blackman.length; j++) {
+  //       source[j] = blackman[j] * subarray[j];
+  //     }
+  //     fft.rfft(source, outr, outi);
+  //     outi[0] = 0;
+
+  //     // draw below nyquist
+  //     for (var bin = 0; bin < fftSize / 2; bin++) {
+  //       var mag = Math.sqrt(outr[bin] * outr[bin] + outi[bin] * outi[bin]) * magScale;
+  //       mag = 10 * Math.log(mag + 1.0);
+  //       magbuffer[bin] = magbuffer[bin] * 0.5 + mag * 0.2;
+  //       ctxSpec.fillStyle = 'rgba(0, 0, 0,' + magbuffer[bin] + ')';
+  //       // console.log(mag > 0.0001 ? mag : 0);
+  //       ctxSpec.fillRect(i * 4, bin * 4, 4, 4);
+
+
+  //     }
+  //   }
+    
+  // }
+
   // Render!
   function render() {
     if (needsRedraw) {
       clearView();
-      // drawWaveform();
-      drawWaveform2();
+      drawWaveform();
       drawRuler();
-      // renderScrollBar();
+      // drawMinimap();
       // updateStat();
       needsRedraw = false;
     }
     requestAnimationFrame(render);  
   }
 
-  Canopy.View.resize = function () {
+  function updateViewport() {
+    pixelsPerSample = width / (viewEnd - viewStart);
+    gridLevel = ~~(10 * Math.log10(pixelsPerSample + 1));
+    gridSize = grids[Math.min(4, gridLevel)];
+    needsRedraw = true;
+  }
+
+  function onResize() {
     width = window.innerWidth - Canopy.config.editorWidth;
-    // height = window.innerHeight - Canopy.config.titleBarHeight;
     ctx.canvas.width = width;
     ctx.canvas.height = height;
-  };
+    // ctxSpec.canvas.width = specgramWidth = width;
+    // ctxSpec.canvas.height = specgramHeight = height;
+    if (width < 600) {
+      alert('Please resize the window for the better visualization.');
+    }
+    updateViewport();
+  }
 
   Canopy.View.setBuffer = function (buffer) {
     renderedBuffer = buffer.getChannelData(0);
     viewStart = 0;
     viewEnd = bufferLength = renderedBuffer.length;
-    pixelsPerSample = width / (viewEnd - viewStart);
-    var gridLevel = ~~(10 * Math.log10(pixelsPerSample + 1));
-    // console.log(gridLevel);
-    gridSize = grids[Math.min(4, gridLevel)];
-    needsRedraw = true;
+    // TODO: draw minimap offscreen.
+    updateViewport();
+    Canopy.ViewSpecgram.drawSpecgram(renderedBuffer);
   };
 
   Canopy.View.zoom = function (deltaY, x) {
@@ -203,12 +230,7 @@
     viewEnd += ~~(deltaFactor * (width - x));
     viewStart = Math.max(viewStart, 0);
     viewEnd = Math.min(viewEnd, bufferLength);
-    pixelsPerSample = width / (viewEnd - viewStart);
-
-    var gridLevel = ~~(10 * Math.log10(pixelsPerSample + 1));
-    // console.log(gridLevel);
-    gridSize = grids[Math.min(4, gridLevel)];
-    needsRedraw = true;
+    updateViewport();
   };
 
   Canopy.View.pan = function (deltaX) {
@@ -218,14 +240,11 @@
       return;
     viewStart += delta;
     viewEnd += delta;
-    needsRedraw = true;
+    updateViewport();
   };
 
   /* Event handlers */  
-  window.onresize = function () {
-    Canopy.View.resize();
-    needsRedraw = true;
-  };
+  window.onresize = onResize;
 
   var prevX = 0, dX = 0;
   var prevY = 0, dY = 0;
@@ -257,7 +276,7 @@
   );
 
   // Boot up the gfx engine.
-  Canopy.View.resize();
+  onResize();
   render();
 
 })(Canopy);

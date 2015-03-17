@@ -25,6 +25,7 @@
   <script src="codemirror/mode/javascript/javascript.js"></script>
 
   <script src="js/events.js"></script>
+  <script src="js/fft.js"></script>
 
   <style>
     html, body {
@@ -97,10 +98,10 @@
       <core-icon-button id="i-rewind-btn" icon="av:loop"></core-icon-button>
     </core-toolbar>
     <div vertical layout flex>
-      <div id="i-viewer" flex>
+      <div>
         <canvas id="i-waveform"></canvas>
       </div>
-      <div id="i-viewer-info" style="height:400px">
+      <div>
         <canvas id="i-specgram"></canvas>
       </div>
     </div>
@@ -114,6 +115,7 @@
 
   <script src="js/canopy.js"></script>
   <script src="js/audio.js"></script>
+  <script src="js/view-specgram.js"></script>
   <script src="js/view.js"></script>
   <script src="js/editor.js"></script>
   <script src="js/app.js"></script>

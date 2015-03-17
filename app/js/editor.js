@@ -24,7 +24,7 @@ var SNIPPETS = [
   }
 
   Task.prototype.injectTaskFromString = function (str) {
-    var header = 'var context = new OfflineAudioContext(2, 44100, 44100);';
+    var header = 'var context = new OfflineAudioContext(2, 44100 * 2, 44100);';
     // var footer = 'context.startRendering().then(this.onRenderComplete);';
     var footer = 'context.oncomplete = this.onRenderComplete; context.startRendering();';
     
