@@ -72,7 +72,7 @@
     var magScale = 1.0 / m_fftSize;
 
     m_unitX = m_width / numHops;
-    m_unitY = 1;
+    m_unitY = m_height / m_half;
 
     // numHops = 10;
     for (var hop = 0; hop < numHops; hop++) {
@@ -87,7 +87,7 @@
 
       for (bin = 0; bin < m_half; bin++) {
         var mag = Math.sqrt(m_reals[bin] * m_reals[bin] + m_imags[bin] * m_imags[bin]) * magScale;
-        mag = 10 * Math.log(mag + 1);
+        mag = 20 * Math.log(mag + 1);
         m_mags[bin] = m_mags[bin] * m_smoothK + mag * (1.0 - m_smoothK);
         ctx.fillStyle = 'rgba(0, 0, 0, ' + m_mags[bin] + ')';
         ctx.fillRect(hop * m_unitX, bin * m_unitY, m_unitX, m_unitY);
