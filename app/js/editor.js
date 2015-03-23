@@ -15,21 +15,58 @@ var SNIPPETS = [
 // Canopy Editor module
 (function (Canopy) {
 
-  Canopy.Editor = {};
-
-  var codeMirror = CodeMirror(Canopy.editorDOM, {
+  // Canopy.Editor
+  //
+  
+  var m_codeMirror = CodeMirror(Canopy.editorDOM, {
     value: SNIPPETS[2].code,
-    mode: 'javascript'
+    mode: 'javascript',
+    // lineNumbers: true,
+    lineWrapping: true
   });
 
+  var m_isBufferRendered = false;
+  var m_renderDuration = 1;
+
+  Canopy.Editor = {};
+
+  Canopy.Editor.markAsRendered = function () {
+    if (!m_isBufferRendered) {
+      Canopy.renderButtonDOM.setAttribute('disabled', true);
+      m_isBufferRendered = true;  
+    }
+  };
+
+  Canopy.Editor.markAsChanged = function () {
+    if (m_isBufferRendered) {
+      Canopy.renderButtonDOM.removeAttribute('disabled');
+      m_isBufferRendered = false;  
+    }
+  };
+
+  Canopy.Editor.runCode = function () {
+    m_renderDuration = Canopy.sliderDOM.immediateValue;
+    Canopy.Editor.markAsRendered();
+    new Task(m_codeMirror.getValue()).run();
+  };
+
+  Canopy.Editor.onResize = function () {
+    Canopy.editorDOM.style.height = window.innerHeight - 
+      Canopy.config.titleBarHeight - Canopy.config.renderOptionsHeight;
+  };
+
+
+  // Task internal class.
+  // Dependencies: Canopy.View, Canopy.Audio
   function Task(str) {
     this.injectTaskFromString(str);
   }
 
   Task.prototype.injectTaskFromString = function (str) {
-    var header = 'var context = new OfflineAudioContext(2, 44100 * 2, 44100);';
-    // var footer = 'context.startRendering().then(this.onRenderComplete);';
-    var footer = 'context.oncomplete = this.onRenderComplete; context.startRendering();';
+    var header = 'var context = new OfflineAudioContext(2, 44100 * ' +
+      m_renderDuration + ', 44100);';
+    var footer = 'context.oncomplete = this.onRenderComplete;' + 
+      'context.startRendering();';
     
     // NOTE: be careful with Function. It is same with 'eval()'.
     this.task = new Function('', header + str + footer);
@@ -40,7 +77,7 @@ var SNIPPETS = [
       this.task();
     } catch (error) {
       var message = '[' + error.name + '] ' + error.message;
-      Canopy.consoleDOM.textContent = '(!) Canopy: ' + message;
+      // Canopy.consoleDOM.textContent = '(!) Canopy: ' + message;
       console.log(error.stack);
     }
   };
@@ -48,14 +85,19 @@ var SNIPPETS = [
   Task.prototype.onRenderComplete = function (event) {
     var buffer = event.renderedBuffer;
     Canopy.View.setBuffer(buffer);
-    Canopy.Audio.playRenderedBuffer(buffer);
+    Canopy.Audio.setBuffer(buffer);
+    Canopy.Audio.play();
   };
 
-  Canopy.Editor.runCode = function () {
-    new Task(codeMirror.getValue()).run();
+  // Other event handlers.
+  m_codeMirror.on('change', function () {
+    Canopy.Editor.markAsChanged();
+  });
+
+  // Sliders:
+  Canopy.sliderDOM.onchange = function () {
+    Canopy.Editor.markAsChanged();
   };
 
-  // Attach 'runCode' method to the buttons
-  Canopy.renderButtonDOM.onclick = Canopy.Editor.runCode;
 
 })(Canopy);

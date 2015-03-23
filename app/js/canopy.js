@@ -19,10 +19,16 @@ var Canopy = {
 
   // UI DOM handles
   Canopy.renderButtonDOM = document.querySelector('#i-render-btn');
+  Canopy.playButtonDOM = document.querySelector('#i-play-btn');
+  Canopy.rewindButtonDOM = document.querySelector('#i-rewind-btn');
+  Canopy.loopButtonDOM = document.querySelector('#i-rewind-btn');
+
   Canopy.editorDOM = document.querySelector('#i-editor');
+  Canopy.sliderDOM = document.querySelector('#i-slider-duration');
   Canopy.consoleDOM = document.querySelector('#i-editor-console');
   
   Canopy.waveformDOM = document.querySelector('#i-waveform');
+  Canopy.minimapDOM = document.querySelector('#i-minimap');
   Canopy.spectrogramDOM = document.querySelector('#i-specgram');
   
   // Canopy.statDOM = document.querySelector('#i-stat');
@@ -31,6 +37,8 @@ var Canopy = {
   Canopy.config = {
     titleBarHeight: 64,
     editorWidth: 500,
+    renderOptionsHeight: 80,
+    miniMapHeight: 48,
     consoleHeight: 200
   };
 

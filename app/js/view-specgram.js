@@ -90,25 +90,15 @@
         mag = 20 * Math.log(mag + 1);
         m_mags[bin] = m_mags[bin] * m_smoothK + mag * (1.0 - m_smoothK);
         ctx.fillStyle = 'rgba(0, 0, 0, ' + m_mags[bin] + ')';
-        ctx.fillRect(hop * m_unitX, bin * m_unitY, m_unitX, m_unitY);
-        // ctx.fillRect(hop * 4, bin * 4, 4, 4);
+        ctx.fillRect(hop * m_unitX, m_height - bin * m_unitY, m_unitX, m_unitY);
       }
     }
-  }
-
-  function onResize() {
-    m_width = window.innerWidth - Canopy.config.editorWidth;
-    ctx.canvas.width = m_width;
-    ctx.canvas.height = m_height;
-    clearView();
-    drawSpecgram();
   }
 
 
   Canopy.ViewSpecgram.configure = configure;
 
   Canopy.ViewSpecgram.drawSpecgram = function (samples, start, end) {
-
     if (!m_READY || !samples)
       return;
 
@@ -118,15 +108,17 @@
 
     clearView();
     drawSpecgram();
-
   };
 
-
-  /* Event handlers */  
-  window.onresize = onResize;
+  Canopy.ViewSpecgram.onResize = function () {
+    m_width = window.innerWidth - Canopy.config.editorWidth;
+    ctx.canvas.width = m_width;
+    ctx.canvas.height = m_height;
+    clearView();
+    drawSpecgram();
+  };
 
   // Boot up the gfx engine.
   configure(1024);
-  onResize();
 
 })(Canopy);

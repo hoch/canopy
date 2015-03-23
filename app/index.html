@@ -18,7 +18,9 @@
   <link href="bower_components/core-icon/core-icon.html" rel="import">
   <link href="bower_components/core-icons/core-icons.html" rel="import">
   <link href="bower_components/core-icons/av-icons.html" rel="import">
+  
   <link href="bower_components/paper-button/paper-button.html" rel="import">
+  <link href="bower_components/paper-slider/paper-slider.html" rel="import">
 
   <script src="codemirror/lib/codemirror.js"></script>
   <link rel="stylesheet" href="codemirror/lib/codemirror.css">
@@ -74,10 +76,19 @@
       text-align: center;
       padding: 5px 0;
     }
+
+    #i-render-options {
+      height: 60px;
+      padding: 5px 15px;
+    }
+
+    #i-editor {
+      padding: 10px;
+    }
   </style>
 </head>
 
-<body fullbleed layout horizontal>
+<body fullbleed layout horizontal unresolved>
 
   <core-header-panel style="width: 500px;">
     <core-toolbar style="background-color: #607D8B; color: #ECEFF1;">
@@ -86,20 +97,27 @@
       <core-icon-button id="i-render-btn" icon="send"></core-icon-button>
     </core-toolbar>
     <div vertical layout>
+      <div id="i-render-options" center horizontal layout>
+        <div>Duration</div>
+        <paper-slider id="i-slider-duration" value="2" min="1" max="5" editable="" role="slider" flex></paper-slider>
+      </div>
       <div id="i-editor" flex></div>
-      <div id="i-editor-console">(Console)</div>
+      <!-- <div id="i-editor-console"></div> -->
     </div>
   </core-header-panel>
     
   <core-header-panel flex>
     <core-toolbar style="background-color: #546E7A; color: #ECEFF1;" justify="center">
-      <core-icon-button id="i-rewind-btn" icon="av:skip-previous"></core-icon-button>
-      <core-icon-button id="i-rewind-btn" icon="av:play-arrow"></core-icon-button>
-      <core-icon-button id="i-rewind-btn" icon="av:loop"></core-icon-button>
+      <!-- <core-icon-button id="i-rewind-btn" icon="av:skip-previous"></core-icon-button> -->
+      <core-icon-button id="i-play-btn" icon="av:play-arrow"></core-icon-button>
+      <!-- <core-icon-button id="i-loop-btn" icon="av:loop"></core-icon-button> -->
     </core-toolbar>
     <div vertical layout flex>
       <div>
         <canvas id="i-waveform"></canvas>
+      </div>
+      <div>
+        <canvas id="i-minimap"></canvas>
       </div>
       <div>
         <canvas id="i-specgram"></canvas>

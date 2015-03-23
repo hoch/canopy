@@ -10,6 +10,7 @@ function MouseResponder(senderID, targetElement, MUICallback) {
   // init with onclick
   this.onclicked(targetElement);
   this.onwheel(targetElement);
+  // this.onmove(targetElement);
 }
 
 MouseResponder.prototype = {
@@ -24,6 +25,17 @@ MouseResponder.prototype = {
       shiftKey: event.shiftKey,
       metaKey: event.metaKey
     };
+  },
+
+  onmove: function (target) {
+    target.addEventListener('mousemove', function (event) {
+      event.preventDefault();
+      if (event.timeStamp - this._prevTS < 16.7)
+        return;
+      this._prevTS = event.timeStamp;
+      var p = this.getEventData(event);
+      this.callback(this.senderId, 'moved', p);
+    }.bind(this), false);
   },
 
   onclicked: function (target) {
