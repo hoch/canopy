@@ -1,0 +1,72 @@
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: RobotoDraft, 'Helvetica Neue', Helvetica, Arial;
+  font-size: 14px;
+  margin: 0;
+  -webkit-tap-highlight-color: rgba(0,0,0,0);
+  -webkit-touch-callout: none;
+}
+
+paper-button.colored {
+  color: #4285f4;
+}
+
+paper-button[raised].colored {
+  background: #3e50b4;
+  color: #fff;
+}
+
+paper-button.custom > core-icon {
+  margin-right: 4px;
+}
+
+paper-button.hover:hover {
+  background: #eee;
+}
+
+paper-button.blue-ripple::shadow #ripple {
+  color: #4285f4;
+}
+
+#i-canopy-workspace {
+  box-shadow: 3px 0 3px rgba(55, 70, 80, 0.33);
+}
+
+#i-transport {
+  background-color: #4CAF50;
+  color: #ECEFF1; 
+  text-align: center;
+  padding: 5px 0;
+}
+
+#i-render-options {
+  height: 60px;
+  padding: 5px 15px;
+}
+
+#i-editor {
+  padding: 10px 0px 10px 10px;
+}
+
+#i-console {
+  font-size: 12px;
+  font-family: monospace;
+  line-height: 16px;
+  color: #EC407A;
+  background-color: #FCE4EC;
+  padding: 5px;
+}
+
+#i-canopy-view {
+  padding: 10px;
+  background-color: #ECEFF1;
+}
+
+#i-minimap {
+  width: 100%;
+  background-color: #eee;
+}

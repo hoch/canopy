@@ -1,103 +1,129 @@
-var SNIPPETS = [
-  {
-    name: 'hello sine!',
-    code: 'var osc1 = context.createOscillator();\nosc1.frequency.value = 1000;\nosc1.connect(context.destination);\nosc1.start();'
-  }, {
-    name: 'simple FM',
-    code: 'var osc1 = context.createOscillator();\nvar modGain = context.createGain();\nvar osc2 = context.createOscillator();\nosc1.connect(modGain);\nmodGain.connect(osc2.frequency);\nosc2.connect(context.destination);\nosc1.frequency.value = 60;\nmodGain.gain.value = 335;\nosc2.frequency.value = 440;\nosc1.start();\nosc2.start();\n'
-  }, {
-    name: 'sine sweep',
-    code: 'var osc1 = context.createOscillator();\nvar modGain = context.createGain();\nvar osc2 = context.createOscillator();\nosc1.connect(modGain);\nmodGain.connect(osc2.frequency);\nosc2.connect(context.destination);\nosc1.frequency.value = 60;\nmodGain.gain.value = 12;\nosc2.frequency.setValueAtTime(0, 0);\nosc2.frequency.linearRampToValueAtTime(22050, 2);\nosc1.start();\nosc2.start();\n'
-  }
-];
-
-
 // Canopy Editor module
-(function (Canopy) {
+(function (Canopy, CodeMirror) {
 
-  // Canopy.Editor
-  //
-  
-  var m_codeMirror = CodeMirror(Canopy.editorDOM, {
-    value: SNIPPETS[2].code,
+  var STYLE = {
+    width: 500,
+    titleBarHeight: 64,
+    renderOptionHeight: 70,
+    consoleHeight: 64
+  };
+
+  // Options for CodeMirror editor.
+  var EDITOR_OPTIONS = {
     mode: 'javascript',
-    // lineNumbers: true,
-    lineWrapping: true
-  });
-
-  var m_isBufferRendered = false;
-  var m_renderDuration = 1;
-
-  Canopy.Editor = {};
-
-  Canopy.Editor.markAsRendered = function () {
-    if (!m_isBufferRendered) {
-      Canopy.renderButtonDOM.setAttribute('disabled', true);
-      m_isBufferRendered = true;  
-    }
-  };
-
-  Canopy.Editor.markAsChanged = function () {
-    if (m_isBufferRendered) {
-      Canopy.renderButtonDOM.removeAttribute('disabled');
-      m_isBufferRendered = false;  
-    }
-  };
-
-  Canopy.Editor.runCode = function () {
-    m_renderDuration = Canopy.sliderDOM.immediateValue;
-    Canopy.Editor.markAsRendered();
-    new Task(m_codeMirror.getValue()).run();
-  };
-
-  Canopy.Editor.onResize = function () {
-    Canopy.editorDOM.style.height = window.innerHeight - 
-      Canopy.config.titleBarHeight - Canopy.config.renderOptionsHeight;
+    lineWrapping: true,
+    value: Canopy.Snippets[1].code,
+    theme: 'elegant'
   };
 
 
-  // Task internal class.
-  // Dependencies: Canopy.View, Canopy.Audio
-  function Task(str) {
-    this.injectTaskFromString(str);
+  /**
+   * @class Editor
+   * @param {Object} domIds { editor, renderButton, durationSlider, console }
+   */
+  function Editor(domIds, CanopyRenderCallback) {
+    this.editorDOM = document.getElementById(domIds.editor);
+    this.renderButtonDOM = document.getElementById(domIds.renderButton);
+    this.durationSliderDOM = document.getElementById(domIds.durationSlider);
+    this.consoleDOM = document.getElementById(domIds.console);
+
+    this.isBufferRendered = false;
+    this.renderDuration = 2;
+    this.renderCallback = CanopyRenderCallback;
+    
+    this.editor = CodeMirror(this.editorDOM, EDITOR_OPTIONS);
+    
+    this.editor.on('change', this.markAsChanged.bind(this));
+    this.durationSliderDOM.onchange = this.markAsChanged.bind(this);
+    this.renderButtonDOM.onclick = this.render.bind(this);
   }
 
-  Task.prototype.injectTaskFromString = function (str) {
-    var header = 'var context = new OfflineAudioContext(2, 44100 * ' +
-      m_renderDuration + ', 44100);';
-    var footer = 'context.oncomplete = this.onRenderComplete;' + 
+  Editor.prototype.markAsRendered = function () {
+    if (!this.isBufferRendered) {
+      this.renderButtonDOM.setAttribute('disabled', true);
+      this.isBufferRendered = true;  
+    }
+  };
+
+  Editor.prototype.markAsChanged = function () {
+    if (this.isBufferRendered) {
+      this.renderButtonDOM.removeAttribute('disabled');
+      this.isBufferRendered = false;  
+    }
+  };
+
+  Editor.prototype.render = function () {
+    var options = {
+      errorCallback: this.logError,
+      renderCallback: this.renderCallback,
+      sampleRate: 44100,
+      duration: this.durationSliderDOM.immediateValue,
+      code: this.editor.getValue()
+    };
+
+    try {
+      new RenderTask(options);
+    } catch (error) {
+      var message = '[' + error.name + '] ' + error.message;
+      this.logError(message);
+      console.log(error.stack, message);
+    }
+
+    this.markAsRendered();
+  };
+
+  Editor.prototype.logError = function (message) {
+    // TO FIX: Red flicker on console DIV.
+    this.consoleDOM.textContent = message;
+    console.log(message);
+  };
+
+  Editor.prototype.onResize = function () {
+    var height = window.innerHeight;
+    height -= (STYLE.titleBarHeight + STYLE.renderOptionHeight + STYLE.consoleHeight);
+    height -= 20; // top-bottom padding 10px.
+    this.editor.setSize('100%', height);
+
+    this.consoleDOM.style.height = STYLE.consoleHeight;
+  };
+
+
+  /**
+   * @class RenderTask
+   * @description Internal task class.
+   * @param {String} codeString Code string.
+   * @param {Object} options { duration, sampleRate, renderCallback }
+   */
+  function RenderTask(options) {
+    this.errorCallback = options.errorCallback;
+    this.renderCallback = options.renderCallback;
+
+    var header = 'var context = new OfflineAudioContext(2, ' +
+      options.sampleRate * options.duration + ', ' +
+      options.sampleRate + ');';
+
+    var footer = 'context.oncomplete = this.onComplete.bind(this);' + 
       'context.startRendering();';
     
     // NOTE: be careful with Function. It is same with 'eval()'.
-    this.task = new Function('', header + str + footer);
-  };
+    this.task = new Function('', header + options.code + footer);
 
-  Task.prototype.run = function () {
-    try {
-      this.task();
-    } catch (error) {
-      var message = '[' + error.name + '] ' + error.message;
-      // Canopy.consoleDOM.textContent = '(!) Canopy: ' + message;
-      console.log(error.stack);
-    }
-  };
+    this.task();
+  }
 
-  Task.prototype.onRenderComplete = function (event) {
-    var buffer = event.renderedBuffer;
-    Canopy.View.setBuffer(buffer);
-    Canopy.Audio.setBuffer(buffer);
-    Canopy.Audio.play();
-  };
-
-  // Other event handlers.
-  m_codeMirror.on('change', function () {
-    Canopy.Editor.markAsChanged();
-  });
-
-  // Sliders:
-  Canopy.sliderDOM.onchange = function () {
-    Canopy.Editor.markAsChanged();
+  RenderTask.prototype.onComplete = function (event) {
+    this.renderCallback(event.renderedBuffer);
   };
 
 
-})(Canopy);
+  /**
+   * Editor Factory.
+   * @param  {[type]} domIds         [description]
+   * @param  {[type]} CanopyRenderer [description]
+   * @return {[type]}                [description]
+   */
+  Canopy.createEditor = function (domIds, CanopyRenderer) {
+    return new Editor(domIds, CanopyRenderer);
+  };
+
+})(Canopy, CodeMirror);

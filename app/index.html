@@ -25,71 +25,42 @@
   <script src="codemirror/lib/codemirror.js"></script>
   <link rel="stylesheet" href="codemirror/lib/codemirror.css">
   <script src="codemirror/mode/javascript/javascript.js"></script>
+  <link rel="stylesheet" href="codemirror/theme/elegant.css">
 
   <script src="js/events.js"></script>
   <script src="js/fft.js"></script>
 
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-    }
-  
-    body {
-      font-family: RobotoDraft, 'Helvetica Neue', Helvetica, Arial;
-      font-size: 14px;
-      margin: 0;
-      -webkit-tap-highlight-color: rgba(0,0,0,0);
-      -webkit-touch-callout: none;
-    }
-    
-    .content {
-      background-color: #fff;
-      height: 5000px;
-      padding: 20px;
-    }
-
-    paper-button.colored {
-      color: #4285f4;
-    }
-
-    paper-button[raised].colored {
-      background: #3e50b4;
-      color: #fff;
-    }
-
-    paper-button.custom > core-icon {
-      margin-right: 4px;
-    }
-
-    paper-button.hover:hover {
-      background: #eee;
-    }
-
-    paper-button.blue-ripple::shadow #ripple {
-      color: #4285f4;
-    }
-
-    #i-transport {
-      background-color: #4CAF50;
-      color: #ECEFF1; 
-      text-align: center;
-      padding: 5px 0;
-    }
-
-    #i-render-options {
-      height: 60px;
-      padding: 5px 15px;
-    }
-
-    #i-editor {
-      padding: 10px;
-    }
-  </style>
+  <link rel="stylesheet" href="css/base.css">
 </head>
 
 <body fullbleed layout horizontal unresolved>
 
+  <core-header-panel id="i-canopy-workspace" style="width: 500px;">
+
+    <core-toolbar style="background-color: #607D8B; color: #ECEFF1;">
+      <core-icon-button icon="menu"></core-icon-button>
+      <span flex>Canopy &#9835;</span>
+      <core-icon-button id="i-render-button" icon="send"></core-icon-button>
+    </core-toolbar>
+
+    <div fit style="overflow:hidden;">
+      <div id="i-render-options" center horizontal layout>
+        <div>Duration</div>
+        <paper-slider id="i-slider-duration" value="3" min="0.1" max="10" step="0.1" role="slider" editable flex></paper-slider> sec
+      </div>
+      <div id="i-editor" flex></div>
+      <div id="i-console"></div>
+    </div>
+
+  </core-header-panel>
+
+  <div id="i-canopy-view" vertical layout>
+    <div><canvas id="i-minimap"></canvas></div>
+    <!-- <div><canvas id="i-waveform"></canvas></div> -->
+    <!-- <div><canvas id="i-specgram"></canvas></div> -->
+  </div>
+
+  <!--
   <core-header-panel style="width: 500px;">
     <core-toolbar style="background-color: #607D8B; color: #ECEFF1;">
       <core-icon-button icon="menu"></core-icon-button>
@@ -102,40 +73,29 @@
         <paper-slider id="i-slider-duration" value="2" min="1" max="5" editable="" role="slider" flex></paper-slider>
       </div>
       <div id="i-editor" flex></div>
-      <!-- <div id="i-editor-console"></div> -->
     </div>
   </core-header-panel>
     
   <core-header-panel flex>
-    <core-toolbar style="background-color: #546E7A; color: #ECEFF1;" justify="center">
-      <!-- <core-icon-button id="i-rewind-btn" icon="av:skip-previous"></core-icon-button> -->
-      <core-icon-button id="i-play-btn" icon="av:play-arrow"></core-icon-button>
-      <!-- <core-icon-button id="i-loop-btn" icon="av:loop"></core-icon-button> -->
-    </core-toolbar>
+    
     <div vertical layout flex>
-      <div>
-        <canvas id="i-waveform"></canvas>
-      </div>
-      <div>
-        <canvas id="i-minimap"></canvas>
-      </div>
-      <div>
-        <canvas id="i-specgram"></canvas>
-      </div>
+      <div><canvas id="i-minimap"></canvas></div>
+      <div><canvas id="i-waveform"></canvas></div>
+      <div><canvas id="i-specgram"></canvas></div>
     </div>
   </core-header-panel>
+  -->
 
-  <!-- <script >
-    function executeCode() {
-      spawnTask(myCodeMirror.getValue());
-    }
-  </script> -->
 
-  <script src="js/canopy.js"></script>
-  <script src="js/audio.js"></script>
-  <script src="js/view-specgram.js"></script>
-  <script src="js/view.js"></script>
-  <script src="js/editor.js"></script>
+  <script src="js/Canopy.js"></script>
+  <script src="js/MiniMap.js"></script>
+  <script src="js/Waveform.js"></script>
+  <script src="js/Editor.js"></script>
+
+  <!--  -->
+  <!-- <script src="js/view-specgram.js"></script> -->
+  <!-- <script src="js/view.js"></script> -->
+
   <script src="js/app.js"></script>
 </body>
 </html>

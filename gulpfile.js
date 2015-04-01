@@ -20,8 +20,9 @@ gulp.task('serve', function () {
   });
 
   gulp.watch([
-    'app/**/*.html',
-    'app/**/*.js',
+    'app/index.html',
+    'app/js/*.js',
+    'app/css/*.css',
     '!app/codemirror/**/*'
   ], reload);
 });
