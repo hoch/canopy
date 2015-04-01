@@ -1,6 +1,9 @@
+/**
+ * Waveform Renderer
+ */
 (function (Canopy) {
 
-  // Space for statics.
+  // Styles.
   var STYLE = {
     height: 384,
     color: '#03A9F4',
@@ -15,8 +18,9 @@
     infoFont: '9px Arial'
   };
 
-  var GRIDS = [10000, 2500, 500, 250, 100, 50, 25]; // samples
-
+  // Grid size based on the zoom level. (in samples)
+  var GRIDS = [10000, 2500, 500, 250, 100, 50, 25];
+  var MAX_PPS = 5.0;
 
   /**
    * @class Waveform
@@ -82,13 +86,17 @@
     if (!this.renderedBuffer)
       return;
     
-    var height = STYLE.height - STYLE.rulerHeight - 1;
+    // -3 for upper padding.
+    var height = STYLE.height - STYLE.rulerHeight - 3;
+
     var y_origin = height * 0.5;
     var y_length;
     var x = 0, px = 0;
 
     this.ctx.save();
-    this.ctx.translate(0, STYLE.rulerHeight + 1);
+
+    // +1.5 for lower padding.
+    this.ctx.translate(0, STYLE.rulerHeight + 1.5);
 
     // Draw center line.
     this.ctx.beginPath();
@@ -100,7 +108,6 @@
     // Draw waveform.
     this.ctx.beginPath();
     this.ctx.strokeStyle = this.ctx.fillStyle = STYLE.color;
-    // ctx.lineWidth = 0.75;
     var chanL = this.renderedBuffer.getChannelData(0);
     var maxSample, maxSampleIndex;
     for (var i = this.viewStart; i < this.viewEnd; i++) {
@@ -146,24 +153,29 @@
     // this.ctx.stroke();
   };
 
+  // TO FIX: 
   Waveform.prototype.drawRegion = function () {
+    // Do not draw if the region length is 0.
     if (this.regionStart === this.regionEnd)
       return;
 
-    this.ctx.strokeStyle = STYLE.infoColor;
-    this.ctx.fillStyle = STYLE.infoColor;
+    // this.ctx.strokeStyle = STYLE.infoColor;
+    // this.ctx.fillStyle = STYLE.infoColor;
     
-    this.ctx.save();
-    this.ctx.translate(0, STYLE.rulerHeight + 1);
-
-    this.ctx.strokeRect(this.regionStart, 0.5, 
-      this.regionEnd - this.regionStart, STYLE.height - STYLE.rulerHeight - 2.0);
-
-    this.ctx.restore();
+    // this.ctx.save();
+    // this.ctx.translate(0, STYLE.rulerHeight + 1);
+    // this.ctx.strokeRect(this.regionStart, 0.5, 
+    //   this.regionEnd - this.regionStart, STYLE.height - STYLE.rulerHeight - 2.0);
+    // this.ctx.restore();
   };
 
-  // TO FIX:
+  // TO FIX: 
   Waveform.prototype.selectRegion = function (x1, x2) {
+    if (x1 === x2)
+      return;
+
+    // We don't know which point is the starting point. Compare and swap them
+    // if necessary.
     if (x1 < x2) {
       this.regionStart = x1;
       this.regionEnd = x2;
@@ -175,6 +187,7 @@
     this.needsRedraw = true;
   };
 
+  // TO FIX: viewStart - viewEnd should not be negative value.
   Waveform.prototype.zoom = function (deltaY, anchorX) {
     var factor = deltaY / this.pixelPerSample / this.width * 10;
     this.viewStart -= Math.round(factor * anchorX);
@@ -182,10 +195,12 @@
     this.viewStart = Math.max(this.viewStart, 0);
     this.viewEnd = Math.min(this.viewEnd, this.renderedBuffer.length);
     this.updateViewPort();
+    this.onChange();
   };
 
+  // TO FIX: clamping pixelPerSample and other viewport related values.
   Waveform.prototype.updateViewPort = function () {
-    this.pixelPerSample = this.width / (this.viewEnd - this.viewStart);
+    this.pixelPerSample = this.width / (this.viewEnd - this.viewStart);    
     this.gridLevel = Math.round(20 * Math.log10(this.pixelPerSample + 1));
     this.gridLevel = Math.min(6, this.gridLevel);
     this.gridSize = GRIDS[this.gridLevel];
@@ -205,7 +220,7 @@
       this.clearCanvas();
       this.drawRuler();
       this.drawWaveform();
-      // this.drawRegion();
+      this.drawRegion();
       this.drawInfo();
       this.needsRedraw = false;
     }
@@ -221,11 +236,8 @@
   };
 
   Waveform.prototype.onChange = function () {
-    // Command change to renderer.
-    // if (this.specgramRenderer)
-    //   this.specgramRenderer.setViewPort(this.regionStart, this.regionStart);
-
     // Notify change to controller.
+    // TO FIX: viewStart - viewEnd should not be negative value.
     this.controller.notify('waveform', 'viewport-change', {
       start: this.viewStart,
       end: this.viewEnd
@@ -302,7 +314,7 @@
         }
         
         // // After user interaction, update the minimap.
-        this.onChange();
+        
       }.bind(this)
     );
 
