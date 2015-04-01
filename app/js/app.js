@@ -5,12 +5,30 @@
   var resizeEvent;
 
   // Make sure the renderer is ready.
-  Canopy.MiniMap = Canopy.createMiniMap('i-minimap');
+  var Waveform = Canopy.createWaveform('i-waveform');
+  var MiniMap = Canopy.createMiniMap('i-minimap');
+
+  // System-wide router.
+  Canopy.notify = function (moduleId, action, data) {
+    
+    switch (moduleId) {
+      case 'minimap':
+        if (action === 'viewport-change')
+          Waveform.setViewPort(data.start, data.end);
+        break;
+      case 'waveform':
+        if (action === 'viewport-change')
+          MiniMap.setRegion(data.start, data.end);
+        break;
+    }
+
+  };
 
   // System-wide render callback.
   Canopy.render = function (buffer) {
     Canopy.Audio.setBuffer(buffer);
-    Canopy.MiniMap.setBuffer(buffer);
+    MiniMap.setBuffer(buffer);
+    Waveform.setBuffer(buffer);
   };
   
   // Construction.
@@ -26,9 +44,9 @@
 
 
   Canopy.onResize = function () {
-    Canopy.MiniMap.onResize();
+    MiniMap.onResize();
+    Waveform.onResize();
     Canopy.Editor.onResize();
-    // Canopy.View.onResize();
     // Canopy.ViewSpecgram.onResize();
   };
 
@@ -43,8 +61,8 @@
 
   // Boot-up operations. (wait for Polymer to load.)
   window.addEventListener('polymer-ready', function(e) {
-    Canopy.onResize();
     Canopy.Editor.render();
+    Canopy.onResize();
   });
   
 })(Canopy);

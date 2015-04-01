@@ -33,14 +33,7 @@ paper-button.blue-ripple::shadow #ripple {
 }
 
 #i-canopy-workspace {
-  box-shadow: 3px 0 3px rgba(55, 70, 80, 0.33);
-}
-
-#i-transport {
-  background-color: #4CAF50;
-  color: #ECEFF1; 
-  text-align: center;
-  padding: 5px 0;
+  box-shadow: 0 0 3px #607D8B;
 }
 
 #i-render-options {
@@ -61,6 +54,7 @@ paper-button.blue-ripple::shadow #ripple {
   padding: 5px;
 }
 
+
 #i-canopy-view {
   padding: 10px;
   background-color: #ECEFF1;
@@ -69,4 +63,10 @@ paper-button.blue-ripple::shadow #ripple {
 #i-minimap {
   width: 100%;
   background-color: #eee;
+  margin-bottom: 5px;
+}
+
+#i-waveform {
+  border-radius: 5px;
+  box-shadow: 0 0 3px #607D8B;
 }

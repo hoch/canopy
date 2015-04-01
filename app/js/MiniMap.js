@@ -9,8 +9,7 @@
     color: '#4CAF50',
     colorBackground: '#ECEFF1',
     infoColor: '#1B5E20',
-    font: '',
-    fontSize: ''
+    infoFont: '10px Arial'
   };
 
 
@@ -21,26 +20,31 @@
    * minimap will cause the visual update on the waveform renderer(viewport
    * change).
    */
-  function MiniMap(canvasId, waveformRenderer) {
-
+  function MiniMap(canvasId, controller) {
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext('2d');
 
-    this.waveformRenderer = waveformRenderer;
-    
+    // App controller.
+    this.controller = controller;
+
     this.renderedBuffer = null;
     this.needsRedraw = false;
 
-    // Registering Mouse handler.
+    // Start/end point on canvas.
     this.regionStart = null;
     this.regionEnd = null;
+    // Start/end points on audio sample.
+    this.sampleStart = null;
+    this.sampleEnd = null;
+
+    // Registering Mouse handler.
     this.registerMouseHandler();
 
     // Start 60fps rendering loop.
     this.render();
   }
 
-  MiniMap.prototype.clearCanvas = function () {    
+  MiniMap.prototype.clearCanvas = function () {
     this.ctx.fillStyle = STYLE.colorBackground;
     this.ctx.fillRect(0, 0, this.width, STYLE.height);
   };
@@ -48,9 +52,11 @@
   MiniMap.prototype.drawMiniMap = function () {
     if (!this.renderedBuffer)
       return;
-    
+
     var pixelPerSample = this.width / this.renderedBuffer.length;
-    var x = 0, px = 0, y_offset, y_length;
+    var y_origin = STYLE.miniMapHeight * 0.5;
+    var y_length;
+    var x = 0, px = 0;
 
     // Styles.
     this.ctx.strokeStyle = STYLE.color;
@@ -65,23 +71,23 @@
     // Draw waveform.
     this.ctx.beginPath();
     this.ctx.lineWidth = 1.0;
-    var maxSample = 0;
     // TO FIX: use both channel.
     var chanL = this.renderedBuffer.getChannelData(0);
+    var maxSample, maxSampleIndex;
     for (var i = 0; i < chanL.length; i++) {
-      // Find the max sample.
+      // Find the max sample and index in sub-pixel sample elements.
       var sample = Math.abs(chanL[i]);
-      if (maxSample < sample)
+      if (maxSample < sample) {
         maxSample = sample;
-      // Drop sub-pixel elements for rendering.
+        maxSampleIndex = i;
+      }
+      // Draw a line when it passes one pixel boundary.
       if (x - px >= 1) {
-        x = Math.round(x);
-        y_length = maxSample * STYLE.miniMapHeight;
-        y_offset = (STYLE.miniMapHeight - y_length) * 0.5;
-        this.ctx.moveTo(x, y_offset);
-        this.ctx.lineTo(x, y_offset + y_length);
-        px = x;
+        y_length = (1 - chanL[maxSampleIndex]) * y_origin;
+        this.ctx.moveTo(x, y_origin);
+        this.ctx.lineTo(x, y_length);
         maxSample = 0;
+        px = x;
       }
       x += pixelPerSample;
     }
@@ -95,17 +101,23 @@
     this.ctx.lineWidth = 1.0;
     this.ctx.strokeStyle = STYLE.infoColor;
     this.ctx.fillStyle = STYLE.infoColor;
-    this.ctx.font = '10px Arial';
+    this.ctx.font = STYLE.infoFont;
     this.ctx.textAlign = 'center';
-    
-    this.ctx.beginPath();
-    this.ctx.fillRect(this.regionStart, STYLE.miniMapHeight + STYLE.infoAreaHeight * 0.1, 1, STYLE.infoAreaHeight * 0.3);
-    this.ctx.moveTo(this.regionStart, STYLE.miniMapHeight + STYLE.infoAreaHeight * 0.4);
-    this.ctx.lineTo(this.regionEnd, STYLE.miniMapHeight + STYLE.infoAreaHeight * 0.4);
-    this.ctx.fillRect(this.regionEnd, STYLE.miniMapHeight + STYLE.infoAreaHeight * 0.1, 1, STYLE.infoAreaHeight * 0.3);
 
-    // TO FIX: this info should come from audio engine (sample or time)
-    this.ctx.fillText(this.regionEnd - this.regionStart, this.regionStart + (this.regionEnd - this.regionStart) * 0.5, STYLE.miniMapHeight + STYLE.infoAreaHeight);
+    this.ctx.fillRect(this.regionStart, 0, 1, STYLE.miniMapHeight);
+    this.ctx.fillRect(this.regionEnd, 0, 1, STYLE.miniMapHeight);
+    this.ctx.fillText(this.sampleEnd - this.sampleStart,
+      this.regionStart + (this.regionEnd - this.regionStart) * 0.5,
+      STYLE.miniMapHeight * 0.8);
+
+    if (this.sampleEnd - this.sampleStart > 3000) {
+      this.ctx.fillText(this.sampleStart, this.regionStart, STYLE.miniMapHeight * 1.2);
+      this.ctx.fillText(this.sampleEnd, this.regionEnd, STYLE.miniMapHeight * 1.2);
+    }
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.regionStart, STYLE.miniMapHeight * 0.51);
+    this.ctx.lineTo(this.regionEnd, STYLE.miniMapHeight * 0.51);
     this.ctx.stroke();
   };
 
@@ -135,16 +147,35 @@
     this.needsRedraw = true;
   };
 
-  // On user interaction.
-  MiniMap.prototype.onChange = function () {
-    // Command change to renderer.
-    if (this.waveformRenderer)
-      this.waveformRenderer.setViewPort(this.regionStart, this.regionStart);
+  // TO FIX: refactor setRegion method out of UI handler.
+  MiniMap.prototype.setRegion = function (sampleStart, sampleEnd) {
+    var factor = this.width / this.renderedBuffer.length;
+    this.sampleStart = sampleStart;
+    this.sampleEnd = sampleEnd;
+    this.regionStart = this.sampleStart * factor;
+    this.regionEnd = this.sampleEnd * factor;
 
     this.needsRedraw = true;
   };
 
-  // On resize.
+  // On user interaction.
+  MiniMap.prototype.onChange = function () {
+    if (this.regionEnd - this.regionStart > 1) {
+      var factor = this.renderedBuffer.length / this.width;
+      this.sampleStart = Math.round(this.regionStart * factor);
+      this.sampleEnd = Math.round(this.regionEnd * factor);
+
+      // Notify change to controller.
+      this.controller.notify('minimap', 'viewport-change', {
+        start: this.sampleStart,
+        end: this.sampleEnd
+      });
+    }
+
+    this.needsRedraw = true;
+  };
+
+  // TO FIX: resizing should change the regionStart/End properly.
   MiniMap.prototype.onResize = function () {
     this.canvas.width = this.width = window.innerWidth - 520;
     this.canvas.height = STYLE.height;
@@ -164,9 +195,9 @@
     var mouseHandler = new MouseResponder('MiniMap', this.canvas,
       function (sender, action, data) {
         // console.log(action, data);
-        
+
         switch (action) {
-          
+
           case 'clicked':
             px = data.x;
             dx = 0;
@@ -187,7 +218,7 @@
               case 'MOVING':
                 var length = this.regionEnd - this.regionStart;
 
-                // If the region is being dragged to the left end, clip the 
+                // If the region is being dragged to the left end, clip the
                 // delta x.
                 if (this.regionStart - dx < 0) {
                   this.regionStart = 0;
@@ -196,9 +227,9 @@
                   return;
                 }
 
-                // IF the region is being dragged over the right end, clip the 
+                // IF the region is being dragged over the right end, clip the
                 // delta x.
-                if (this.regionEnd - dx > this.width - 1) {
+                if (this.regionEnd - dx > this.width-1) {
                   this.regionEnd = this.width - 1;
                   this.regionStart = this.regionEnd - length;
                   px = data.x;
@@ -210,18 +241,18 @@
                 break;
               case 'CREATING':
                 if (data.x < ox) {
-                  this.regionStart = data.x;
+                  this.regionStart = Math.max(data.x, 0);
                   this.regionEnd = ox;
                 } else {
                   this.regionStart = ox;
-                  this.regionEnd = data.x;
+                  this.regionEnd = Math.min(data.x, this.width-1);
                 }
                 break;
             }
             px = data.x;
             break;
         }
-        
+
         // After user interaction, update the minimap.
         this.onChange();
       }.bind(this)
@@ -232,7 +263,7 @@
 
   // MiniMap factory.
   Canopy.createMiniMap = function (canvasId) {
-    return new MiniMap(canvasId);
+    return new MiniMap(canvasId, Canopy);
   };
 
 })(Canopy);

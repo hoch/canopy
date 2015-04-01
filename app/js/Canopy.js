@@ -3,6 +3,11 @@
 
   Canopy.REV = '0.0.4';
 
+  Canopy.STYLE = {
+    editorWidth: 500,
+    viewPadding: 20
+  };
+
   // Import external dependency.
   Canopy.FFT = FFT;
 
