@@ -12,7 +12,7 @@
   var EDITOR_OPTIONS = {
     mode: 'javascript',
     lineWrapping: true,
-    value: Canopy.Snippets[1].code,
+    value: Canopy.Snippets[2].code,
     theme: 'elegant'
   };
 
