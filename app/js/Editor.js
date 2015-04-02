@@ -21,7 +21,7 @@
    * @class Editor
    * @param {Object} domIds { editor, renderButton, durationSlider, console }
    */
-  function Editor(domIds, CanopyRenderCallback) {
+  function Editor(domIds, controller) {
     this.editorDOM = document.getElementById(domIds.editor);
     this.renderButtonDOM = document.getElementById(domIds.renderButton);
     this.durationSliderDOM = document.getElementById(domIds.durationSlider);
@@ -29,7 +29,7 @@
 
     this.isBufferRendered = false;
     this.renderDuration = 2;
-    this.renderCallback = CanopyRenderCallback;
+    this.controller = controller;
     
     this.editor = CodeMirror(this.editorDOM, EDITOR_OPTIONS);
     
@@ -54,8 +54,7 @@
 
   Editor.prototype.render = function () {
     var options = {
-      errorCallback: this.logError,
-      renderCallback: this.renderCallback,
+      parentEditor: this,
       sampleRate: 44100,
       duration: this.durationSliderDOM.immediateValue,
       code: this.editor.getValue()
@@ -70,6 +69,10 @@
     }
 
     this.markAsRendered();
+  };
+
+  Editor.prototype.onRenderComplete = function (renderedBuffer) {
+    this.controller.notify('editor', 'render-complete', { buffer: renderedBuffer });
   };
 
   Editor.prototype.logError = function (message) {
@@ -91,12 +94,10 @@
   /**
    * @class RenderTask
    * @description Internal task class.
-   * @param {String} codeString Code string.
-   * @param {Object} options { duration, sampleRate, renderCallback }
+   * @param {Object} options { parentEditor, duration, sampleRate, code }
    */
   function RenderTask(options) {
-    this.errorCallback = options.errorCallback;
-    this.renderCallback = options.renderCallback;
+    this.parentEditor = options.parentEditor;
 
     var header = 'var context = new OfflineAudioContext(2, ' +
       options.sampleRate * options.duration + ', ' +
@@ -112,18 +113,15 @@
   }
 
   RenderTask.prototype.onComplete = function (event) {
-    this.renderCallback(event.renderedBuffer);
+    this.parentEditor.onRenderComplete(event.renderedBuffer);
   };
 
 
   /**
    * Editor Factory.
-   * @param  {[type]} domIds         [description]
-   * @param  {[type]} CanopyRenderer [description]
-   * @return {[type]}                [description]
    */
-  Canopy.createEditor = function (domIds, CanopyRenderer) {
-    return new Editor(domIds, CanopyRenderer);
+  Canopy.createEditor = function (domIds) {
+    return new Editor(domIds, Canopy);
   };
 
 })(Canopy, CodeMirror);

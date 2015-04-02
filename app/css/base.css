@@ -69,4 +69,10 @@ paper-button.blue-ripple::shadow #ripple {
 #i-waveform {
   border-radius: 5px;
   box-shadow: 0 0 3px #607D8B;
+  margin-bottom: 10px;
+}
+
+#i-specgram {
+  border-radius: 5px;
+  box-shadow: 0 0 3px #607D8B;
 }

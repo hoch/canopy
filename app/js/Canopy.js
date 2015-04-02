@@ -1,7 +1,9 @@
 // Canopy Header  
 (function (Canopy, FFT) {
 
-  Canopy.REV = '0.0.4';
+  Canopy.REV = '0.0.5';
+
+  Canopy.MIN_SAMPLES_IN_VIEWPORT = 512;
 
   Canopy.STYLE = {
     editorWidth: 500,

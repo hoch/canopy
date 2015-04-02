@@ -8,6 +8,7 @@
     miniMapHeight: 48,
     color: '#4CAF50',
     colorBackground: '#ECEFF1',
+    regionColor: 'rgba(255, 192, 192, 0.5)',
     infoColor: '#1B5E20',
     infoFont: '10px Arial'
   };
@@ -24,18 +25,20 @@
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext('2d');
 
+    // Global style.
+    this.ctx.font = STYLE.infoFont;
+
     // App controller.
     this.controller = controller;
 
     this.renderedBuffer = null;
     this.needsRedraw = false;
 
-    // Start/end point on canvas.
-    this.regionStart = null;
-    this.regionEnd = null;
     // Start/end points on audio sample.
     this.sampleStart = null;
     this.sampleEnd = null;
+    this.pixelPerSample = null;
+    this.isRegionValid = false;
 
     // Registering Mouse handler.
     this.registerMouseHandler();
@@ -53,7 +56,7 @@
     if (!this.renderedBuffer)
       return;
 
-    var pixelPerSample = this.width / this.renderedBuffer.length;
+    // var pixelPerSample = this.width / this.renderedBuffer.length;
     var y_origin = STYLE.miniMapHeight * 0.5;
     var y_length;
     var x = 0, px = 0;
@@ -64,8 +67,8 @@
     // Draw center line.
     this.ctx.beginPath();
     this.ctx.lineWidth = 0.5;
-    this.ctx.moveTo(0, STYLE.miniMapHeight * 0.5);
-    this.ctx.lineTo(this.width, STYLE.miniMapHeight * 0.5);
+    this.ctx.moveTo(0, y_origin);
+    this.ctx.lineTo(this.width, y_origin);
     this.ctx.stroke();
 
     // Draw waveform.
@@ -89,45 +92,48 @@
         maxSample = 0;
         px = x;
       }
-      x += pixelPerSample;
+      x += this.pixelPerSample;
     }
     this.ctx.stroke();
   };
 
-  MiniMap.prototype.drawInfo = function () {
-    if (this.regionStart === this.regionEnd)
-      return;
-
+  MiniMap.prototype.drawOverlay = function () {
     this.ctx.lineWidth = 1.0;
     this.ctx.strokeStyle = STYLE.infoColor;
-    this.ctx.fillStyle = STYLE.infoColor;
-    this.ctx.font = STYLE.infoFont;
     this.ctx.textAlign = 'center';
 
-    this.ctx.fillRect(this.regionStart, 0, 1, STYLE.miniMapHeight);
-    this.ctx.fillRect(this.regionEnd, 0, 1, STYLE.miniMapHeight);
-    this.ctx.fillText(this.sampleEnd - this.sampleStart,
-      this.regionStart + (this.regionEnd - this.regionStart) * 0.5,
-      STYLE.miniMapHeight * 0.8);
+    // Convert sample to pixel.
+    var start = this.sampleStart * this.pixelPerSample;
+    var end = this.sampleEnd * this.pixelPerSample;
+    var sampleLength = this.sampleEnd - this.sampleStart;
 
-    if (this.sampleEnd - this.sampleStart > 3000) {
-      this.ctx.fillText(this.sampleStart, this.regionStart, STYLE.miniMapHeight * 1.2);
-      this.ctx.fillText(this.sampleEnd, this.regionEnd, STYLE.miniMapHeight * 1.2);
+    // Check the visual region's validity.
+    if (start <= 0 && end >= this.width - 1) {
+      this.isRegionValid = false;
+      return;
+    }
+    
+    this.isRegionValid = true;
+
+    this.ctx.fillStyle = STYLE.regionColor;
+    this.ctx.fillRect(start, 0, end - start, STYLE.miniMapHeight);
+
+    this.ctx.fillStyle = STYLE.infoColor;
+    this.ctx.fillRect(start, 0, 1, STYLE.miniMapHeight);
+    this.ctx.fillRect(end - 1, 0, 1, STYLE.miniMapHeight);
+    this.ctx.fillText(sampleLength, start + (end - start) * 0.5, STYLE.miniMapHeight * 0.8);
+
+    // Draw additional info above 150 pixel-width.
+    if (end - start > 50) {
+      this.ctx.fillText(this.sampleStart, start, STYLE.miniMapHeight * 1.2);
+      this.ctx.fillText(this.sampleEnd, end, STYLE.miniMapHeight * 1.2);
     }
 
     this.ctx.beginPath();
-    this.ctx.moveTo(this.regionStart, STYLE.miniMapHeight * 0.51);
-    this.ctx.lineTo(this.regionEnd, STYLE.miniMapHeight * 0.51);
+    // 0.51 is the magic number to draw a clear (non-blurred) line.
+    this.ctx.moveTo(start, STYLE.miniMapHeight * 0.51);
+    this.ctx.lineTo(end, STYLE.miniMapHeight * 0.51);
     this.ctx.stroke();
-  };
-
-  MiniMap.prototype.drawRegion = function () {
-    if (this.regionStart === null || this.regionEnd === null)
-      return;
-
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-    this.ctx.fillRect(this.regionStart, 0,
-      this.regionEnd - this.regionStart, STYLE.miniMapHeight);
   };
 
   // Render loop in 60fps.
@@ -135,126 +141,139 @@
     if (this.needsRedraw) {
       this.clearCanvas();
       this.drawMiniMap();
-      this.drawRegion();
-      this.drawInfo();
+      this.drawOverlay();
       this.needsRedraw = false;
     }
     requestAnimationFrame(this.render.bind(this));
   };
 
+  MiniMap.prototype.updateViewPort = function () {
+    if (!this.renderedBuffer)
+      return;
+    
+    // Change the PPS factor on resize, or buffer change.
+    this.pixelPerSample = this.width / this.renderedBuffer.length;
+    this.needsRedraw = true;
+  };
+
   MiniMap.prototype.setBuffer = function (buffer) {
     this.renderedBuffer = buffer;
-    this.needsRedraw = true;
+    this.sampleStart = 0;
+    this.sampleEnd = this.renderedBuffer.length;
+
+    // By default, the region is invalid. (start === end)
+    this.isRegionValid = false;
+    
+    this.updateViewPort();
   };
 
-  // TO FIX: refactor setRegion method out of UI handler.
-  MiniMap.prototype.setRegion = function (sampleStart, sampleEnd) {
-    var factor = this.width / this.renderedBuffer.length;
-    this.sampleStart = sampleStart;
-    this.sampleEnd = sampleEnd;
-    this.regionStart = this.sampleStart * factor;
-    this.regionEnd = this.sampleEnd * factor;
 
-    this.needsRedraw = true;
-  };
+  // minimap -> controller
+  MiniMap.prototype.setRegionRange = function (regionStart, regionEnd) {
+    
+    // New start/end positions in samples.
+    var start = Math.round(regionStart / this.pixelPerSample);
+    var end = Math.round(regionEnd / this.pixelPerSample);
 
-  // On user interaction.
-  MiniMap.prototype.onChange = function () {
-    if (this.regionEnd - this.regionStart > 1) {
-      var factor = this.renderedBuffer.length / this.width;
-      this.sampleStart = Math.round(this.regionStart * factor);
-      this.sampleEnd = Math.round(this.regionEnd * factor);
+    // Validate the start/end positions. (should be greater than 512 samples)
+    if (Math.abs(end - start) < Canopy.MIN_SAMPLES_IN_VIEWPORT)
+      return;
 
-      // Notify change to controller.
-      this.controller.notify('minimap', 'viewport-change', {
-        start: this.sampleStart,
-        end: this.sampleEnd
-      });
+    // Swap them if necessary.
+    if (start > end) {
+      this.sampleStart = end;
+      this.sampleEnd = start;
+    } else {
+      this.sampleStart = start;
+      this.sampleEnd = end;
     }
 
+    var length = this.sampleEnd - this.sampleStart;
+
+    // If the region is being dragged to the left end, clip the
+    // delta x.
+    if (this.sampleStart < 0) {
+      this.sampleStart = 0;
+      this.sampleEnd = this.sampleStart + length;
+    }
+
+    // If the region is being dragged over the right end, clip the
+    // delta x.
+    if (this.sampleEnd > this.renderedBuffer.length - 1) {
+      this.sampleEnd = this.renderedBuffer.length - 1;
+      this.sampleStart = this.sampleEnd - length;
+    }
+
+    this.onChange('viewport-change', {
+      start: this.sampleStart,
+      end: this.sampleEnd
+    });
+
     this.needsRedraw = true;
+  };
+
+  // controller -> minimap
+  MiniMap.prototype.setSampleRange = function (sampleStart, sampleEnd) {
+    this.sampleStart = sampleStart;
+    this.sampleEnd = sampleEnd;
+    this.needsRedraw = true;
+  };
+
+  MiniMap.prototype.onChange = function (eventType, data) {
+    this.controller.notify('minimap', eventType, data);
   };
 
   // TO FIX: resizing should change the regionStart/End properly.
   MiniMap.prototype.onResize = function () {
     this.canvas.width = this.width = window.innerWidth - 520;
     this.canvas.height = STYLE.height;
-    this.needsRedraw = true;
+    this.updateViewPort();
   };
 
-  // Mouse handler.
   MiniMap.prototype.registerMouseHandler = function () {
+
+    // UI mode: { MOVE, CREATE }
+    var mode = 'MOVING';
 
     // 3x: origin, previous, delta.
     var ox, px, dx;
 
-    // UI mode.
-    var mode = 'MOVING'; // MOVING, CREATING
-
-    // TO FIX: This needs some redesign.
     var mouseHandler = new MouseResponder('MiniMap', this.canvas,
       function (sender, action, data) {
         // console.log(action, data);
+        var start = this.sampleStart * this.pixelPerSample;
+        var end = this.sampleEnd * this.pixelPerSample;
 
         switch (action) {
 
           case 'clicked':
+            
             px = data.x;
             dx = 0;
-            // Define behavior: MOVING or CREATING
-            if (this.regionStart < data.x && data.x < this.regionEnd) {
-              mode = 'MOVING';
+            
+            // Define behavior. Move only when the region is valid.
+            if (start <= data.x && data.x <= end && this.isRegionValid) {
+              mode = 'MOVE';
             } else {
+              mode = 'CREATE';
               ox = data.x;
-              this.regionStart = data.x;
-              this.regionEnd = data.x;
-              mode = 'CREATING';
+              this.setRegionRange(data.x, data.x + 1);
             }
             break;
 
           case 'dragged':
             dx = px - data.x;
             switch (mode) {
-              case 'MOVING':
-                var length = this.regionEnd - this.regionStart;
-
-                // If the region is being dragged to the left end, clip the
-                // delta x.
-                if (this.regionStart - dx < 0) {
-                  this.regionStart = 0;
-                  this.regionEnd = length;
-                  px = data.x;
-                  return;
-                }
-
-                // IF the region is being dragged over the right end, clip the
-                // delta x.
-                if (this.regionEnd - dx > this.width-1) {
-                  this.regionEnd = this.width - 1;
-                  this.regionStart = this.regionEnd - length;
-                  px = data.x;
-                  return;
-                }
-
-                this.regionStart -= dx;
-                this.regionEnd = this.regionStart + length;
+              case 'MOVE':
+                this.setRegionRange(start - dx, end - dx);
                 break;
-              case 'CREATING':
-                if (data.x < ox) {
-                  this.regionStart = Math.max(data.x, 0);
-                  this.regionEnd = ox;
-                } else {
-                  this.regionStart = ox;
-                  this.regionEnd = Math.min(data.x, this.width-1);
-                }
+              case 'CREATE':
+                this.setRegionRange(ox, data.x);
                 break;
             }
             px = data.x;
             break;
         }
-
-        // After user interaction, update the minimap.
-        this.onChange();
       }.bind(this)
     );
 

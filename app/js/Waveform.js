@@ -5,22 +5,24 @@
 
   // Styles.
   var STYLE = {
-    height: 384,
+    height: 256, // Height of single channel rendering.
     color: '#03A9F4',
     colorBackground: '#FFF',
     colorCenterLine: '#B0BEC5',
-    rulerHeight: 30,
+    rulerHeight: 32,
     rulerGridWidth: 1.0,
     rulerColor: '#37474F',
     rulerGridColor: '#CFD8DC',
     rulerFont: '9px Arial',
     infoColor: '#1B5E20',
-    infoFont: '9px Arial'
+    infoFont: '9px Arial',
+    padding: 2.4
   };
 
   // Grid size based on the zoom level. (in samples)
   var GRIDS = [10000, 2500, 500, 250, 100, 50, 25];
-  var MAX_PPS = 5.0;
+  var MIN_SAMPLES_IN_VIEWPORT = 512;
+
 
   /**
    * @class Waveform
@@ -31,16 +33,21 @@
     this.ctx = this.canvas.getContext('2d');
 
     this.controller = controller;
-    
+
     this.renderedBuffer = null;
     this.needsRedraw = false;
+    this.numChannels = 2;
 
     // For view port.
     this.pixelPerSample = null;
     this.gridLevel = null;
     this.gridSize = null;
+
+    // View port in samples.
     this.viewStart = null;
     this.viewEnd = null;
+
+    // User-selected region in pixels.
     this.regionStart = null;
     this.regionEnd = null;
 
@@ -51,9 +58,10 @@
     this.render();
   }
 
-  Waveform.prototype.clearCanvas = function () {    
+  Waveform.prototype.clearCanvas = function () {
     this.ctx.fillStyle = STYLE.colorBackground;
-    this.ctx.fillRect(0, 0, this.width, STYLE.height);
+    this.ctx.fillRect(0, STYLE.rulerHeight, 
+      this.width, STYLE.height * 2 + STYLE.padding * 3);
   };
 
   Waveform.prototype.drawRuler = function () {
@@ -85,51 +93,58 @@
   Waveform.prototype.drawWaveform = function () {
     if (!this.renderedBuffer)
       return;
-    
-    // -3 for upper padding.
-    var height = STYLE.height - STYLE.rulerHeight - 3;
-
-    var y_origin = height * 0.5;
-    var y_length;
-    var x = 0, px = 0;
 
     this.ctx.save();
 
-    // +1.5 for lower padding.
-    this.ctx.translate(0, STYLE.rulerHeight + 1.5);
+    // +1.6 for lower padding.
+    this.ctx.translate(0, STYLE.rulerHeight + STYLE.padding);
 
-    // Draw center line.
-    this.ctx.beginPath();
-    this.ctx.strokeStyle = STYLE.colorCenterLine;
-    this.ctx.moveTo(0, height * 0.5);
-    this.ctx.lineTo(this.width, height * 0.5);
-    this.ctx.stroke();
+    for (var channel = 0; channel < this.renderedBuffer.numberOfChannels; channel++) {
+      var data = this.renderedBuffer.getChannelData(channel);
+      var maxSample, maxSampleIndex;
+      var y_origin = STYLE.height * 0.5;
+      var y_length;
+      var x = 0, px = 0;
 
-    // Draw waveform.
-    this.ctx.beginPath();
-    this.ctx.strokeStyle = this.ctx.fillStyle = STYLE.color;
-    var chanL = this.renderedBuffer.getChannelData(0);
-    var maxSample, maxSampleIndex;
-    for (var i = this.viewStart; i < this.viewEnd; i++) {
-      // Find the max sample and index in sub-pixel sample elements.
-      var sample = Math.abs(chanL[i]);
-      if (maxSample < sample) {
-        maxSample = sample;
-        maxSampleIndex = i;
+      if (channel) {
+        this.ctx.save();
+        this.ctx.translate(0, STYLE.height * channel + STYLE.padding);
       }
-      // Draw only when the advance is bigger than one pixel.
-      if (x - px >= 1) {
-        y_length = (1 - chanL[maxSampleIndex]) * y_origin;
-        this.ctx.lineTo(x, y_length);
-        // Draw sample dots beyond 1.5x zoom.
-        if (this.pixelPerSample > 1.5)
-          this.ctx.fillRect(x - 1.5, y_length - 1.5, 3, 3);
-        maxSample = 0;
-        px = x;
+
+      // Draw center line.
+      this.ctx.beginPath();
+      this.ctx.strokeStyle = STYLE.colorCenterLine;
+      this.ctx.moveTo(0, STYLE.height * 0.5);
+      this.ctx.lineTo(this.width, STYLE.height * 0.5);
+      this.ctx.stroke();
+
+      // Draw waveform.
+      this.ctx.strokeStyle = this.ctx.fillStyle = STYLE.color;
+      this.ctx.beginPath();
+      for (var i = this.viewStart; i < this.viewEnd; i++) {
+        // Find the max sample and index in sub-pixel sample elements.
+        var sample = Math.abs(data[i]);
+        if (maxSample < sample) {
+          maxSample = sample;
+          maxSampleIndex = i;
+        }
+        // Draw only when the advance is bigger than one pixel.
+        if (x - px >= 1) {
+          y_length = (1 - data[maxSampleIndex]) * y_origin;
+          this.ctx.lineTo(x, y_length);
+          // Draw sample dots beyond 1.5x zoom.
+          if (this.pixelPerSample > 1.5)
+            this.ctx.fillRect(x - 1.5, y_length - 1.5, 3, 3);
+          maxSample = 0;
+          px = x;
+        }
+        x += this.pixelPerSample;
       }
-      x += this.pixelPerSample;
+      this.ctx.stroke();
+
+      if (channel)
+        this.ctx.restore();
     }
-    this.ctx.stroke();
 
     this.ctx.restore();
   };
@@ -141,9 +156,9 @@
     // this.ctx.lineWidth = 1.0;
     // this.ctx.font = '10px Arial';
     // this.ctx.textAlign = 'center';
-    
-    
-    // this.ctx.beginPath();    
+
+
+    // this.ctx.beginPath();
     // this.ctx.moveTo(this.regionStart, STYLE.WaveformHeight + STYLE.infoAreaHeight * 0.4);
     // this.ctx.lineTo(this.regionEnd, STYLE.WaveformHeight + STYLE.infoAreaHeight * 0.4);
     // this.ctx.fillRect(this.regionEnd, STYLE.WaveformHeight + STYLE.infoAreaHeight * 0.1, 1, STYLE.infoAreaHeight * 0.3);
@@ -153,7 +168,7 @@
     // this.ctx.stroke();
   };
 
-  // TO FIX: 
+  // TO FIX:
   Waveform.prototype.drawRegion = function () {
     // Do not draw if the region length is 0.
     if (this.regionStart === this.regionEnd)
@@ -161,15 +176,15 @@
 
     // this.ctx.strokeStyle = STYLE.infoColor;
     // this.ctx.fillStyle = STYLE.infoColor;
-    
+
     // this.ctx.save();
     // this.ctx.translate(0, STYLE.rulerHeight + 1);
-    // this.ctx.strokeRect(this.regionStart, 0.5, 
+    // this.ctx.strokeRect(this.regionStart, 0.5,
     //   this.regionEnd - this.regionStart, STYLE.height - STYLE.rulerHeight - 2.0);
     // this.ctx.restore();
   };
 
-  // TO FIX: 
+  // TO FIX:
   Waveform.prototype.selectRegion = function (x1, x2) {
     if (x1 === x2)
       return;
@@ -187,24 +202,61 @@
     this.needsRedraw = true;
   };
 
-  // TO FIX: viewStart - viewEnd should not be negative value.
   Waveform.prototype.zoom = function (deltaY, anchorX) {
+
+    // 10 is a scaling factor.
     var factor = deltaY / this.pixelPerSample / this.width * 10;
-    this.viewStart -= Math.round(factor * anchorX);
-    this.viewEnd += Math.round(factor * (this.width - anchorX));
-    this.viewStart = Math.max(this.viewStart, 0);
-    this.viewEnd = Math.min(this.viewEnd, this.renderedBuffer.length);
-    this.updateViewPort();
-    this.onChange();
+
+    // Estimate start/end points.
+    var start = this.viewStart - Math.round(factor * anchorX);
+    var end = this.viewEnd + Math.round(factor * (this.width - anchorX));
+    start = Math.max(start, 0);
+    end = Math.min(end, this.renderedBuffer.length);
+
+    // Only works beyond MIN_SAMPLES_IN_VIEWPORT.
+    if (end - start > MIN_SAMPLES_IN_VIEWPORT) {
+      this.viewStart = start;
+      this.viewEnd = end;
+
+      // Notify app controller the view port change.
+      this.onChange('viewport-change', {
+        start: this.viewStart,
+        end: this.viewEnd
+      });
+
+      this.updateViewPort();
+    }
   };
 
-  // TO FIX: clamping pixelPerSample and other viewport related values.
+  Waveform.prototype.pan = function (deltaX) {
+
+    var disp = Math.round(deltaX / this.pixelPerSample);
+
+    // Estimate start/end points.
+    var start = this.viewStart + disp;
+    var end = start + (this.viewEnd - this.viewStart);
+    
+    // Only works with valid start/end points.
+    if (0 <= start && end < this.renderedBuffer.length) {
+      this.viewStart = start;
+      this.viewEnd = end;
+
+      // Notify app controller the view port change.
+      this.onChange('viewport-change', {
+        start: this.viewStart,
+        end: this.viewEnd
+      });
+
+      this.updateViewPort();
+    }
+  };
+
   Waveform.prototype.updateViewPort = function () {
-    this.pixelPerSample = this.width / (this.viewEnd - this.viewStart);    
+    this.pixelPerSample = this.width / (this.viewEnd - this.viewStart);
     this.gridLevel = Math.round(20 * Math.log10(this.pixelPerSample + 1));
     this.gridLevel = Math.min(6, this.gridLevel);
     this.gridSize = GRIDS[this.gridLevel];
-    
+
     this.needsRedraw = true;
   };
 
@@ -235,39 +287,32 @@
     this.updateViewPort();
   };
 
-  Waveform.prototype.onChange = function () {
-    // Notify change to controller.
-    // TO FIX: viewStart - viewEnd should not be negative value.
-    this.controller.notify('waveform', 'viewport-change', {
-      start: this.viewStart,
-      end: this.viewEnd
-    });
-
-    this.needsRedraw = true;
+  // Notify change to controller.
+  Waveform.prototype.onChange = function (eventType, data) {
+    this.controller.notify('waveform', eventType, data);
   };
 
   Waveform.prototype.onResize = function () {
-    this.canvas.width = this.width = window.innerWidth - 
+    this.canvas.width = this.width = window.innerWidth -
       Canopy.STYLE.editorWidth - Canopy.STYLE.viewPadding;
-    this.canvas.height = STYLE.height;
+    this.canvas.height = STYLE.rulerHeight + STYLE.height * 2 + STYLE.padding * 3;
     this.updateViewPort();
   };
 
   Waveform.prototype.registerMouseHandler = function () {
 
+    // UI mode = {ZOOM, PAN, SELECT}
+    var mode;
+
     // origin, previous, delta.
     var ox;
     var px, py, dx, dy;
 
-    // UI mode = {ZOOMING, SELECTING}
-    var mode;
-
     var mouseHandler = new MouseResponder('Waveform', this.canvas,
       function (sender, action, data) {
         // console.log(action, data);
-        
         switch (action) {
-          
+
           case 'clicked':
             ox = data.x;
             px = data.x;
@@ -278,50 +323,26 @@
           case 'dragged':
             dx = px - data.x;
             dy = py - data.y;
-            mode = (dx * dx < dy * dy) ? 'ZOOMING' : 'SELECTING';
+            mode = (dx * dx < dy * dy) ? 'ZOOM' : 'PAN';
             switch (mode) {
-              case 'ZOOMING':
+              case 'ZOOM':
                 this.zoom(dy, data.x);
-                
-                // // If the region is being dragged to the left end, clip the 
-                // // delta x.
-                // if (this.regionStart - dx < 0) {
-                //   this.regionStart = 0;
-                //   this.regionEnd = length;
-                //   px = data.x;
-                //   return;
-                // }
-
-                // // IF the region is being dragged over the right end, clip the 
-                // // delta x.
-                // if (this.regionEnd - dx > this.width - 1) {
-                //   this.regionEnd = this.width - 1;
-                //   this.regionStart = this.regionEnd - length;
-                //   px = data.x;
-                //   return;
-                // }
-
-                // this.regionStart -= dx;
-                // this.regionEnd = this.regionStart + length;
                 break;
-              case 'SELECTING':
-                this.selectRegion(ox, data.x);
+              case 'PAN':
+                this.pan(dx);
                 break;
             }
             px = data.x;
             py = data.y;
             break;
         }
-        
-        // // After user interaction, update the minimap.
-        
       }.bind(this)
     );
 
   };
 
 
-  // MiniMap factory.
+  // Waveform factory.
   Canopy.createWaveform = function (canvasId) {
     return new Waveform(canvasId, Canopy);
   };
