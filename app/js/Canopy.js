@@ -1,7 +1,7 @@
 // Canopy Header  
 (function (Canopy, FFT) {
 
-  Canopy.REV = '0.0.5';
+  Canopy.REV = '0.0.6';
 
   Canopy.MIN_SAMPLES_IN_VIEWPORT = 512;
 
