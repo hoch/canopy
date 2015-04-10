@@ -12,7 +12,7 @@
   var EDITOR_OPTIONS = {
     mode: 'javascript',
     lineWrapping: true,
-    value: Canopy.Snippets[2].code,
+    value: '// Type your code or load a code snippet from the menu.',
     theme: 'elegant'
   };
 
@@ -37,6 +37,10 @@
     this.durationSliderDOM.onchange = this.markAsChanged.bind(this);
     this.renderButtonDOM.onclick = this.render.bind(this);
   }
+
+  Editor.prototype.setCodeString = function (codeStr) {
+    this.editor.setValue(codeStr);
+  };
 
   Editor.prototype.markAsRendered = function () {
     if (!this.isBufferRendered) {

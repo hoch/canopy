@@ -1,0 +1,154 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/core-ajax/core-ajax.html">
+<link rel="import" href="../bower_components/core-menu/core-menu.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-input/paper-input-decorator.html">
+<link rel="import" href="../bower_components/core-icons/core-icons.html">
+<link rel="import" href="../bower_components/core-item/core-item.html">
+<link rel="import" href="../bower_components/core-icon-button/core-icon-button.html">
+
+<polymer-element name="gist-loader">
+  <template>
+
+    <style>
+      :host {
+        display: block;
+        position: relative;
+        padding: 10px;
+        width: 236px;
+        font-size: 1.1rem;
+        font-weight: 400;
+        overflow: hidden;
+      }
+
+      core-label {
+        font-size: 14px;
+        display: block;
+      }
+
+      paper-input {
+        width: 100%;
+        font-size: 14px;
+        margin-bottom: 20px;
+      }
+
+      core-item {
+        font-size: 12px;
+        min-height: 30px;
+      }
+
+      core-icon {
+        margin-right: 8px;
+      }
+    </style>
+
+    <core-ajax id="gistXHR"
+      url="https://api.github.com/gists/5d2bfc3d7d6ee009ac2c"
+      handleAs="json"></core-ajax>
+
+    <section>
+      <core-menu>
+        <core-label>Gist ID</core-label>
+        <paper-input id="gistInput" value="{{ gistId }}" 
+          on-change="{{ onGistIDChanged }}">
+        </paper-input>
+        <template id="gistList" repeat="{{ model }}">
+          <core-item icon="description" label="{{ name }}" on-click="{{ onItemClicked }}">
+          </core-item>
+        </template>
+      </core-menu>
+    </section>
+    
+  </template>
+
+  <script>
+    Polymer({
+
+      // Default gist repository: 'hoch@github'
+      gistId: null,
+      lastSuccessfulGistId: '5d2bfc3d7d6ee009ac2c',
+
+      // Callback when a file is loaded.
+      onFileLoaded: null,
+
+      // Validate, truncate and extract Gist ID.
+      extractGistId: function (str) {
+        // Regex filter.
+        var hexDec20 = /[0-9a-f]{20}/;
+        var slashPos = -1, poundPos = -1, index = str.length - 1;
+        // Find slash and pound.
+        while (index--) {
+          if (str[index] === '/' && slashPos === -1)
+            slashPos = index + 1;
+          if (str[index] === '#' && poundPos === -1)
+            poundPos = index;
+        }
+        // If not found, replace with default values. Then truncate.
+        if (slashPos === -1)
+          slashPos = 0;
+        if (poundPos === -1)
+          poundPos = str.length;
+        var result = str.slice(slashPos, poundPos);
+        
+        // Regex matching and return result.
+        return hexDec20.exec(result);
+      },
+
+      setGistId: function (id) {
+        this.gistId = (id || this.gistId || this.lastSuccessfulGistId);
+        this.$.gistXHR.url = 'https://api.github.com/gists/' + this.gistId;
+        this.$.gistXHR.go();
+      },
+
+      loadFile: function (fileLabel) {
+        if (this.onFileLoaded) {
+          for (var i = 0; this.model.length; i++) {
+            if (this.model[i].name === fileLabel) {
+              this.onFileLoaded(this.model[i].code);
+              return;
+            }
+          }
+        }
+      },
+
+      ready: function () {
+        // Event handler: core-response.
+        this.$.gistXHR.addEventListener('core-response', function (e) {
+          var files = e.detail.response.files;
+          this.model = [];
+          for (var gist in files) {
+            if (gist === 'Canopy Code Repository')
+              continue;
+            this.model.push({
+              name: gist,
+              code: files[gist].content
+            });
+          }
+        }.bind(this));
+
+        // Event handler: core-complete
+        this.$.gistXHR.addEventListener('core-complete', function (e) {
+          if (e.detail.response === 200){
+            this.lastSuccessfulGistId = this.gistId;
+            console.log('[gist-loader] Gists loaded: ' + this.$.gistXHR.url);
+          } else {
+            this.gistId = this.lastSuccessfulGistId;
+            console.log('[gist-loader] XHR error: ' + e.detail.response);
+          }
+        }.bind(this));
+
+        // Initial gist loading.
+        this.setGistId();
+      },
+
+      onGistIDChanged: function (event, detail, sender) {
+        this.setGistId(this.extractGistId(sender.committedValue));
+      },
+
+      onItemClicked: function (event, detail, sender) {
+        this.loadFile(sender.label);
+      }
+
+    });
+  </script>
+</polymer-element>

@@ -32,6 +32,17 @@ paper-button.blue-ripple::shadow #ripple {
   color: #4285f4;
 }
 
+[drawer] {
+  background-color: #FFF;
+  border-right: 1px solid #ccc;
+  z-index: 1;
+}
+
+[main] {
+  position: relative;
+  z-index: 0;
+}
+
 #i-canopy-workspace {
   box-shadow: 0 0 3px #607D8B;
 }
@@ -53,7 +64,6 @@ paper-button.blue-ripple::shadow #ripple {
   background-color: #FCE4EC;
   padding: 5px;
 }
-
 
 #i-canopy-view {
   padding: 10px;

@@ -20,7 +20,8 @@ gulp.task('serve', function () {
   });
 
   gulp.watch([
-    'app/index.html',
+    'app/*.html',
+    'app/canopy-polymer/*.html',
     'app/js/*.js',
     'app/css/*.css',
     '!app/codemirror/**/*'

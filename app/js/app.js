@@ -59,6 +59,15 @@
   });
 
   window.addEventListener('polymer-ready', function(e) {
+    var drawer = document.getElementById('i-drawer');
+    var loader = document.getElementById('i-loader');
+    var codeView = document.getElementById('i-code-view');
+
+    loader.onFileLoaded = function (codeStr) {
+      Editor.setCodeString(codeStr);
+      drawer.closeDrawer();
+    };
+
     Editor.render();
     Canopy.onResize();
   });
