@@ -73,6 +73,8 @@
 
       // Validate, truncate and extract Gist ID.
       extractGistId: function (str) {
+        if (str.length < 20)
+          return null;
         // Regex filter.
         var hexDec20 = /[0-9a-f]{20}/;
         var slashPos = -1, poundPos = -1, index = str.length - 1;
