@@ -27,9 +27,10 @@
       }
 
       paper-input {
-        width: 100%;
+        width: 75%;
         font-size: 14px;
         margin-bottom: 20px;
+        margin-right: 10px;
       }
 
       core-item {
@@ -38,7 +39,11 @@
       }
 
       core-icon {
-        margin-right: 8px;
+        /*margin-right: 8px;*/
+      }
+
+      a {
+        text-decoration: none;
       }
     </style>
 
@@ -49,11 +54,15 @@
     <section>
       <core-menu>
         <core-label>Gist ID</core-label>
-        <paper-input id="gistInput" value="{{ gistId }}" 
-          on-change="{{ onGistIDChanged }}">
+        <paper-input id="gistInput" value="{{ gistId }}"
+          on-change="{{ onGistIDChanged }}" flex>
         </paper-input>
+        <a href="{{ gistURL }}" target="_blank">
+          <core-icon icon="link"></core-icon>
+        </a>
         <template id="gistList" repeat="{{ model }}">
-          <core-item icon="description" label="{{ name }}" on-click="{{ onItemClicked }}">
+          <core-item icon="description" label="{{ name }}" 
+            on-click="{{ onItemClicked }}">
           </core-item>
         </template>
       </core-menu>
@@ -67,6 +76,7 @@
       // Default gist repository: 'hoch@github'
       gistId: null,
       lastSuccessfulGistId: '5d2bfc3d7d6ee009ac2c',
+      gistURL: null,
 
       // Callback when a file is loaded.
       onFileLoaded: null,
@@ -98,6 +108,7 @@
 
       setGistId: function (id) {
         this.gistId = (id || this.gistId || this.lastSuccessfulGistId);
+        this.gistURL = 'https://gist.github.com/' + this.lastSuccessfulGistId;
         this.$.gistXHR.url = 'https://api.github.com/gists/' + this.gistId;
         this.$.gistXHR.go();
       },

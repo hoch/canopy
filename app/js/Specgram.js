@@ -3,7 +3,7 @@
 
   // Specgram style.
   var STYLE = {
-    height: 256,
+    height: 192,
     color: '#4CAF50',
     colorBackground: '#ECEFF1'
   };
@@ -106,7 +106,8 @@
         this.mags[b] = this.mags[b] * SMOOTHING_CONSTANT + mag * (1.0 - SMOOTHING_CONSTANT);
 
         // Draw the bin based on HSL color model.
-        this.ctx.fillStyle = 'hsl(' + this.mags[b] * 360 + ', 100%, ' + this.mags[b] * 75 + '%)';
+        var hue = (1 - this.mags[b]) * 240;
+        this.ctx.fillStyle = 'hsl(' + hue + ', 100%, ' + this.mags[b] * 50 + '%)';
         this.ctx.fillRect(h * unitX, STYLE.height - b * unitY, unitX, unitY);
       }
     }

@@ -5,7 +5,7 @@
 
   // Styles.
   var STYLE = {
-    height: 256, // Height of single channel rendering.
+    height: 192, // Height of single channel rendering.
     color: '#03A9F4',
     colorBackground: '#FFF',
     colorCenterLine: '#B0BEC5',
@@ -20,8 +20,8 @@
   };
 
   // Grid size based on the zoom level. (in samples)
-  var GRIDS = [10000, 2500, 500, 250, 100, 50, 25];
-  var MIN_SAMPLES_IN_VIEWPORT = 512;
+  var GRIDS = [10000, 2048, 512, 256, 128, 64, 32];
+  var MIN_SAMPLES_IN_VIEWPORT = 128;
 
 
   /**
@@ -101,10 +101,9 @@
 
     for (var channel = 0; channel < this.renderedBuffer.numberOfChannels; channel++) {
       var data = this.renderedBuffer.getChannelData(channel);
-      var maxSample, maxSampleIndex;
       var y_origin = STYLE.height * 0.5;
       var y_length;
-      var x = 0, px = 0;
+      var x = 0, px = -1, i;
 
       if (channel) {
         this.ctx.save();
@@ -121,25 +120,59 @@
       // Draw waveform.
       this.ctx.strokeStyle = this.ctx.fillStyle = STYLE.color;
       this.ctx.beginPath();
-      for (var i = this.viewStart; i < this.viewEnd; i++) {
-        // Find the max sample and index in sub-pixel sample elements.
-        var sample = Math.abs(data[i]);
-        if (maxSample < sample) {
-          maxSample = sample;
-          maxSampleIndex = i;
+
+      var posSample = 0.0, negSample = 0.0, sample;
+      var maxSampleIndex;
+      var y_posOffset, y_negOffset;
+
+      // If PPS is smaller than 1.0 (zoomed-out), use sub-sampling to draw.
+      // Otherwise, use super-sampling and interpolation with lineTo().
+      if (this.pixelPerSample <= 1.0) {
+        for (i = this.viewStart; i < this.viewEnd; i++) {
+          // Pick each sample from positive and negative values.
+          sample = data[i];
+          if (sample > posSample)
+            posSample = sample;
+          else if (sample < negSample)
+            negSample = sample;
+
+          // Draw only when the advance is bigger than one pixel.
+          if (x - px >= 1) {
+            // Draw the positive sample.
+            y_posOffset = (1 - posSample) * y_origin;
+            y_negOffset = (1 - negSample) * y_origin;
+
+            this.ctx.moveTo(x, y_posOffset);
+            this.ctx.lineTo(x, y_origin);
+            this.ctx.lineTo(x, y_negOffset);
+            
+            posSample = negSample = 0.0;
+            px = x;
+          }
+          x += this.pixelPerSample;
         }
-        // Draw only when the advance is bigger than one pixel.
-        if (x - px >= 1) {
-          y_length = (1 - data[maxSampleIndex]) * y_origin;
-          this.ctx.lineTo(x, y_length);
-          // Draw sample dots beyond 1.5x zoom.
-          if (this.pixelPerSample > 1.5)
-            this.ctx.fillRect(x - 1.5, y_length - 1.5, 3, 3);
-          maxSample = 0;
-          px = x;
-        }
-        x += this.pixelPerSample;
-      }
+      } else {
+        for (i = this.viewStart; i < this.viewEnd; i++) {
+          // Find the max sample and index in sub-pixel sample elements.
+          sample = Math.abs(data[i]);
+          if (sample > posSample) {
+            posSample = sample;
+            maxSampleIndex = i;
+          }
+          // Draw only when the advance is bigger than one pixel.
+          if (x - px >= 1) {
+            y_length = (1 - data[maxSampleIndex]) * y_origin;
+            this.ctx.lineTo(x, y_length);
+            // Draw sample dots beyond 1.25x zoom.
+            if (this.pixelPerSample > 1.25)
+              this.ctx.fillRect(x - 1.5, y_length - 1.5, 3, 3);
+            posSample = 0;
+            px = x;
+          }
+          x += this.pixelPerSample;
+        }  
+      }   
+
       this.ctx.stroke();
 
       if (channel)

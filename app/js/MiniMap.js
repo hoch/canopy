@@ -74,22 +74,30 @@
     // Draw waveform.
     this.ctx.beginPath();
     this.ctx.lineWidth = 1.0;
+    
     // TO FIX: use both channel.
-    var chanL = this.renderedBuffer.getChannelData(0);
-    var maxSample, maxSampleIndex;
-    for (var i = 0; i < chanL.length; i++) {
-      // Find the max sample and index in sub-pixel sample elements.
-      var sample = Math.abs(chanL[i]);
-      if (maxSample < sample) {
-        maxSample = sample;
-        maxSampleIndex = i;
-      }
+    var data = this.renderedBuffer.getChannelData(0);
+    var posSample = 0.0, negSample = 0.0, sample;
+    var maxSampleIndex;
+    var y_posOffset, y_negOffset;
+
+    for (var i = 0; i < data.length; i++) {
+      // Pick each sample from positive and negative values.
+      sample = data[i];
+      if (sample > posSample)
+        posSample = sample;
+      else if (sample < negSample)
+        negSample = sample;
       // Draw a line when it passes one pixel boundary.
       if (x - px >= 1) {
-        y_length = (1 - chanL[maxSampleIndex]) * y_origin;
-        this.ctx.moveTo(x, y_origin);
-        this.ctx.lineTo(x, y_length);
-        maxSample = 0;
+        y_posOffset = (1 - posSample) * y_origin;
+        y_negOffset = (1 - negSample) * y_origin;
+        
+        this.ctx.moveTo(x, y_posOffset);
+        this.ctx.lineTo(x, y_origin);
+        this.ctx.lineTo(x, y_negOffset);
+        
+        posSample = negSample = 0.0;
         px = x;
       }
       x += this.pixelPerSample;
