@@ -7,6 +7,7 @@
   var STYLE = {
     height: 192, // Height of single channel rendering.
     color: '#03A9F4',
+    colorClipped: '#E91E63',
     colorBackground: '#FFF',
     colorCenterLine: '#B0BEC5',
     rulerHeight: 32,
@@ -33,9 +34,14 @@
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext('2d');
 
+    // Offscreen canvas and context.
+    this.canvasOS = document.createElement('canvas');
+    this.ctxOS = this.canvasOS.getContext('2d');
+
     this.controller = controller;
 
     this.renderedBuffer = null;
+    this.isOSChanged = false;
     this.needsRedraw = false;
     this.numChannels = 2;
 
@@ -63,43 +69,47 @@
     this.ctx.fillStyle = STYLE.colorBackground;
     this.ctx.fillRect(0, STYLE.rulerHeight, 
       this.width, STYLE.height * 2 + STYLE.padding * 3);
+    this.ctxOS.fillStyle = STYLE.colorBackground;
+    this.ctxOS.fillRect(0, STYLE.rulerHeight, 
+      this.width, STYLE.height * 2 + STYLE.padding * 3);
   };
 
   Waveform.prototype.drawRuler = function () {
     var nextGrid = this.viewStart + this.gridSize - (this.viewStart % this.gridSize);
     var x = 0;
 
-    this.ctx.fillStyle = STYLE.rulerColor;
-    this.ctx.strokeStyle = STYLE.rulerGridColor;
-    this.ctx.lineWidth = STYLE.rulerGridWidth;
+    this.ctxOS.fillStyle = STYLE.rulerColor;
+    this.ctxOS.strokeStyle = STYLE.rulerGridColor;
+    this.ctxOS.lineWidth = STYLE.rulerGridWidth;
 
-    this.ctx.fillRect(0, 0, this.width, STYLE.rulerHeight);
+    this.ctxOS.fillRect(0, 0, this.width, STYLE.rulerHeight);
 
-    this.ctx.beginPath();
-    this.ctx.fillStyle = STYLE.rulerGridColor;
-    this.ctx.font = STYLE.rulerFont;
+    this.ctxOS.beginPath();
+    this.ctxOS.fillStyle = STYLE.rulerGridColor;
+    this.ctxOS.font = STYLE.rulerFont;
     for (var i = this.viewStart; i < this.viewEnd; i++) {
       // Draw a grid when the buffer index passes the grid position.
       if (i >= nextGrid) {
-        this.ctx.fillText(nextGrid, x, 15);
-        this.ctx.moveTo(x, 20);
-        this.ctx.lineTo(x, 28.5);
+        this.ctxOS.fillText(nextGrid, x, 15);
+        this.ctxOS.moveTo(x, 20);
+        this.ctxOS.lineTo(x, 30);
         nextGrid += this.gridSize;
       }
       x += this.pixelPerSample;
     }
-    this.ctx.stroke();
+    this.ctxOS.stroke();
   };
 
   Waveform.prototype.drawWaveform = function () {
     if (!this.renderedBuffer)
       return;
 
-    this.ctx.save();
+    this.ctxOS.save();
 
     // +1.6 for lower padding.
-    this.ctx.translate(0, STYLE.rulerHeight + STYLE.padding);
-
+    this.ctxOS.translate(0, STYLE.rulerHeight + STYLE.padding);
+    
+    // Iterate channels.
     for (var channel = 0; channel < this.renderedBuffer.numberOfChannels; channel++) {
       var data = this.renderedBuffer.getChannelData(channel);
       var y_origin = STYLE.height * 0.5;
@@ -107,20 +117,20 @@
       var x = 0, px = -1, i;
 
       if (channel) {
-        this.ctx.save();
-        this.ctx.translate(0, STYLE.height * channel + STYLE.padding);
+        this.ctxOS.save();
+        this.ctxOS.translate(0, STYLE.height * channel + STYLE.padding);
       }
 
       // Draw center line.
-      this.ctx.beginPath();
-      this.ctx.strokeStyle = STYLE.colorCenterLine;
-      this.ctx.moveTo(0, STYLE.height * 0.5);
-      this.ctx.lineTo(this.width, STYLE.height * 0.5);
-      this.ctx.stroke();
+      this.ctxOS.beginPath();
+      this.ctxOS.strokeStyle = STYLE.colorCenterLine;
+      this.ctxOS.moveTo(0, STYLE.height * 0.5);
+      this.ctxOS.lineTo(this.width, STYLE.height * 0.5);
+      this.ctxOS.stroke();
 
       // Draw waveform.
-      this.ctx.strokeStyle = this.ctx.fillStyle = STYLE.color;
-      this.ctx.beginPath();
+      this.ctxOS.strokeStyle = this.ctxOS.fillStyle = STYLE.color;
+      this.ctxOS.beginPath();
 
       var posSample = 0.0, negSample = 0.0, sample;
       var maxSampleIndex;
@@ -129,6 +139,7 @@
       // If PPS is smaller than 1.0 (zoomed-out), use sub-sampling to draw.
       // Otherwise, use super-sampling and interpolation with lineTo().
       if (this.pixelPerSample <= 1.0) {
+
         for (i = this.viewStart; i < this.viewEnd; i++) {
           // Pick each sample from positive and negative values.
           sample = data[i];
@@ -139,13 +150,16 @@
 
           // Draw only when the advance is bigger than one pixel.
           if (x - px >= 1) {
+            posSample = Math.min(1.0, posSample);
+            negSample = Math.max(-1.0, negSample);
+
             // Draw the positive sample.
             y_posOffset = (1 - posSample) * y_origin;
             y_negOffset = (1 - negSample) * y_origin;
 
-            this.ctx.moveTo(x, y_posOffset);
-            this.ctx.lineTo(x, y_origin);
-            this.ctx.lineTo(x, y_negOffset);
+            this.ctxOS.moveTo(x, y_posOffset);
+            this.ctxOS.lineTo(x, y_origin);
+            this.ctxOS.lineTo(x, y_negOffset);
             
             posSample = negSample = 0.0;
             px = x;
@@ -163,10 +177,10 @@
           // Draw only when the advance is bigger than one pixel.
           if (x - px >= 1) {
             y_length = (1 - data[maxSampleIndex]) * y_origin;
-            this.ctx.lineTo(x, y_length);
+            this.ctxOS.lineTo(x, y_length);
             // Draw sample dots beyond 1.25x zoom.
             if (this.pixelPerSample > 1.25)
-              this.ctx.fillRect(x - 1.5, y_length - 1.5, 3, 3);
+              this.ctxOS.fillRect(x - 1.5, y_length - 1.5, 3, 3);
             posSample = 0;
             px = x;
           }
@@ -174,13 +188,19 @@
         }  
       }   
 
-      this.ctx.stroke();
+      this.ctxOS.stroke();
 
       if (channel)
-        this.ctx.restore();
+        this.ctxOS.restore();
     }
 
-    this.ctx.restore();
+    this.ctxOS.restore();
+  };
+
+  Waveform.prototype.copyOSCanvas = function () {
+    // Copy OS.
+    this.ctx.drawImage(this.ctxOS.canvas, 
+      0, 0, this.width, STYLE.rulerHeight + STYLE.height * 2 + STYLE.padding * 3);    
   };
 
   Waveform.prototype.drawInfo = function () {
@@ -291,6 +311,10 @@
     this.gridLevel = Math.min(6, this.gridLevel);
     this.gridSize = GRIDS[this.gridLevel];
 
+    // Changing view port triggers the redraw of offscreen waveform.
+    this.isOSChanged = true;
+
+    // The OS change always triggers the complete redraw.
     this.needsRedraw = true;
   };
 
@@ -304,8 +328,12 @@
   Waveform.prototype.render = function () {
     if (this.needsRedraw) {
       this.clearCanvas();
-      this.drawRuler();
-      this.drawWaveform();
+      if (this.isOSChanged) {
+        this.drawWaveform();
+        this.drawRuler();
+        this.isOSChanged = false;  
+      }
+      this.copyOSCanvas();
       this.drawRegion();
       this.drawInfo();
       this.needsRedraw = false;
@@ -318,6 +346,10 @@
     this.renderedBuffer = buffer;
     this.viewStart = 0;
     this.viewEnd = this.renderedBuffer.length;
+
+    // OS should be changed.
+    this.isOSChanged = true;
+
     this.updateViewPort();
   };
 
@@ -330,6 +362,10 @@
     this.canvas.width = this.width = window.innerWidth -
       Canopy.STYLE.editorWidth - Canopy.STYLE.viewPadding;
     this.canvas.height = STYLE.rulerHeight + STYLE.height * 2 + STYLE.padding * 3;
+
+    this.canvasOS.width = this.width;
+    this.canvasOS.height = STYLE.rulerHeight + STYLE.height * 2 + STYLE.padding * 3;
+
     this.updateViewPort();
   };
 
