@@ -20,7 +20,8 @@
   };
 
   // Grid size based on the zoom level. (in samples)
-  var GRIDS = [10000, 2048, 512, 256, 128, 64, 32];
+  // var GRIDS = [10000, 2048, 512, 256, 128, 64, 32];
+  var GRIDS = [10000, 3200, 800, 400, 200, 100, 50];
   var MIN_SAMPLES_IN_VIEWPORT = 128;
 
 
