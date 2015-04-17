@@ -10,7 +10,7 @@
     colorBackground: '#ECEFF1',
     regionColor: 'rgba(255, 192, 192, 0.5)',
     infoColor: '#1B5E20',
-    infoFont: '10px Arial'
+    infoFont: '12px Arial'
   };
 
 
@@ -58,7 +58,7 @@
 
     if (this.isBufferDirty) {
       this.ctxOS.fillStyle = STYLE.colorBackground;
-      this.ctxOS.fillRect(0, 0, this.width, STYLE.height);      
+      this.ctxOS.fillRect(0, 0, this.width, STYLE.height);
     }
   };
 
@@ -85,7 +85,7 @@
       // Draw waveform.
       this.ctxOS.beginPath();
       this.ctxOS.lineWidth = 1.0;
-      
+
       // TO FIX: use both channel.
       var data = this.renderedBuffer.getChannelData(0);
       var posSample = 0.0, negSample = 0.0, sample;
@@ -106,11 +106,11 @@
 
           y_posOffset = (1 - posSample) * y_origin;
           y_negOffset = (1 - negSample) * y_origin;
-          
+
           this.ctxOS.moveTo(x, y_posOffset);
           this.ctxOS.lineTo(x, y_origin);
           this.ctxOS.lineTo(x, y_negOffset);
-          
+
           posSample = negSample = 0.0;
           px = x;
         }
@@ -140,7 +140,7 @@
       this.isRegionValid = false;
       return;
     }
-    
+
     this.isRegionValid = true;
 
     this.ctx.fillStyle = STYLE.regionColor;
@@ -149,15 +149,19 @@
     this.ctx.fillStyle = STYLE.infoColor;
     this.ctx.fillRect(start, 0, 1, STYLE.miniMapHeight);
     this.ctx.fillRect(end - 1, 0, 1, STYLE.miniMapHeight);
-    
+
 
     // Draw additional info above 150 pixel-width.
     if (end - start > 50) {
-      this.ctx.fillText(sampleLength, start + (end - start) * 0.5, STYLE.miniMapHeight * 0.8);
-      this.ctx.fillText(this.sampleStart, start, STYLE.miniMapHeight * 1.2);
-      this.ctx.fillText(this.sampleEnd, end, STYLE.miniMapHeight * 1.2);
+      this.ctx.fillText(this.getTimeFromSample(sampleLength),
+        start + (end - start) * 0.5, STYLE.miniMapHeight * 0.8);
+      this.ctx.fillText(this.getTimeFromSample(this.sampleStart),
+        start, STYLE.miniMapHeight * 1.2);
+      this.ctx.fillText(this.getTimeFromSample(this.sampleEnd),
+        end, STYLE.miniMapHeight * 1.2);
     } else {
-      this.ctx.fillText(sampleLength, start + (end - start) * 0.5, STYLE.miniMapHeight * 1.2);
+      this.ctx.fillText(this.getTimeFromSample(sampleLength),
+        start + (end - start) * 0.5, STYLE.miniMapHeight * 1.2);
     }
 
     this.ctx.beginPath();
@@ -181,7 +185,7 @@
   MiniMap.prototype.updateViewPort = function () {
     if (!this.renderedBuffer)
       return;
-    
+
     // Change the PPS factor on resize, or buffer change.
     this.pixelPerSample = this.width / this.renderedBuffer.length;
     this.needsRedraw = true;
@@ -197,14 +201,14 @@
 
     // By default, the region is invalid. (start === end)
     this.isRegionValid = false;
-    
+
     this.updateViewPort();
   };
 
 
   // minimap -> controller
   MiniMap.prototype.setRegionRange = function (regionStart, regionEnd) {
-    
+
     // New start/end positions in samples.
     var start = Math.round(regionStart / this.pixelPerSample);
     var end = Math.round(regionEnd / this.pixelPerSample);
@@ -283,10 +287,10 @@
         switch (action) {
 
           case 'clicked':
-            
+
             px = data.x;
             dx = 0;
-            
+
             // Define behavior. Move only when the region is valid.
             if (start <= data.x && data.x <= end && this.isRegionValid) {
               mode = 'MOVE';
@@ -315,6 +319,15 @@
 
   };
 
+  MiniMap.prototype.getTimeFromSample = function (samples) {
+    if (!this.renderedBuffer)
+      return null;
+
+    var seconds = samples / this.renderedBuffer.sampleRate;
+    var sec = Math.floor(seconds);
+    var msec = Math.floor((seconds - sec) * 10000);
+    return sec + ':' + msec;
+  };
 
   // MiniMap factory.
   Canopy.createMiniMap = function (canvasId) {

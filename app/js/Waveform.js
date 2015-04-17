@@ -14,9 +14,9 @@
     rulerGridWidth: 1.0,
     rulerColor: '#37474F',
     rulerGridColor: '#CFD8DC',
-    rulerFont: '9px Arial',
+    rulerFont: '11px Arial',
     infoColor: '#1B5E20',
-    infoFont: '9px Arial',
+    infoFont: '12px Arial',
     padding: 2.4
   };
 
@@ -49,6 +49,7 @@
     this.pixelPerSample = null;
     this.gridLevel = null;
     this.gridSize = null;
+    this.gridDisplayMode = 'seconds';
 
     // View port in samples.
     this.viewStart = null;
@@ -67,10 +68,10 @@
 
   Waveform.prototype.clearCanvas = function () {
     this.ctx.fillStyle = STYLE.colorBackground;
-    this.ctx.fillRect(0, STYLE.rulerHeight, 
+    this.ctx.fillRect(0, STYLE.rulerHeight,
       this.width, STYLE.height * 2 + STYLE.padding * 3);
     this.ctxOS.fillStyle = STYLE.colorBackground;
-    this.ctxOS.fillRect(0, STYLE.rulerHeight, 
+    this.ctxOS.fillRect(0, STYLE.rulerHeight,
       this.width, STYLE.height * 2 + STYLE.padding * 3);
   };
 
@@ -90,7 +91,11 @@
     for (var i = this.viewStart; i < this.viewEnd; i++) {
       // Draw a grid when the buffer index passes the grid position.
       if (i >= nextGrid) {
-        this.ctxOS.fillText(nextGrid, x, 15);
+        if (this.gridDisplayMode === 'seconds') {
+          this.ctxOS.fillText(this.getTimeFromSample(nextGrid), x, 15);
+        } else {
+          this.ctxOS.fillText(nextGrid, x, 15);
+        }
         this.ctxOS.moveTo(x, 20);
         this.ctxOS.lineTo(x, 30);
         nextGrid += this.gridSize;
@@ -108,7 +113,7 @@
 
     // +1.6 for lower padding.
     this.ctxOS.translate(0, STYLE.rulerHeight + STYLE.padding);
-    
+
     // Iterate channels.
     for (var channel = 0; channel < this.renderedBuffer.numberOfChannels; channel++) {
       var data = this.renderedBuffer.getChannelData(channel);
@@ -160,7 +165,7 @@
             this.ctxOS.moveTo(x, y_posOffset);
             this.ctxOS.lineTo(x, y_origin);
             this.ctxOS.lineTo(x, y_negOffset);
-            
+
             posSample = negSample = 0.0;
             px = x;
           }
@@ -185,8 +190,8 @@
             px = x;
           }
           x += this.pixelPerSample;
-        }  
-      }   
+        }
+      }
 
       this.ctxOS.stroke();
 
@@ -199,8 +204,8 @@
 
   Waveform.prototype.copyOSCanvas = function () {
     // Copy OS.
-    this.ctx.drawImage(this.ctxOS.canvas, 
-      0, 0, this.width, STYLE.rulerHeight + STYLE.height * 2 + STYLE.padding * 3);    
+    this.ctx.drawImage(this.ctxOS.canvas,
+      0, 0, this.width, STYLE.rulerHeight + STYLE.height * 2 + STYLE.padding * 3);
   };
 
   Waveform.prototype.drawInfo = function () {
@@ -289,7 +294,7 @@
     // Estimate start/end points.
     var start = this.viewStart + disp;
     var end = start + (this.viewEnd - this.viewStart);
-    
+
     // Only works with valid start/end points.
     if (0 <= start && end < this.renderedBuffer.length) {
       this.viewStart = start;
@@ -331,7 +336,7 @@
       if (this.isOSChanged) {
         this.drawWaveform();
         this.drawRuler();
-        this.isOSChanged = false;  
+        this.isOSChanged = false;
       }
       this.copyOSCanvas();
       this.drawRegion();
@@ -409,6 +414,16 @@
       }.bind(this)
     );
 
+  };
+
+  Waveform.prototype.getTimeFromSample = function (samples) {
+    if (!this.renderedBuffer)
+      return null;
+
+    var seconds = samples / this.renderedBuffer.sampleRate;
+    var sec = Math.floor(seconds);
+    var msec = Math.floor((seconds - sec) * 10000);
+    return sec + ':' + msec;
   };
 
 
