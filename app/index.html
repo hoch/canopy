@@ -13,6 +13,9 @@
   <link rel="import" href="bower_components/core-header-panel/core-header-panel.html">
   <link rel="import" href="bower_components/core-drawer-panel/core-drawer-panel.html">
   <link rel="import" href="bower_components/core-scaffold/core-scaffold.html">
+  <link rel="import" href="bower_components/core-tooltip/core-tooltip.html">
+
+  <link rel="import" href="bower_components/core-collapse/core-collapse.html">
 
   <link href="bower_components/font-roboto/roboto.html" rel="import">
   <link href="bower_components/core-icon/core-icon.html" rel="import">
@@ -21,6 +24,7 @@
   
   <link href="bower_components/paper-button/paper-button.html" rel="import">
   <link href="bower_components/paper-slider/paper-slider.html" rel="import">
+  <link href="bower_components/paper-input/paper-input.html" rel="import">
 
   <link rel="import" href="canopy-polymer/gist-loader.html">
 
@@ -49,16 +53,64 @@
       
       <core-header-panel id="i-canopy-workspace" style="width: 500px;">
         <core-toolbar style="background-color: #607D8B; color: #ECEFF1;">
-          <core-icon-button icon="menu" core-drawer-toggle></core-icon-button>
-          <span flex>Canopy &#9835;</span>
-          <core-icon-button id="i-render-button" icon="send"></core-icon-button>
+          
+          <core-tooltip position="right" large>
+            <core-icon-button icon="menu" core-drawer-toggle></core-icon-button>
+            <div tip>Gists</div>
+          </core-tooltip>
+          
+          <span flex>Canopy</span>
+          
+          <core-tooltip large>
+            <core-icon-button id="i-setting-button" icon="settings"></core-icon-button>
+            <div tip>Change Render Setting</div>
+          </core-tooltip>
+
+          <core-tooltip large>
+            <core-icon-button id="i-render-button" icon="send"></core-icon-button>
+            <div tip>Render Audio</div>
+          </core-tooltip>
+
         </core-toolbar>
       
         <div fit style="overflow:hidden;">
-          <div id="i-render-options" center horizontal layout>
-            <div>Duration</div>
-            <paper-slider id="i-slider-duration" value="3" min="0.1" max="10" step="0.1" role="slider" editable flex></paper-slider> sec
-          </div>
+
+          <core-collapse id="i-render-setting">
+
+            <div id="i-render-setting-container" center vertical layout>
+            
+            <div>
+              <paper-input-decorator id="i-setting-numchannels-deco" label="Number of Channels" class="c-setting-input" floatingLabel>
+                <input is="core-input" id="i-setting-numchannels">
+              </paper-input-decorator>
+            </div>
+
+            <div>
+              <paper-input-decorator id="i-setting-duration-deco" label="Duration (sec)" class="c-setting-input" floatingLabel>
+                <input is="core-input" id="i-setting-duration">
+              </paper-input-decorator>
+            </div>
+
+            <div>
+              <paper-input-decorator id="i-setting-samplerate-deco" label="Sample Rate" class="c-setting-input" floatingLabel>
+                <input is="core-input" id="i-setting-samplerate">
+              </paper-input-decorator>
+            </div>
+
+            <!-- <div center horizontal layout>Sample Rate
+              <paper-slider id="i-slider-duration" value="3" min="0.1" max="10" step="0.1" role="slider" editable flex></paper-slider> Hz
+            </div>
+            <div center horizontal layout>Duration
+              <paper-slider id="i-slider-duration" value="3" min="0.1" max="10" step="0.1" role="slider" editable flex></paper-slider> sec
+            </div>
+            <div center horizontal layout>Channels
+              <paper-slider id="i-slider-duration" value="3" min="0.1" max="10" step="0.1" role="slider" editable flex></paper-slider> sec
+            </div> -->
+
+            </div>
+
+          </core-collapse>
+
           <div id="i-editor" flex></div>
           <div id="i-console"></div>
         </div>

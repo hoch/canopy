@@ -3,8 +3,6 @@
 
   Canopy.REV = '0.0.6';
 
-  Canopy.MIN_SAMPLES_IN_VIEWPORT = 512;
-
   Canopy.STYLE = {
     editorWidth: 500,
     viewPadding: 20
@@ -42,4 +40,7 @@
     Canopy.Audio.play();
   };
 
-})(Canopy = {}, FFT);
+})(
+  Canopy = {}, 
+  FFT
+);

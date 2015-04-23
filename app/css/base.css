@@ -47,9 +47,12 @@ paper-button.blue-ripple::shadow #ripple {
   box-shadow: 0 0 3px #607D8B;
 }
 
-#i-render-options {
-  height: 60px;
-  padding: 5px 15px;
+#i-render-setting {
+}
+
+#i-render-setting-container {
+  padding: 5px 0 10px 0;
+  background-color: #424242;
 }
 
 #i-editor {
@@ -85,4 +88,34 @@ paper-button.blue-ripple::shadow #ripple {
 #i-specgram {
   border-radius: 5px;
   box-shadow: 0 0 3px #607D8B;
+}
+
+
+
+/** custom paper-input styling */
+
+paper-input-decorator {
+  width: 450px;
+}
+
+.c-setting-input {
+  color: #CFD8DC;
+}
+
+.c-setting-input /deep/ .label-text,
+.c-setting-input /deep/ .error {
+  color: #90A4AE;
+}
+
+.c-setting-input.invalid /deep/ .floated-label .label-text,
+.c-setting-input /deep/ .error {
+  color: #f06292;
+}
+
+.c-setting-input[focused] /deep/ .floated-label .label-text {
+  color: #FFFFFF;
+}
+
+.c-setting-input /deep/ .focused-underline {
+  background-color: #FFFFFF;
 }

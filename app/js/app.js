@@ -11,7 +11,9 @@
   var Editor = Canopy.createEditor({
     editor: 'i-editor',
     renderButton: 'i-render-button',
-    durationSlider: 'i-slider-duration',
+    sampleRateInput: 'i-setting-samplerate',
+    durationInput: 'i-setting-duration',
+    numChannelsInput: 'i-setting-numchannels',
     console: 'i-console'
   });
 
@@ -42,7 +44,7 @@
   };
 
   Canopy.onResize = function () {
-    console.log('resized');
+    // console.log('resized');
     MiniMap.onResize();
     Waveform.onResize();
     Editor.onResize();
@@ -63,12 +65,18 @@
     var loader = document.getElementById('i-loader');
     var codeView = document.getElementById('i-code-view');
 
+    var renderSettingBtn = document.getElementById('i-setting-button');
+    var renderSettingContainer = document.getElementById('i-render-setting');
+    renderSettingBtn.onclick = function () {
+      renderSettingContainer.toggle();
+    };
+
     loader.onFileLoaded = function (codeStr) {
       Editor.setCodeString(codeStr);
       drawer.closeDrawer();
     };
 
-    Editor.render();
+    // Editor.render();
     Canopy.onResize();
   });
   
