@@ -76,6 +76,8 @@
   };
 
   Waveform.prototype.drawRuler = function () {
+
+    // Draw time axis.
     var nextGrid = this.viewStart + this.gridSize - (this.viewStart % this.gridSize);
     var x = 0;
 
@@ -103,6 +105,14 @@
       x += this.pixelPerSample;
     }
     this.ctxOS.stroke();
+
+    // Draw amplitude/decibel axis.
+    this.ctxOS.fillStyle = STYLE.rulerColor;
+    this.ctxOS.strokeStyle = STYLE.rulerGridColor;
+    this.ctxOS.lineWidth = STYLE.rulerGridWidth;
+    
+    this.ctxOS.fillRect(0, STYLE.rulerHeight, 20, STYLE.height);
+
   };
 
   Waveform.prototype.drawWaveform = function () {

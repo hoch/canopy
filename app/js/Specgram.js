@@ -3,16 +3,16 @@
 
   // Specgram style.
   var STYLE = {
-    height: 192,
+    height: 256,
     color: '#4CAF50',
     colorBackground: '#ECEFF1'
   };
 
   // Default FFT size.
-  var FFT_SIZE = 1024;
+  var FFT_SIZE = 256;
 
   // Smoothing constant between successive FFT frame.
-  var SMOOTHING_CONSTANT = 0.25;
+  var SMOOTHING_CONSTANT = 0.2;
 
   // Blackman window generator.
   function generateBlackmanWindow(length) {
@@ -108,7 +108,7 @@
         // Draw the bin based on HSL color model.
         var hue = (1 - this.mags[b]) * 240;
         this.ctx.fillStyle = 'hsl(' + hue + ', 100%, ' + this.mags[b] * 50 + '%)';
-        this.ctx.fillRect(h * unitX, STYLE.height - b * unitY, unitX, unitY);
+        this.ctx.fillRect(h * unitX, STYLE.height - b * unitY, unitX * 1.5, unitY * 1.5);
       }
     }
   };
