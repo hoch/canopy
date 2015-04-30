@@ -15,6 +15,7 @@
     rulerColor: '#37474F',
     rulerGridColor: '#CFD8DC',
     rulerFont: '11px Arial',
+    ampRulerFont: '10px Arial',
     infoColor: '#1B5E20',
     infoFont: '12px Arial',
     padding: 2.4
@@ -43,9 +44,10 @@
     this.renderedBuffer = null;
     this.isOSChanged = false;
     this.needsRedraw = false;
-    this.numChannels = 2;
 
     // For view port.
+    this.width = 0;
+    this.height = 0;
     this.pixelPerSample = null;
     this.gridLevel = null;
     this.gridSize = null;
@@ -67,12 +69,9 @@
   }
 
   Waveform.prototype.clearCanvas = function () {
-    this.ctx.fillStyle = STYLE.colorBackground;
-    this.ctx.fillRect(0, STYLE.rulerHeight,
-      this.width, STYLE.height * 2 + STYLE.padding * 3);
-    this.ctxOS.fillStyle = STYLE.colorBackground;
-    this.ctxOS.fillRect(0, STYLE.rulerHeight,
-      this.width, STYLE.height * 2 + STYLE.padding * 3);
+    this.ctx.fillStyle = this.ctxOS.fillStyle = STYLE.colorBackground;
+    this.ctx.fillRect(0, 0, this.width, this.height);
+    this.ctxOS.fillRect(0, 0, this.width, this.height);
   };
 
   Waveform.prototype.drawRuler = function () {
@@ -110,9 +109,50 @@
     this.ctxOS.fillStyle = STYLE.rulerColor;
     this.ctxOS.strokeStyle = STYLE.rulerGridColor;
     this.ctxOS.lineWidth = STYLE.rulerGridWidth;
-    
-    this.ctxOS.fillRect(0, STYLE.rulerHeight, 20, STYLE.height);
+  };
 
+  Waveform.prototype.drawAmpRuler = function () {
+    // TO FIX: abstract/optimize this.
+    // NOTE: this draw routine is inside of translation stack.
+    
+    // upper bound (amplitude)
+    var viewUpperBound = 1.0; // [-1.0, 1.0]
+
+    // grid (amplitude)
+    var gridSize = 0.5;
+    var gridSubdivision = 2;
+    var subdivSize = gridSize / gridSubdivision;
+
+    var rulerWidth = 38; // pixel
+    var rulerHeight = STYLE.height; // pixel
+    var axisCenter = rulerHeight * 0.5; // pixel
+    var gainPerPixel = (viewUpperBound * 2) / rulerHeight;
+
+    this.ctxOS.fillStyle = '#CFD8DC';
+    this.ctxOS.fillRect(0, -1, rulerWidth, rulerHeight + 2);
+
+    this.ctxOS.fillStyle = '#263238';
+    this.ctxOS.font = STYLE.ampRulerFont;
+
+    var nextGain = 0;
+    while (nextGain < viewUpperBound) {
+
+      var ypos = Math.round(axisCenter + nextGain / gainPerPixel);
+      var yneg = Math.round(axisCenter - nextGain / gainPerPixel);
+
+      if (~~(nextGain / gridSize) !== nextGain / gridSize) {
+        this.ctxOS.fillRect(28, ypos, 10, 0.5);
+        this.ctxOS.fillRect(28, yneg, 10, 0.5);
+      } else {
+        this.ctxOS.fillRect(22, ypos, 16, 1);
+        this.ctxOS.fillRect(22, yneg, 16, 1);
+        this.ctxOS.fillText(nextGain.toFixed(1), 4, yneg + 2.5);
+        if (nextGain !== 0.0)
+          this.ctxOS.fillText('-' + nextGain.toFixed(1), 4, ypos + 2.5);
+      }
+
+      nextGain += subdivSize;
+    }
   };
 
   Waveform.prototype.drawWaveform = function () {
@@ -121,8 +161,8 @@
 
     this.ctxOS.save();
 
-    // +1.6 for lower padding.
-    this.ctxOS.translate(0, STYLE.rulerHeight + STYLE.padding);
+    // Ruler height.
+    this.ctxOS.translate(0, STYLE.rulerHeight);
 
     // Iterate channels.
     for (var channel = 0; channel < this.renderedBuffer.numberOfChannels; channel++) {
@@ -131,10 +171,9 @@
       var y_length;
       var x = 0, px = -1, i;
 
-      if (channel) {
-        this.ctxOS.save();
-        this.ctxOS.translate(0, STYLE.height * channel + STYLE.padding);
-      }
+      // Translate: padding + channel height
+      this.ctxOS.save();
+      this.ctxOS.translate(0, (STYLE.padding * (channel + 1)) + STYLE.height * channel);
 
       // Draw center line.
       this.ctxOS.beginPath();
@@ -205,8 +244,11 @@
 
       this.ctxOS.stroke();
 
-      if (channel)
-        this.ctxOS.restore();
+      // Paint amp ruler section.
+      this.drawAmpRuler();
+
+      // Restoring from: padding + channel height
+      this.ctxOS.restore();
     }
 
     this.ctxOS.restore();
@@ -215,7 +257,7 @@
   Waveform.prototype.copyOSCanvas = function () {
     // Copy OS.
     this.ctx.drawImage(this.ctxOS.canvas,
-      0, 0, this.width, STYLE.rulerHeight + STYLE.height * 2 + STYLE.padding * 3);
+      0, 0, this.width, this.height);
   };
 
   Waveform.prototype.drawInfo = function () {
@@ -365,6 +407,7 @@
     // OS should be changed.
     this.isOSChanged = true;
 
+    this.onResize();
     this.updateViewPort();
   };
 
@@ -374,13 +417,17 @@
   };
 
   Waveform.prototype.onResize = function () {
-    this.canvas.width = this.width = window.innerWidth -
-      Canopy.STYLE.editorWidth - Canopy.STYLE.viewPadding;
-    this.canvas.height = STYLE.rulerHeight + STYLE.height * 2 + STYLE.padding * 3;
 
-    this.canvasOS.width = this.width;
-    this.canvasOS.height = STYLE.rulerHeight + STYLE.height * 2 + STYLE.padding * 3;
+    var numberOfChannels = 1;
+    if (this.renderedBuffer)
+      numberOfChannels = this.renderedBuffer.numberOfChannels;
 
+    this.width = window.innerWidth - Canopy.STYLE.editorWidth - Canopy.STYLE.viewPadding;
+    this.height = STYLE.rulerHeight + (STYLE.padding + STYLE.height) * numberOfChannels;
+
+    this.canvas.width = this.canvasOS.width = this.width;
+    this.canvas.height = this.canvasOS.height = this.height;
+    
     this.updateViewPort();
   };
 

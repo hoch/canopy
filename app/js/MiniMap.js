@@ -267,6 +267,9 @@
     this.canvas.height = STYLE.height;
     this.canvasOS.width = this.width;
     this.canvasOS.height = STYLE.height;
+
+    // Fake that buffer is dirty.
+    this.isBufferDirty = true;
     this.updateViewPort();
   };
 

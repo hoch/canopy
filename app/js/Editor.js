@@ -28,7 +28,7 @@
   var DEFAULT_RENDER_OPTIONS = {
     sampleRate: 44100,
     duration: 3,
-    numberOfChannels: 2
+    numChannels: 2
   };
 
 
@@ -42,7 +42,7 @@
     this.numChannelsInputDOM = document.getElementById(domIds.numChannelsInput);
     this.durationInputDOM = document.getElementById(domIds.durationInput);
     this.sampleRateInputDOM = document.getElementById(domIds.sampleRateInput);
-    this.consoleDOM = document.getElementById(domIds.console);
+    // this.consoleDOM = document.getElementById(domIds.console);
 
     this.numChannelsInputDecoDOM = document.getElementById(domIds.numChannelsInput + '-deco');
     this.durationInputDecoDOM = document.getElementById(domIds.durationInput + '-deco');
@@ -51,19 +51,17 @@
     this.controller = controller;
     this.isBufferRendered = false;
 
-    this.renderNumChannels = DEFAULT_RENDER_OPTIONS.numberOfChannels;
+    this.renderNumChannels = DEFAULT_RENDER_OPTIONS.numChannels;
     this.renderDuration = DEFAULT_RENDER_OPTIONS.duration;
     this.renderSampleRate = DEFAULT_RENDER_OPTIONS.sampleRate;
 
-    this.numChannelsInputDOM.value = DEFAULT_RENDER_OPTIONS.numberOfChannels;
+    this.numChannelsInputDOM.value = DEFAULT_RENDER_OPTIONS.numChannels;
     this.durationInputDOM.value = DEFAULT_RENDER_OPTIONS.duration;
     this.sampleRateInputDOM.value = DEFAULT_RENDER_OPTIONS.sampleRate;
 
     this.editor = CodeMirror(this.editorDOM, EDITOR_OPTIONS);
 
     this.editor.on('change', this.markAsChanged.bind(this));
-
-    console.log()
 
     this.numChannelsInputDOM.onchange = this.markAsChanged.bind(this);
     this.durationInputDOM.onchange = this.markAsChanged.bind(this);
@@ -155,17 +153,14 @@
 
   Editor.prototype.logError = function (message) {
     // TO FIX: Red flicker on console DIV.
-    this.consoleDOM.textContent = message;
     console.log(message);
   };
 
   Editor.prototype.onResize = function () {
     var height = window.innerHeight;
-    height -= (STYLE.titleBarHeight + STYLE.renderOptionHeight + STYLE.consoleHeight);
+    height -= (STYLE.titleBarHeight + STYLE.renderOptionHeight);
     height -= 20; // top-bottom padding 10px.
     this.editor.setSize('100%', height);
-
-    this.consoleDOM.style.height = STYLE.consoleHeight;
   };
 
 
@@ -177,7 +172,8 @@
   function RenderTask(options) {
     this.parentEditor = options.parentEditor;
 
-    var header = 'var context = new OfflineAudioContext(2, ' +
+    var header = 'var context = new OfflineAudioContext(' + 
+      options.numChannels + ', ' +
       options.sampleRate * options.duration + ', ' +
       options.sampleRate + ');';
 
