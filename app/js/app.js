@@ -10,6 +10,7 @@
   var MiniMap = Canopy.createMiniMap('i-minimap');
   var Editor = Canopy.createEditor({
     editor: 'i-editor',
+    replayButton: 'i-replay-button',
     renderButton: 'i-render-button',
     sampleRateInput: 'i-setting-samplerate',
     durationInput: 'i-setting-duration',
@@ -38,6 +39,9 @@
           MiniMap.setBuffer(data.buffer);
           Waveform.setBuffer(data.buffer);
           Specgram.setBuffer(data.buffer);
+        }
+        if (action === 'replay') {
+          Canopy.Audio.play();
         }
         break;
     }

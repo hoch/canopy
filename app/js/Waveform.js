@@ -15,6 +15,7 @@
     rulerColor: '#37474F',
     rulerGridColor: '#CFD8DC',
     rulerFont: '11px Arial',
+    ampRulerWidth: 38,
     ampRulerFont: '10px Arial',
     infoColor: '#1B5E20',
     infoFont: '12px Arial',
@@ -78,7 +79,7 @@
 
     // Draw time axis.
     var nextGrid = this.viewStart + this.gridSize - (this.viewStart % this.gridSize);
-    var x = 0;
+    var x = STYLE.ampRulerWidth;
 
     this.ctxOS.fillStyle = STYLE.rulerColor;
     this.ctxOS.strokeStyle = STYLE.rulerGridColor;
@@ -123,7 +124,7 @@
     var gridSubdivision = 2;
     var subdivSize = gridSize / gridSubdivision;
 
-    var rulerWidth = 38; // pixel
+    var rulerWidth = STYLE.ampRulerWidth; // pixel
     var rulerHeight = STYLE.height; // pixel
     var axisCenter = rulerHeight * 0.5; // pixel
     var gainPerPixel = (viewUpperBound * 2) / rulerHeight;
@@ -135,7 +136,7 @@
     this.ctxOS.font = STYLE.ampRulerFont;
 
     var nextGain = 0;
-    while (nextGain < viewUpperBound) {
+    while (nextGain <= viewUpperBound) {
 
       var ypos = Math.round(axisCenter + nextGain / gainPerPixel);
       var yneg = Math.round(axisCenter - nextGain / gainPerPixel);
@@ -146,9 +147,13 @@
       } else {
         this.ctxOS.fillRect(22, ypos, 16, 1);
         this.ctxOS.fillRect(22, yneg, 16, 1);
-        this.ctxOS.fillText(nextGain.toFixed(1), 4, yneg + 2.5);
-        if (nextGain !== 0.0)
-          this.ctxOS.fillText('-' + nextGain.toFixed(1), 4, ypos + 2.5);
+        // Render text
+        if (nextGain === 0.0) {
+          this.ctxOS.fillText(nextGain.toFixed(1), 4, yneg + 5);  
+        } else {
+          this.ctxOS.fillText(nextGain.toFixed(1), 20, yneg + 12);
+          this.ctxOS.fillText('-' + nextGain.toFixed(1), 20, ypos - 2.5);
+        }
       }
 
       nextGain += subdivSize;
@@ -169,7 +174,7 @@
       var data = this.renderedBuffer.getChannelData(channel);
       var y_origin = STYLE.height * 0.5;
       var y_length;
-      var x = 0, px = -1, i;
+      var x = STYLE.ampRulerWidth, px = -1, i;
 
       // Translate: padding + channel height
       this.ctxOS.save();
@@ -363,7 +368,7 @@
   };
 
   Waveform.prototype.updateViewPort = function () {
-    this.pixelPerSample = this.width / (this.viewEnd - this.viewStart);
+    this.pixelPerSample = (this.width - STYLE.ampRulerWidth) / (this.viewEnd - this.viewStart);
     this.gridLevel = Math.round(20 * Math.log10(this.pixelPerSample + 1));
     this.gridLevel = Math.min(6, this.gridLevel);
     this.gridSize = GRIDS[this.gridLevel];
@@ -479,8 +484,8 @@
 
     var seconds = samples / this.renderedBuffer.sampleRate;
     var sec = Math.floor(seconds);
-    var msec = Math.floor((seconds - sec) * 10000);
-    return sec + ':' + msec;
+    var msec = Math.floor((seconds - sec) * 1000);
+    return sec + '.' + msec;
   };
 
 

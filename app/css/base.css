@@ -90,7 +90,15 @@ paper-button.blue-ripple::shadow #ripple {
   box-shadow: 0 0 3px #607D8B;
 }
 
+/** custom core-icon styling */
+core-item {
+  transition: all 0.2s;
+  -webkit-transition: all 0.2s;
+}
 
+core-item.c-icon-etc {
+  color: #656565;
+}
 
 /** custom paper-input styling */
 

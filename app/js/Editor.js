@@ -39,6 +39,7 @@
   function Editor(domIds, controller) {
     this.editorDOM = document.getElementById(domIds.editor);
     this.renderButtonDOM = document.getElementById(domIds.renderButton);
+    this.replayButtonDOM = document.getElementById(domIds.replayButton);
     this.numChannelsInputDOM = document.getElementById(domIds.numChannelsInput);
     this.durationInputDOM = document.getElementById(domIds.durationInput);
     this.sampleRateInputDOM = document.getElementById(domIds.sampleRateInput);
@@ -68,6 +69,9 @@
     this.sampleRateInputDOM.onchange = this.markAsChanged.bind(this);
 
     this.renderButtonDOM.onclick = this.render.bind(this);
+    this.replayButtonDOM.onclick = this.replay.bind(this);
+
+    this.replayButtonDOM.setAttribute('disabled', true);
   }
 
   Editor.prototype.setCodeString = function (codeStr) {
@@ -77,6 +81,7 @@
   Editor.prototype.markAsRendered = function () {
     if (!this.isBufferRendered) {
       this.renderButtonDOM.setAttribute('disabled', true);
+      this.replayButtonDOM.removeAttribute('disabled');
       this.isBufferRendered = true;
     }
   };
@@ -145,6 +150,10 @@
     }
 
     this.markAsRendered();
+  };
+
+  Editor.prototype.replay = function () {
+    this.controller.notify('editor', 'replay', null);
   };
 
   Editor.prototype.onRenderComplete = function (renderedBuffer) {

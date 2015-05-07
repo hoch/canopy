@@ -328,8 +328,8 @@
 
     var seconds = samples / this.renderedBuffer.sampleRate;
     var sec = Math.floor(seconds);
-    var msec = Math.floor((seconds - sec) * 10000);
-    return sec + ':' + msec;
+    var msec = Math.floor((seconds - sec) * 1000);
+    return sec + '.' + msec;
   };
 
   // MiniMap factory.

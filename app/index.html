@@ -41,11 +41,19 @@
 
 <body fullbleed unresolved>
 
-  <core-drawer-panel id="i-drawer" forceNarrow="true">
+  <core-drawer-panel id="i-drawer" forceNarrow="true" disableEdgeSwipe="true">
     
     <!-- drawer -->
     <div drawer>
       <gist-loader id="i-loader"></gist-loader>
+      <core-menu>
+        <core-item icon="home" label="GitHub" class="c-icon-etc">
+          <a href="https://github.com/hoch/canopy" target="_blank"></a>
+        </core-item>
+        <core-item icon="warning" label="Issues" class="c-icon-etc">
+          <a href="https://github.com/hoch/canopy/issues" target="_blank"></a>
+        </core-item>
+      </core-menu>
     </div>
     
     <!-- main -->
@@ -60,6 +68,11 @@
           </core-tooltip>
           
           <span flex>Canopy</span>
+
+          <core-tooltip large>
+            <core-icon-button id="i-replay-button" icon="av:play-arrow"></core-icon-button>
+            <div tip>Replay Previous</div>
+          </core-tooltip>
           
           <core-tooltip large>
             <core-icon-button id="i-setting-button" icon="settings"></core-icon-button>
