@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+
+  <canvas id="i-canvas"></canvas>
+
+  <script src="canopy.timeruler.js"></script>
+  <script>
+    var cvs = document.getElementById('i-canvas');
+    var ctx = cvs.getContext('2d');
+    ctx.canvas.width = 800;
+    ctx.canvas.height = 300;
+
+    var timeruler = Canopy.createTimeRuler(ctx, 10, 10, 800);
+
+    var start = 2.0, end = 8.0;
+    var phase1 = 0.011, phase2 = 0.013;
+
+    function runTest() {
+      var delta1 = Math.sin(phase1);
+      var delta2 = Math.cos(phase2);
+      phase1 += 0.011;
+      phase2 += 0.013;
+      
+      timeruler.draw(start + delta1, end + delta2);
+
+      requestAnimationFrame(runTest);
+    }
+
+    runTest();
+  </script>
+
+</body>
+</html>
