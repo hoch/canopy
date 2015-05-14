@@ -1,31 +1,23 @@
 // TimeRuler class definition.
 
-// TODO
-// - gridLevel detection
-// - grid subdivision
-
 (function (Canopy) {
 
   // class-static styles.
   var STYLE = {
     height: 32,
     color: '#37474F',
-    gridWidth: 1.0,
+    gridWidth: 55,
+    gridLineWidth: 1.0,
     gridColor: '#CFD8DC',
     font: '11px Arial'
   };
 
-  // Grid size based on the zoom level. (seconds)
-  var GRIDS = [0.010, 0.020, 0.040, 0.080, 0.160, 0.320, 0.640, 1.280];
-
+  
   function TimeRuler (ctx, x, y, width, height) {
     this.initialize(ctx, x, y, width, height);
   }
 
   TimeRuler.prototype.initialize = function (ctx, x, y, width, height) {
-    this.gridDuration = GRIDS[5];
-    this.gridSubdivision = 2;
-
     this.ctx = ctx;
     this.x = x;
     this.y = y;
@@ -34,6 +26,7 @@
 
     // Set font once.
     this.ctx.font = STYLE.rulerFont;
+    this.gridDuration = 1.0;
   };
 
   // length as in number of samples.
@@ -43,9 +36,7 @@
   };
 
   TimeRuler.prototype.formatTime = function (second) {
-    var sec = ~~second;
-    var msec = ~~((second - sec) * 1000);
-    return sec + '.' + msec;
+    return second.toFixed(3);
   };
 
   // time, start time, total duration => a pixel position in width.
@@ -53,8 +44,32 @@
     return (time - start) / totalDuration * this.width;
   };
 
+  TimeRuler.prototype.calculateGrid = function (range) {
+    // Convert to msec and divide by the max number of grids.
+    var rangeMsec = (range * 1000) / (~~(this.width / STYLE.gridWidth) - 1);
+
+    // This is from: http://stackoverflow.com/questions/8506881/
+    var exponent = ~~(Math.log10(rangeMsec));
+    var fraction = rangeMsec / Math.pow(10, exponent);
+    var niceFraction = Math.pow(10, exponent);
+    
+    if (fraction < 1.5)
+      niceFraction *= 1;
+    else if (fraction < 3)
+      niceFraction *= 2;
+    else if (fraction < 7)
+      niceFraction *= 5;
+    else
+      niceFraction *= 10;
+    
+    this.gridDuration = niceFraction / 1000;
+  };
+
   // start, end as in seconds.
   TimeRuler.prototype.draw = function (start, end) {
+
+    // TO FIX: optimize this.
+    this.calculateGrid(end - start);
     
     // Set up parameters
     var totalDuration = end - start;
@@ -68,7 +83,7 @@
     // Prepare for drawing.
     this.ctx.fillStyle = STYLE.color;
     this.ctx.strokeStyle = STYLE.gridColor;
-    this.ctx.lineWidth = STYLE.gridWidth;
+    this.ctx.lineWidth = STYLE.gridLineWidth;
 
     // Push down.
     this.ctx.save();
