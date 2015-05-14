@@ -1,5 +1,9 @@
 // TimeRuler class definition.
 
+// TODO
+// - support samples (time unit)
+// - draw subdivisions
+
 (function (Canopy) {
 
   // class-static styles.
@@ -12,8 +16,15 @@
     font: '11px Arial'
   };
 
-  
-  function TimeRuler (ctx, x, y, width, height) {
+  /**
+   * @class TimeRuler
+   * @param {[type]} ctx    [description]
+   * @param {[type]} x      [description]
+   * @param {[type]} y      [description]
+   * @param {[type]} width  [description]
+   * @param {[type]} height [description]
+   */
+  function TimeRuler(ctx, x, y, width, height) {
     this.initialize(ctx, x, y, width, height);
   }
 
@@ -25,7 +36,7 @@
     this.height = (height || STYLE.height);
 
     // Set font once.
-    this.ctx.font = STYLE.rulerFont;
+    this.ctx.font = STYLE.font;
     this.gridDuration = 1.0;
   };
 
@@ -84,6 +95,7 @@
     this.ctx.fillStyle = STYLE.color;
     this.ctx.strokeStyle = STYLE.gridColor;
     this.ctx.lineWidth = STYLE.gridLineWidth;
+    this.ctx.textAlign = 'center';
 
     // Push down.
     this.ctx.save();
@@ -106,11 +118,10 @@
 
     // Pop back up.
     this.ctx.restore();
-
   };
 
   Canopy.createTimeRuler = function (ctx, x, y, width, height) {
     return new TimeRuler(ctx, x, y, width, height);
   };
 
-})(Canopy = {}, window);
+})(Canopy = {});
