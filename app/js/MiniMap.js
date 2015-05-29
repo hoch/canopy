@@ -269,10 +269,11 @@
 
   // TO FIX: resizing should change the regionStart/End properly.
   MiniMap.prototype.onResize = function () {
-    this.canvas.width = this.width = window.innerWidth - 520;
-    this.canvas.height = STYLE.height;
-    this.canvasOS.width = this.width;
-    this.canvasOS.height = STYLE.height;
+    var calculatedWidth = Canopy.STYLE.editorWidth + Canopy.STYLE.viewPadding;
+    this.width = window.innerWidth - calculatedWidth;
+    this.canvas.width = this.canvasOS.width = this.width;
+    this.canvas.height = this.canvasOS.height = STYLE.height;
+    
 
     // Fake that buffer is dirty.
     this.isBufferDirty = true;

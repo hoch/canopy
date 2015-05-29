@@ -57,7 +57,7 @@
     <!-- main -->
     <div main layout horizontal>
       
-      <core-header-panel id="i-canopy-workspace" style="width: 500px;">
+      <core-header-panel id="i-canopy-workspace">
         <core-toolbar style="background-color: #607D8B; color: #ECEFF1;">
           
           <core-tooltip position="right" large>
@@ -118,8 +118,7 @@
 
       <div id="i-canopy-view" vertical layout>
         <div><canvas id="i-minimap"></canvas></div>
-        <!-- <div><canvas id="i-waveform"></canvas></div> -->
-        <div><waveform-renderer id="wf-renderer"></waveform-renderer></div>
+        <div flex><waveform-renderer id="wf-renderer"></waveform-renderer></div>
         <div><canvas id="i-specgram"></canvas></div>
       </div>
 
@@ -129,7 +128,6 @@
 
   <script src="js/Canopy.js"></script>
   <script src="js/MiniMap.js"></script>
-  <!-- <script src="js/Waveform.js"></script> -->
   <script src="js/Specgram.js"></script>
   <script src="js/Editor.js"></script>
   <script src="js/app.js"></script>

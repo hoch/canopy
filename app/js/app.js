@@ -45,9 +45,9 @@
 
   Canopy.onResize = function () {
     // console.log('resized');
+    Editor.onResize();
     MiniMap.onResize();
     WaveformRenderer.resize();
-    Editor.onResize();
     Specgram.onResize();
   };
 

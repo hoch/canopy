@@ -3,9 +3,9 @@
 
   // Specgram style.
   var STYLE = {
-    height: 256,
+    height: 128,
     color: '#4CAF50',
-    colorBackground: '#ECEFF1'
+    colorBackground: '#263238'
   };
 
   // Default FFT size.
@@ -127,7 +127,8 @@
   };
 
   Specgram.prototype.onResize = function () {
-    this.canvas.width = this.width = window.innerWidth - 520;
+    var calculatedWidth = Canopy.STYLE.editorWidth + Canopy.STYLE.viewPadding;
+    this.canvas.width = this.width = window.innerWidth - calculatedWidth;
     this.canvas.height = STYLE.height;
     this.updateViewPort();
   };

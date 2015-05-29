@@ -4,8 +4,9 @@
   Canopy.REV = '0.0.6';
 
   Canopy.STYLE = {
-    editorWidth: 500,
-    viewPadding: 20
+    editorWidth: 450,
+    viewPadding: 20,
+    modulePadding: 10
   };
 
   // Import external dependency.

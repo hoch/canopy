@@ -211,8 +211,8 @@
 
       resize: function () {
         this.width = this.parentNode.offsetWidth;
-        if (this.parentNode.offsetHeight > 500)
-          this.height = this.parentNode.offsetHeight;
+        // if (this.parentNode.offsetHeight > 500)
+          // this.height = this.parentNode.offsetHeight - 10;
 
         // Sizing.
         this.$.eCanvas.width = this.cvsOff.width = this.width;
@@ -256,8 +256,7 @@
         this.ctxOff = this.cvsOff.getContext('2d');
 
         // Sizing.
-        this.$.eCanvas.width = this.cvsOff.width = this.width;
-        this.$.eCanvas.height = this.cvsOff.height = this.height;
+        this.resize();
 
         // Registering mouse handler.
         this._registerMouseHandler();

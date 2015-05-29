@@ -68,14 +68,19 @@ paper-button.blue-ripple::shadow #ripple {
   padding: 5px;
 }
 
+#i-canopy-workspace {
+  min-width: 450px;
+}
+
 #i-canopy-view {
+  width: 100%;
   padding: 10px;
   background-color: #ECEFF1;
 }
 
 #i-minimap {
   width: 100%;
-  background-color: #eee;
+  background-color: #ee0;
   margin-bottom: 5px;
 }
 
@@ -88,6 +93,7 @@ paper-button.blue-ripple::shadow #ripple {
 #i-specgram {
   border-radius: 5px;
   box-shadow: 0 0 3px #607D8B;
+  background-color: #263238;
 }
 
 /** custom core-icon styling */
@@ -103,7 +109,7 @@ core-item.c-icon-etc {
 /** custom paper-input styling */
 
 paper-input-decorator {
-  width: 450px;
+  width: 400px;
 }
 
 .c-setting-input {
