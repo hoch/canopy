@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+
+  <canvas id="i-canvas"></canvas>
+
+  <script src="canopy.timeruler.js"></script>
+  <script src="canopy.ampruler.js"></script>
+  <script>
+    var cvs = document.getElementById('i-canvas');
+    var ctx = cvs.getContext('2d');
+    ctx.canvas.width = 800;
+    ctx.canvas.height = 400;
+
+    var ampruler = Canopy.createAmpRuler(ctx, 10, 10, 38, 400);
+
+    var phase1 = 0.011;
+
+    function runTest() {
+      var delta1 = 1.0 + Math.sin(phase1) * 0.5;
+      phase1 += 0.013;
+      ampruler.draw(delta1);
+      requestAnimationFrame(runTest);
+    }
+
+    runTest();
+  </script>
+
+</body>
+</html>
