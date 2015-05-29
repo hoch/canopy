@@ -153,14 +153,14 @@
 
     // Draw additional info above 150 pixel-width.
     if (end - start > 50) {
-      this.ctx.fillText(this.getTimeFromSample(sampleLength),
+      this.ctx.fillText(this.getFormattedTimeFromSample(sampleLength),
         start + (end - start) * 0.5, STYLE.miniMapHeight * 0.8);
-      this.ctx.fillText(this.getTimeFromSample(this.sampleStart),
+      this.ctx.fillText(this.getFormattedTimeFromSample(this.sampleStart),
         start, STYLE.miniMapHeight * 1.2);
-      this.ctx.fillText(this.getTimeFromSample(this.sampleEnd),
+      this.ctx.fillText(this.getFormattedTimeFromSample(this.sampleEnd),
         end, STYLE.miniMapHeight * 1.2);
     } else {
-      this.ctx.fillText(this.getTimeFromSample(sampleLength),
+      this.ctx.fillText(this.getFormattedTimeFromSample(sampleLength),
         start + (end - start) * 0.5, STYLE.miniMapHeight * 1.2);
     }
 
@@ -243,8 +243,8 @@
     }
 
     this.onChange('viewport-change', {
-      start: this.sampleStart,
-      end: this.sampleEnd
+      start: this.getSecondFromSample(this.sampleStart),
+      end: this.getSecondFromSample(this.sampleEnd)
     });
 
     this.needsRedraw = true;
@@ -254,6 +254,12 @@
   MiniMap.prototype.setSampleRange = function (sampleStart, sampleEnd) {
     this.sampleStart = sampleStart;
     this.sampleEnd = sampleEnd;
+    this.needsRedraw = true;
+  };
+
+  MiniMap.prototype.setRange = function (start, end) {
+    this.sampleStart = start * this.renderedBuffer.sampleRate;
+    this.sampleEnd = end * this.renderedBuffer.sampleRate;
     this.needsRedraw = true;
   };
 
@@ -322,15 +328,21 @@
 
   };
 
-  MiniMap.prototype.getTimeFromSample = function (samples) {
+  MiniMap.prototype.getSecondFromSample = function (samples) {
     if (!this.renderedBuffer)
-      return null;
+      return 0;
+    
+    return samples / this.renderedBuffer.sampleRate;
+  };
 
-    var seconds = samples / this.renderedBuffer.sampleRate;
+  MiniMap.prototype.getFormattedTimeFromSample = function (samples) {
+    var seconds = this.getSecondFromSample(samples);
     var sec = Math.floor(seconds);
     var msec = Math.floor((seconds - sec) * 1000);
     return sec + '.' + msec;
   };
+
+
 
   // MiniMap factory.
   Canopy.createMiniMap = function (canvasId) {

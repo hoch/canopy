@@ -27,6 +27,7 @@
   <link href="bower_components/paper-input/paper-input.html" rel="import">
 
   <link rel="import" href="canopy-polymer/gist-loader.html">
+  <link rel="import" href="canopy-polymer/waveform-renderer/waveform-renderer.html">
 
   <script src="codemirror/lib/codemirror.js"></script>
   <link rel="stylesheet" href="codemirror/lib/codemirror.css">
@@ -120,7 +121,8 @@
 
       <div id="i-canopy-view" vertical layout>
         <div><canvas id="i-minimap"></canvas></div>
-        <div><canvas id="i-waveform"></canvas></div>
+        <!-- <div><canvas id="i-waveform"></canvas></div> -->
+        <div><waveform-renderer id="wf-renderer"></waveform-renderer></div>
         <div><canvas id="i-specgram"></canvas></div>
       </div>
 
@@ -128,11 +130,9 @@
 
   </core-drawer-panel>
 
-  
-
   <script src="js/Canopy.js"></script>
   <script src="js/MiniMap.js"></script>
-  <script src="js/Waveform.js"></script>
+  <!-- <script src="js/Waveform.js"></script> -->
   <script src="js/Specgram.js"></script>
   <script src="js/Editor.js"></script>
   <script src="js/app.js"></script>
