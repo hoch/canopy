@@ -96,10 +96,10 @@
       // Sub-sampling routine: the range of sub-sampling is
       // [floor(blockStart), ceiling(blockEnd)].
       var index = Math.floor(blockStart);
-      blockEnd = Math.ceil(blockEnd);
+      blockEnd = blockEnd;
       negMax = posMax = 0.0;
 
-      while (index <= blockEnd) {
+      while (index < blockEnd) {
         var value = this.data[index];
         if (value > posMax)
           posMax = value;
@@ -116,7 +116,7 @@
       this.ctx.moveTo(i, (1 - posMax) * this.yCenter);
       this.ctx.lineTo(i, (1 - negMax) * this.yCenter);
 
-      blockStart += SPP;
+      blockStart = blockEnd;
       blockEnd += SPP;
     }
 
