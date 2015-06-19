@@ -8,7 +8,7 @@
     colorBackground: '#EEE',
     colorCenterLine: '#B0BEC5',
     colorBorder: '#FFF',
-    SPPThreshold: 50.0
+    SPPThreshold: 10.0
   };
 
   /**
@@ -161,6 +161,7 @@
           this.ctx.fillRect(x - 1.5, yOffset - 1.5, 3, 3);
 
         maxValue = 0;
+        maxValueIndex = i;
         px = x;
       }
 
