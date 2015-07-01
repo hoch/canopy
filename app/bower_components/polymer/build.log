@@ -1,25 +1,26 @@
 BUILD LOG
 ---------
-Build Time: 2015-01-23T16:15:54
+Build Time: 2015-06-25T16:47:16-0700
 
 NODEJS INFORMATION
 ==================
-nodejs: v0.10.35
-grunt: 0.4.5
-grunt-audit: 1.0.0
-grunt-contrib-concat: 0.5.0
-grunt-contrib-copy: 0.7.0
-grunt-contrib-uglify: 0.6.0
-grunt-string-replace: 1.0.0
+nodejs: v0.12.2
+del: 1.2.0
+gulp: 3.9.0
+gulp-audit: 1.0.0
+gulp-rename: 1.2.2
+gulp-replace: 0.5.3
+gulp-vulcanize: 6.0.1
+polyclean: 1.2.0
+run-sequence: 1.1.1
+lazypipe: 0.2.4
 
 REPO REVISIONS
 ==============
-polymer-expressions: bbe5e753aa4aec7653145d403abb5c4c152b565c
-polymer-gestures: d796c5a47b33c7feeb5bfdbdb67040e74b1fbee7
-polymer: d65025bae57be28f20c113818ef13e24d180fae6
+polymer: e859b532a7fb5b10ae1311c22988b76cc6cbc04a
 
 BUILD HASHES
 ============
-dist/polymer.js: 54c5a39a737129b4d0742eaf151e48f7f212a40a
-dist/polymer.min.js: 950ed84abd9a7ad9c24615176d3c7f5b2a142b79
-dist/layout.html: 348d358a91712ecc2f8811efa430fcd954b4590c
+polymer-mini.html: 93f4b283ba95fd687562b965bf7651eab7a66a1f
+polymer-micro.html: db73818583996fe27b9f1119f0e4ef46ccadc859
+polymer.html: 9b0cd22e821422a8afe809ca5715612e682e5622

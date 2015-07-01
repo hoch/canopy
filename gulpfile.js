@@ -1,31 +1,25 @@
 var gulp        = require('gulp'),
     plugins     = require('gulp-load-plugins')(),
-    browserSync = require('browser-sync'),
     runSequence = require('run-sequence'),
     del         = require('del');
 
+var browserSync = require('browser-sync').create();
 var deploy      = require('gulp-gh-pages');
 
-var reload      = browserSync.reload;
-
-
 gulp.task('serve', function () {
-  browserSync({
-    notify: false,
+
+  browserSync.init({
     server: {
-      baseDir: './app'
-    },
-    browser: 'google chrome'
-    // browser: 'google chrome canary'
+      baseDir: 'app'
+    }
   });
 
   gulp.watch([
     'app/*.html',
-    'app/canopy-polymer/*.html',
     'app/js/*.js',
     'app/css/*.css',
     '!app/codemirror/**/*'
-  ], reload);
+  ], browserSync.reload);
 });
 
 
