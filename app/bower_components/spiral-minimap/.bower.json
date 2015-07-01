@@ -1,0 +1,41 @@
+{
+  "name": "spiral-minimap",
+  "version": "0.0.1",
+  "authors": [
+    "Hongchan Choi <hongchan.choi@gmail.com>"
+  ],
+  "description": "A Polymer element draws an interactive mini map of AudioBuffer",
+  "keywords": [
+    "web-component",
+    "web-components",
+    "polymer",
+    "audio",
+    "waveform",
+    "time-domain",
+    "minimap"
+  ],
+  "main": "spiral-minimap.html",
+  "license": "http://polymer.github.io/LICENSE.txt",
+  "homepage": "https://github.com/hoch/spiral-minimap/",
+  "ignore": [
+    "/.*",
+    "/test/",
+    "/demo/"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "web-component-tester": "*"
+  },
+  "_release": "0.0.1",
+  "_resolution": {
+    "type": "version",
+    "tag": "v0.0.1",
+    "commit": "87e4c929b5aa62d5ca31d705c351b486a7c46027"
+  },
+  "_source": "git://github.com/hoch/spiral-minimap.git",
+  "_target": "~0.0.1",
+  "_originalSource": "hoch/spiral-minimap"
+}

@@ -1,0 +1,48 @@
+{
+  "name": "spiral-gistloader",
+  "version": "0.0.1",
+  "authors": [
+    "Hongchan Choi <hongchan.choi@gmail.com>"
+  ],
+  "description": "A Polymer element that accesses and displays gists by URL",
+  "keywords": [
+    "web-component",
+    "web-components",
+    "polymer",
+    "audio",
+    "spiral",
+    "web-audio",
+    "github",
+    "gist"
+  ],
+  "main": "spiral-gistloader.html",
+  "license": "http://polymer.github.io/LICENSE.txt",
+  "homepage": "https://github.com/hoch/spiral-gistloader/",
+  "ignore": [
+    "/.*",
+    "/test/",
+    "/demo/"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "iron-ajax": "PolymerElements/iron-ajax#^1.0.0",
+    "paper-icon-button": "PolymerElements/paper-icon-button#^1.0.0",
+    "paper-input": "PolymerElements/paper-input#^1.0.0",
+    "paper-item": "PolymerElements/paper-item#^1.0.0",
+    "paper-menu": "PolymerElements/paper-menu#^1.0.0",
+    "paper-toast": "PolymerElements/paper-toast#^1.0.0"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "web-component-tester": "*"
+  },
+  "_release": "0.0.1",
+  "_resolution": {
+    "type": "version",
+    "tag": "v0.0.1",
+    "commit": "0d813bf0d295a721d881fadb656bbd05b6c1597a"
+  },
+  "_source": "git://github.com/hoch/spiral-gistloader.git",
+  "_target": "~0.0.1",
+  "_originalSource": "hoch/spiral-gistloader"
+}

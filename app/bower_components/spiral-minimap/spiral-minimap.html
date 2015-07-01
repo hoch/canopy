@@ -1,0 +1,320 @@
+<!--
+@license
+MIT License. Copyright (c) 2015 Hongchan Choi. All rights reserved.
+-->
+<link rel="import" href="../polymer/polymer.html">
+
+<script src="spiral-minimap.js"></script>
+
+<!--
+Draws the time-domain representation of <code>AudioBuffer</code> which
+can be navigated by adjusting the two handles. The region can be
+translated by dragging the center of the region.
+
+Example:
+
+    <spiral-minimap></spiral-minimap>
+
+@demo
+-->
+<dom-module id="spiral-minimap">
+
+  <style>
+    :host {
+      display: block;
+      box-sizing: border-box;
+    }
+
+    #divWrapper {
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+    }
+  </style>
+
+  <template>
+
+    <div id="divWrapper">
+      <canvas id="canvas" on-track="_onTrack"></canvas>
+    </div>
+
+  </template>
+
+</dom-module>
+
+<script>
+
+  Polymer({
+
+    is: 'spiral-minimap',
+
+    properties: {
+
+      _width: Number,
+      _height: Number,
+
+      _ctx: Object,
+
+      _mMiniMapDrawer: Object,
+
+      _regionStart: Number,
+      _reiognEnd: Number,
+      _uiMode: String,
+
+      _audioBuffer: Object,
+
+      _controller: Object,
+      _componentId: String,
+
+    },
+
+    /** Helpers **/
+
+    _initialize: function () {
+      this._width = 700;
+      this._height = 48;
+      this._componentId = 'spiral-minimap';
+      this._uiMode = 'IDLE';
+    },
+
+    _createContext: function () {
+      this._ctx = this.$.canvas.getContext('2d');
+    },
+
+    _doDOMLayout: function () {
+        // Use style.{height, width} for DIVs.
+      this.$.divWrapper.style.width = this._width + 'px';
+      this.$.divWrapper.style.height = this._height + 'px';
+
+      // Use clientWidth to get the internal area size excluding the scroll bar.
+      var clientWidth = this.$.divWrapper.clientWidth;
+      var clientHeight = this.$.divWrapper.clientHeight;
+      this.$.canvas.width = clientWidth;
+      this.$.canvas.height = clientHeight;
+    },
+
+    _createModules: function () {
+      if (!this._audioBuffer)
+        return;
+
+      // TODO: when it is resized, the modules are created again and resets
+      // the start/end position.
+      this._mMiniMapDrawer = SpiralMiniMap.create(this._ctx, 0, 0,
+        this.$.canvas.width, this.$.canvas.height);
+      this._mMiniMapDrawer.setAudioBuffer(this._audioBuffer);      
+    },
+
+    _convertSecondToPixel: function (second) {
+      if (!this._audioBuffer)
+        return 0;
+
+      return (second / this._audioBuffer.duration) * this._width;
+    },
+
+    _convertPixelToSecond: function (pixel) {
+      if (!this._audioBuffer || this.width === 0)
+        return 0;
+
+      return (pixel / this._width) * this._audioBuffer.duration;
+    },
+
+
+    /** Render-related **/
+
+    _updateView: function () {
+      if (!this._audioBuffer)
+        return;
+
+      this._render();
+    },
+
+    _render: function () {
+      if (!this._audioBuffer)
+        return;
+
+      this._mMiniMapDrawer.draw();
+    },
+
+
+    /** UI helpers */
+
+    // TODO: abstract track handlers.
+    // _onLeftHandleDragged: function (deltaX) {},
+    // _onRightHandleDragged: function (deltaX) {},
+    // _onRegionDragged: function (deltaX) {},
+    // _onDragged: function (deltaX) {},
+
+    /** Track handlers */
+
+    _updateRegion: function (handleL, handleR) {
+      var start = this._convertPixelToSecond(handleL);
+      var end = this._convertPixelToSecond(handleR);
+
+      if (start < end)
+        this._mMiniMapDrawer.setRegion(start, end);
+      else
+        this._mMiniMapDrawer.setRegion(end, start);
+
+      this._notify('region-change', {
+        start: start,
+        end: end
+      });
+    },
+
+    _onTrack: function (event) {
+      if (!this._audioBuffer)
+        return;
+
+      // uiMode:
+      // { CREATE_REGION, MOVE_HANDLE_L, MOVE_HANDLE_R, MOVE_REGION, IDLE }
+
+      var pos = event.detail;
+
+      // Calculate current region area by pixels.
+      var needsUpdate = false;
+      var region = this._mMiniMapDrawer.getRegion();
+      var handleL = this._convertSecondToPixel(region.start);
+      var handleR = this._convertSecondToPixel(region.end);
+
+      switch(pos.state) {
+
+        case 'start':
+          if (handleL - 30 <= pos.x && pos.x <= handleL + 30) {
+            this._uiMode = 'MOVE_HANDLE_L';
+          } else if (handleR - 30 <= pos.x && pos.x <= handleR + 30) {
+            this._uiMode = 'MOVE_HANDLE_R';
+          } else if (handleL + 30 < pos.x && pos.x < handleR - 30) {
+            this._uiMode = 'MOVE_REGION';
+          } else {
+            this._uiMode = 'CREATE_REGION';
+            // TODO:
+            // handleL = pos.x;
+            // handleR = pos.x;
+            // needsUpdate = true;
+          }
+          break;
+
+        case 'track':
+          switch (this._uiMode) {
+            case 'MOVE_HANDLE_L':
+              handleL += pos.ddx;
+              if (0 <= handleL && handleR - handleL >= 60)
+                needsUpdate = true;
+              break;
+            case 'MOVE_HANDLE_R':
+              handleR += pos.ddx;
+              if (handleR <= this._width && handleR - handleL >= 60)
+                needsUpdate = true;
+              break;
+            case 'MOVE_REGION':
+              handleL += pos.ddx;
+              handleR += pos.ddx;
+              if (0 <= handleL && handleR <= this._width)
+                needsUpdate = true;
+              break;
+            case 'CREATE_REGION':
+              // TODO:
+              // if (pos.ddx > 0)
+              //   handleR = pos.x;
+              // else
+              //   handleL = pos.
+              // needsUpdate = true;
+              break;
+          }
+          break;
+
+        case 'end':
+          this._uiMode = 'IDLE';
+          break;
+      }
+
+      if (needsUpdate)
+        this._updateRegion(handleL, handleR);
+    },
+
+
+    /** communication */
+
+    _notify: function (eventType, data) {
+      if (this._controller)
+        this._controller.postMessage(this._componentId, eventType, data);
+    },
+
+
+    /** Polymer life cycle: created -> ready -> attached **/
+
+    created: function () {
+      this._initialize();
+    },
+
+    ready: function() {
+      // When initialized, DOM layout requires a bit of delay to figure out
+      // computed width of DIVs. Then Context 2Ds from canvases.
+      this.async(function () {
+        this._createContext();
+        this._doDOMLayout();
+      }, 1);
+    },
+
+    attached: function () {
+
+    },
+
+    
+    /**
+     * Sets the controller object for reporting the local state change.
+     * @param {Object} controller A controller object. This typically is a
+     *                            message router.
+     */
+    setController: function (controller) {
+      this._controller = controller;
+    },
+
+    /**
+     * Sets the size of the instance. This triggers the redraw of visualization.
+     * @param {Number} width  Width in pixel.
+     * @param {Number} height Height in pixel.
+     */
+    setSize: function (width, height) {
+      this._width = width;
+      this._height = height;
+
+      this._doDOMLayout();
+      this._createModules();
+      this._updateView();
+    },
+
+    /**
+     * Sets the audio buffer object to visualize.
+     * @param {Object} audioBuffer AudioBuffer object to be rendered.
+     */
+    setAudioBuffer: function (audioBuffer) {
+      if (!audioBuffer)
+        return;
+
+      this._audioBuffer = audioBuffer;
+
+      // Handle layout and create new modules.
+      this._doDOMLayout();
+      this._createModules();
+      this._updateView();
+    },
+
+    /**
+     * Sets start and end points of user-defined region.
+     * @param {Number} start Region start position in seconds.
+     * @param {Number} end   Region end position in seconds.
+     */
+    setRegion: function (start, end) {
+      if (!this._mMiniMapDrawer)
+        return;
+
+      this._mMiniMapDrawer.setRegion(start, end);
+      this._updateView();
+    }
+
+  });
+
+</script>

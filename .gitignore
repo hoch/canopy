@@ -1,3 +1,2 @@
 .DS_Store
-node_modules/
-app/_deprecated/
+node_modules

@@ -1,0 +1,135 @@
+<html>
+<head>
+  <title>&#9835; Canopy</title>
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  
+  <script src="bower_components/webcomponentsjs/webcomponents.js"></script>
+  <link rel="import" href="bower_components/core-toolbar/core-toolbar.html">
+  <link rel="import" href="bower_components/core-menu/core-menu.html">
+  <link rel="import" href="bower_components/core-item/core-item.html">
+  <link rel="import" href="bower_components/core-header-panel/core-header-panel.html">
+  <link rel="import" href="bower_components/core-drawer-panel/core-drawer-panel.html">
+  <link rel="import" href="bower_components/core-scaffold/core-scaffold.html">
+  <link rel="import" href="bower_components/core-tooltip/core-tooltip.html">
+  <link rel="import" href="bower_components/core-collapse/core-collapse.html">
+  <link href="bower_components/font-roboto/roboto.html" rel="import">
+  <link href="bower_components/core-icon/core-icon.html" rel="import">
+  <link href="bower_components/core-icons/core-icons.html" rel="import">
+  <link href="bower_components/core-icons/av-icons.html" rel="import"> 
+  <link href="bower_components/paper-button/paper-button.html" rel="import">
+  <link href="bower_components/paper-slider/paper-slider.html" rel="import">
+  <link href="bower_components/paper-input/paper-input.html" rel="import">
+
+  <link rel="import" href="canopy-polymer/gist-loader/gist-loader.html">
+  <link rel="import" href="canopy-polymer/waveform-renderer/waveform-renderer.html">
+
+  <script src="codemirror/lib/codemirror.js"></script>
+  <link rel="stylesheet" href="codemirror/lib/codemirror.css">
+  <script src="codemirror/mode/javascript/javascript.js"></script>
+  <link rel="stylesheet" href="codemirror/theme/elegant.css">
+
+  <script src="js/events.js"></script>
+  <script src="js/fft.js"></script>
+
+  <link rel="stylesheet" href="css/base.css">
+</head>
+
+<body fullbleed unresolved>
+
+  <core-drawer-panel id="i-drawer" forceNarrow="true" disableEdgeSwipe="true">
+    
+    <!-- drawer -->
+    <div drawer>
+      <gist-loader id="i-loader"></gist-loader>
+      <core-menu>
+        <core-item icon="home" label="GitHub" class="c-icon-etc">
+          <a href="https://github.com/hoch/canopy" target="_blank"></a>
+        </core-item>
+        <core-item icon="warning" label="Issues" class="c-icon-etc">
+          <a href="https://github.com/hoch/canopy/issues" target="_blank"></a>
+        </core-item>
+      </core-menu>
+    </div>
+    
+    <!-- main -->
+    <div main layout horizontal>
+      
+      <core-header-panel id="i-canopy-workspace">
+        <core-toolbar style="background-color: #607D8B; color: #ECEFF1;">
+          
+          <core-tooltip position="right" large>
+            <core-icon-button icon="menu" core-drawer-toggle></core-icon-button>
+            <div tip>Gists</div>
+          </core-tooltip>
+          
+          <span flex>Canopy</span>
+
+          <core-tooltip large>
+            <core-icon-button id="i-replay-button" icon="av:play-arrow"></core-icon-button>
+            <div tip>Replay Previous</div>
+          </core-tooltip>
+          
+          <core-tooltip large>
+            <core-icon-button id="i-setting-button" icon="settings"></core-icon-button>
+            <div tip>Change Render Setting</div>
+          </core-tooltip>
+
+          <core-tooltip large>
+            <core-icon-button id="i-render-button" icon="send"></core-icon-button>
+            <div tip>Render Audio</div>
+          </core-tooltip>
+
+        </core-toolbar>
+      
+        <div fit style="overflow:hidden;">
+
+          <core-collapse id="i-render-setting">
+
+            <div id="i-render-setting-container" center vertical layout>
+            
+            <div>
+              <paper-input-decorator id="i-setting-numchannels-deco" label="Number of Channels" class="c-setting-input" floatingLabel>
+                <input is="core-input" id="i-setting-numchannels">
+              </paper-input-decorator>
+            </div>
+
+            <div>
+              <paper-input-decorator id="i-setting-duration-deco" label="Duration (sec)" class="c-setting-input" floatingLabel>
+                <input is="core-input" id="i-setting-duration">
+              </paper-input-decorator>
+            </div>
+
+            <div>
+              <paper-input-decorator id="i-setting-samplerate-deco" label="Sample Rate" class="c-setting-input" floatingLabel>
+                <input is="core-input" id="i-setting-samplerate">
+              </paper-input-decorator>
+            </div>
+
+            </div>
+
+          </core-collapse>
+
+          <div id="i-editor" flex></div>
+        </div>
+      </core-header-panel>
+
+      <div id="i-canopy-view" vertical layout>
+        <div><canvas id="i-minimap"></canvas></div>
+        <div flex><waveform-renderer id="wf-renderer"></waveform-renderer></div>
+        <div><canvas id="i-specgram"></canvas></div>
+      </div>
+
+    </div>
+
+  </core-drawer-panel>
+
+  <script src="js/Canopy.js"></script>
+  <script src="js/MiniMap.js"></script>
+  <script src="js/Specgram.js"></script>
+  <script src="js/Editor.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
