@@ -1,67 +1,125 @@
 <!doctype html>
-<!--
-Copyright 2015 Hongchan Choi. All rights reserved. MIT License.
--->
 <html>
 
 <head>
   <title>&#9835; Canopy</title>
-  
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  
+
   <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-  
+
   <link rel="import" href="bower_components/paper-styles/paper-styles.html">
-  <link rel="stylesheet" href="css/base.css">
-
   <link rel="import" href="bower_components/paper-drawer-panel/paper-drawer-panel.html">
+  <link rel="import" href="bower_components/paper-header-panel/paper-header-panel.html">
 
-  <link rel="import" href="bower_components/spiral-gistloader/spiral-gistloader.html">  
+  <link rel="import" href="bower_components/paper-toolbar/paper-toolbar.html">
+  <link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html">
+  <link rel="import" href="bower_components/iron-icons/iron-icons.html">
+  <link rel="import" href="bower_components/iron-icons/av-icons.html">
+  <link rel="import" href="bower_components/iron-icons/editor-icons.html">
 
-  <!-- <script src="codemirror/lib/codemirror.js"></script>
-  <link rel="stylesheet" href="codemirror/lib/codemirror.css">
-  <script src="codemirror/mode/javascript/javascript.js"></script>
-  <link rel="stylesheet" href="codemirror/theme/elegant.css"> -->
+  <link rel="import" href="bower_components/spiral-gistloader/spiral-gistloader.html">
+  <link rel="import" href="bower_components/spiral-minimap/spiral-minimap.html">
+  <link rel="import" href="bower_components/spiral-waveform/spiral-waveform.html">
+  <link rel="import" href="bower_components/spiral-coder/spiral-coder.html">
 
-  <!-- <script src="js/fft.js"></script> -->
-
-  <style is="custom-style">
-    #canopyDrawer [main] {
-      background-color: var(--google-grey-100);
-    }
-
-    #canopyDrawer [drawer] {
-      border-right: 1px solid var(--google-grey-301);
-      padding: 0.5em;
-    }
-
-    paper-button {
-      color: white;
-      margin: 10px;
-      background-color: var(--google-blue-700);
-      white-space: nowrap;
-    }
-  </style>
-  
+  <link rel="stylesheet" href="css/base.css">
 </head>
 
-<body fullbleed>
-  <paper-drawer-panel id="canopyDrawer" drawer-width="370px">
+<body class="unresolved fullbleed">
+
+  <paper-drawer-panel id="eContainer"
+    force-narrow="true" drawer-width="352px"
+    disable-swipe="true" disable-edge-swipe="true">
+
     <div drawer>
-      <h1>Canopy</h1>
-      <spiral-gistloader></spiral-gistloader>
+      <spiral-gistloader id="eGistLoader"></spiral-gistloader>
+      <div class="stuff">
+        <span>GitHub</span>
+        <span>Issue Tracker</span>
+      </div>
     </div>
-    <div main>
-      
+
+    <div main class="vertical layout fit">
+      <paper-material elevation="2">
+        <paper-toolbar>
+          <paper-icon-button icon="menu" onclick="openGistLoader()"></paper-icon-button>
+          <span class="title">Canopy</span>
+          <paper-icon-button icon="av:skip-previous"></paper-icon-button>
+          <paper-icon-button icon="av:stop"></paper-icon-button>
+          <paper-icon-button icon="av:play-arrow"></paper-icon-button>
+          <paper-icon-button icon="av:repeat"></paper-icon-button>
+          <span class="flex"></span>
+          <paper-icon-button icon="editor:mode-edit" onclick="openCoder()"></paper-icon-button>
+        </paper-toolbar>
+      </paper-material>
+      <div>
+        <spiral-minimap id="eMiniMap"></spiral-minimap>
+      </div>
+      <div class="flex">
+        <spiral-waveform id="eWaveform"></spiral-waveform>
+      </div>
     </div>
+
   </paper-drawer-panel>
 
+  <spiral-coder id="eCoder" class="canopy-coder"></spiral-coder>
+
   <script>
+    var eWaveform, eMiniMap, eCoder;
+    var timeout;
+
+    var controller = {
+      postMessage: function (id, type, data) {
+        switch (id) {
+          case 'spiral-minimap':
+            eWaveform.setViewRange(data.start, data.end);
+            break;
+          case 'spiral-waveform':
+            eMiniMap.setRegion(data.start, data.end);
+            break;
+        }
+      }
+    };
+
+    function openGistLoader() {
+      eContainer.openDrawer();
+    }
+
+    function openCoder() {
+      eCoder.show();
+    }
+
     window.addEventListener('WebComponentsReady', function () {
 
-      
+      eContainer = document.querySelector('#eContainer');
+      eGistLoader = document.querySelector('#eGistLoader');
+      eWaveform = document.querySelector('#eWaveform');
+      eMiniMap = document.querySelector('#eMiniMap');
+      eCoder = document.querySelector('#eCoder');
 
-      
+      eWaveform.setController(controller);
+      eMiniMap.setController(controller);
+      eCoder.setController(controller);
+
+      eCoder.setCode(
+        '// Press render button to hear the sound.\n\n' +
+        'var osc = context.createOscillator();\n' +
+        'var gain = context.createGain();\n' +
+        'gain.gain.value = 0.5;\n' +
+        'osc.connect(gain);\n' +
+        'gain.connect(context.destination);\n' +
+        'osc.start();'
+      );
+
+      eCoder.onRenderComplete = function (buffer) {
+        eWaveform.setAudioBuffer(buffer);
+        eMiniMap.setAudioBuffer(buffer);
+      };
+
+      eGistLoader.onGistLoaded = function (gist) {
+        eCoder.setCode(gist.code);
+      };
+
     });
   </script>
 </body>

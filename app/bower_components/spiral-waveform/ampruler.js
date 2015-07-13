@@ -3,12 +3,12 @@
   var STYLE = {
     width: 38,
     height: 192,
-    color: '#546E7A',
-    colorShadow: '#37474F',
-    gridHeight: 28,
-    colorGrid: '#CFD8DC',
+    color: '#CFD8DC',
+    colorShadow: '#607D8B',
+    gridHeight: 24,
+    colorGrid: '#37474F',
     colorBorder: '#FFF',
-    font: '11.5px Arial'
+    font: '10.5px Arial'
   };
 
   /**
@@ -29,6 +29,12 @@
     // Set font once.
     this.ctx.font = STYLE.font;
     this.gridGain = 0.2;
+  };
+
+  AmpRuler.prototype.setSize = function (width, height) {
+    this.width = (width || STYLE.width);
+    this.height = (height || STYLE.height);
+    this.yCenter = this.height / 2;
   };
 
   AmpRuler.prototype.formatGain = function(gain) {
@@ -88,7 +94,7 @@
     this.ctx.fillStyle = STYLE.color;
     this.ctx.fillRect(0, 0, this.width, this.height);
     this.ctx.fillStyle = STYLE.colorShadow;
-    this.ctx.fillRect(this.width - 3, 0, 3, this.height);
+    this.ctx.fillRect(this.width - 1, 0, 1, this.height);
 
     // Draw grid.
     this.ctx.beginPath();
@@ -98,12 +104,13 @@
       yNeg = this.gainToPixel(-gain, absPeak);
       
       if (yNeg < this.height - 4) {
-        if (gain !== 0.0)
-          this.ctx.fillText(this.formatGain(gain), this.width * 0.725, yPos + 4);
-        this.ctx.fillText(this.formatGain(-gain), this.width * 0.725, yNeg + 4);
-        this.ctx.moveTo(this.width * 0.8, yPos);
-        this.ctx.lineTo(this.width, yPos);
-        this.ctx.moveTo(this.width * 0.8, yNeg);
+        if (gain !== 0.0) {
+          this.ctx.fillText(this.formatGain(gain), this.width * 0.8, yPos + 4);
+          this.ctx.moveTo(this.width * 0.85, yPos);
+          this.ctx.lineTo(this.width, yPos);
+        }
+        this.ctx.fillText(this.formatGain(-gain), this.width * 0.8, yNeg + 4);
+        this.ctx.moveTo(this.width * 0.85, yNeg);
         this.ctx.lineTo(this.width, yNeg);
       }
 
@@ -113,7 +120,8 @@
 
     // clear residues.
     this.ctx.strokeStyle = STYLE.colorBorder;
-    this.ctx.strokeRect(0, 0, this.width, this.height);
+    this.ctx.strokeRect(0, 0, this.width, 0);
+    this.ctx.strokeRect(0, this.height, this.width, this.height);
 
     // Pop back up.
     this.ctx.restore();

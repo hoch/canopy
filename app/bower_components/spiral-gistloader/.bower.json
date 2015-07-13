@@ -1,6 +1,6 @@
 {
   "name": "spiral-gistloader",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "authors": [
     "Hongchan Choi <hongchan.choi@gmail.com>"
   ],
@@ -36,13 +36,13 @@
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
     "web-component-tester": "*"
   },
-  "_release": "0.0.1",
+  "_release": "0.0.2",
   "_resolution": {
     "type": "version",
-    "tag": "v0.0.1",
-    "commit": "0d813bf0d295a721d881fadb656bbd05b6c1597a"
+    "tag": "v0.0.2",
+    "commit": "650d131dc5d21752780358cc53961a76b0cdb4c8"
   },
   "_source": "git://github.com/hoch/spiral-gistloader.git",
-  "_target": "~0.0.1",
+  "_target": "~0.0.2",
   "_originalSource": "hoch/spiral-gistloader"
 }

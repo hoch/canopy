@@ -1,11 +1,18 @@
-#canopy-drawer [main] {
-  background-color: var(--google-grey-100);
+body {
+  padding: 0;
+  margin: 0;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
-#canopy-drawer [drawer] {
-  border-right: 1px solid var(--google-grey-300);
+#eGistLoader {
+  width: 320px;
 }
 
-#canopy-drawer[right-drawer] [drawer] {
-  border-left: 1px solid var(--google-grey-300);
+.canopy-coder {
+  position: fixed;
+  width: 550px;
+  height: 50%;
+  bottom: 50px;
+  right: 50px;
 }

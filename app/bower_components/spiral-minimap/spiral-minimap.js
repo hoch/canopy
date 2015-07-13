@@ -11,7 +11,7 @@
     colorCenterLine: '#B0BEC5',
     colorInfo: '#1B5E20',
     colorBorder: '#FFF',
-    fontInfo: '12px Arial',
+    fontInfo: '10.5px Arial',
     SPPThreshold: 10.0
   };
 
@@ -41,11 +41,19 @@
     this.ctx.textAlign = 'center';
   };
 
+  MiniMap.prototype.setSize = function (width, height) {
+    this.width = (width || STYLE.width);
+    this.height = (height || STYLE.height);
+    this.ctx.canvas.width = this.width;
+    this.ctx.canvas.height = this.height;
+    this.ctx.canvas.style.width = this.width + 'px';
+    this.ctx.canvas.style.height = this.height + 'px';
+    this.yCenter = this.height / 2;
+    this.draw();
+  };
+
   // TODO: use off-screen drawing for higher performance.
   MiniMap.prototype.drawWaveform = function () {
-    if (!this.data)
-      return;
-
     var startIndex = 0;
     var endIndex = this.data.length;
 
@@ -78,11 +86,17 @@
     this.ctx.restore();
   };
 
+  MiniMap.prototype.handleInvalidAudioBuffer = function () {
+    this.ctx.textAlign = 'center';
+    this.ctx.font = STYLE.fontInfo;
+    this.ctx.fillText('Nothing to display.', this.width * 0.5, this.height * 0.5 + 5);
+  };
+
   MiniMap.prototype.drawSubSampling = function (startIndex, endIndex) {
 
     // For selected regions.
-    var regionStartIndex = this.regionStart * this.sampleRate;
-    var regionEndIndex = this.regionEnd * this.sampleRate;
+    // var regionStartIndex = this.regionStart * this.sampleRate;
+    // var regionEndIndex = this.regionEnd * this.sampleRate;
 
     // For scanning-block.
     var SPP = (endIndex - startIndex) / this.width;
@@ -204,6 +218,7 @@
 
     // Draw texts.
     // TODO: fixed all the hard-coded numbers.
+    this.ctx.textAlign = 'center';
     this.ctx.fillText((this.regionEnd - this.regionStart).toFixed(3), 
       regionStartPixel + (regionEndPixel - regionStartPixel) * 0.5, this.height * 0.5 + 15);
     this.ctx.fillText(this.regionStart.toFixed(3), regionStartPixel - 17, this.height * 0.5 + 5);
@@ -211,7 +226,7 @@
   };
 
   MiniMap.prototype.drawInfo = function() {
-
+    // TODO:
   };
 
 
@@ -247,12 +262,14 @@
   };
 
   MiniMap.prototype.draw = function () {
-    if (!this.data)
+    if (!this.data) {
+      this.handleInvalidAudioBuffer();
       return;
+    }
 
     this.ctx.fillStyle = STYLE.colorBackground;
     this.ctx.fillRect(0, 0, this.width, this.height);
-    
+
     this.drawWaveform();
     this.drawOverlay();
     this.drawInfo();

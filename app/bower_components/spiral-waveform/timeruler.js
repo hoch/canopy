@@ -1,13 +1,14 @@
 (function (SpiralWaveform) {
 
   var STYLE = {
+    width: 400,
     height: 32,
-    color: '#546E7A',
-    colorShadow: '#37474F',
+    color: '#CFD8DC',
+    colorShadow: '#607D8B',
     gridWidth: 55,
     gridLineWidth: 1.0,
-    gridColor: '#CFD8DC',
-    font: '11.5px Arial'
+    gridColor: '#37474F',
+    font: '10.5px Arial'
   };
 
   /**
@@ -21,12 +22,18 @@
     this.ctx = ctx;
     this.x = x;
     this.y = y;
-    this.width = width;
+    this.width = (width || STYLE.width);
     this.height = (height || STYLE.height);
-
-    // Set font once.
-    this.ctx.font = STYLE.font;
     this.gridDuration = 1.0;
+  };
+
+  TimeRuler.prototype.setSize = function (width, height) {
+    this.width = (width || STYLE.width);
+    this.height = (height || STYLE.height);
+    this.ctx.canvas.width = this.width;
+    this.ctx.canvas.height = this.height;
+    this.ctx.canvas.style.width = this.width + 'px';
+    this.ctx.canvas.style.height = this.height + 'px';
   };
 
   // length as in number of samples.
@@ -97,11 +104,9 @@
     this.ctx.save();
     this.ctx.translate(this.x, this.y);
 
-    // clear background and draw border.
+    // clear background.
     this.ctx.fillStyle = STYLE.color;
     this.ctx.fillRect(0, 0, this.width, this.height);
-    this.ctx.fillStyle = STYLE.colorShadow;
-    this.ctx.fillRect(0, this.height - 3, this.width, 3);
 
     // Draw grid.
     this.ctx.beginPath();
@@ -114,6 +119,10 @@
       startGrid += this.gridDuration;
     }
     this.ctx.stroke();
+
+    // Draw the bottom border.
+    this.ctx.fillStyle = STYLE.colorShadow;
+    this.ctx.fillRect(0, this.height - 1, this.width, 1);
 
     // Pop back up.
     this.ctx.restore();

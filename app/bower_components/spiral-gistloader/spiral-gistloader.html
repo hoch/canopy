@@ -5,10 +5,11 @@ MIT License. Copyright (c) 2015 Hongchan Choi. All rights reserved.
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../iron-ajax/iron-ajax.html">
 <link rel="import" href="../iron-icons/iron-icons.html">
-<link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../paper-menu/paper-menu.html">
+<link rel="import" href="../paper-input/paper-input.html">
 <link rel="import" href="../paper-item/paper-item.html">
+<link rel="import" href="../paper-menu/paper-menu.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
 <link rel="import" href="../paper-toast/paper-toast.html">
 
 <!--
@@ -17,7 +18,7 @@ provided. The code can be accessed when a menu item clicked.
 
 Example:
 
-  <spiral-gistloader></spiral-gistloader>
+    <spiral-gistloader></spiral-gistloader>
 
 @demo
 -->
@@ -25,13 +26,15 @@ Example:
 
   <style>
     :host {
-      display: block;
-      box-sizing: border-box;
-      min-width: 22em;
+      @apply(--layout);
+      background-color: #FFF;
+      padding: 1em;
+      width: 100%;
     }
 
-    .section {
-      padding: 0.45em;
+    .gist-url {
+      margin-bottom: 0.45em;
+      width: 320px;
     }
 
     .section-url-input {
@@ -39,13 +42,19 @@ Example:
     }
 
     .section-url-input input {
-      font-size: 0.9em;
+      font-size: 0.85em;
+      color: var(--google-blue-700);
     }
 
     .section-gist-list paper-item {
-      font-size: 0.9em;
+      font-size: 0.85em;
       padding: 0;
       min-height: 2.25em;
+    }
+
+    .item-icon {
+      color: var(--paper-grey-600);
+      margin-right: 0.3em;
     }
 
     paper-toast {
@@ -58,46 +67,44 @@ Example:
   </style>
 
   <template>
-
-    <iron-ajax id="gistXHR"
-      handle-as="json"
-      on-response="_handleXhrResponse"
-      on-error="_handleXhrError"></iron-ajax>
-
     <div class="vertical layout">
 
-      <div class="section">
+      <div class="gist-url">
         <paper-input-container always-float-label
           id="gistInput"
-          on-change="_handleGistIdChange"
+          on-change="_handleGistIdChange" on-keydown="_onEnterKey"
           class="flex section-url-input">
           <label>Gist URL
-            <a href="{{lastSuccessfulGistURL}}" target="_blank">
+            <a href="{{_lastSuccessfulGistURL}}" target="_blank" >
               <iron-icon icon="link" item-icon></iron-icon>
             </a>
           </label>
-          <input is="iron-input" bind-value="{{gistURL}}">
+          <input is="iron-input" bind-value="{{_gistURL}}">
         </paper-input-container>
       </div>
 
-      <div class="section flex">
+      <div class="flex">
         <paper-menu class="list section-gist-list">
-          <template id="gistList" is="dom-repeat" items="{{gistFiles}}">
+          <template id="gistList" is="dom-repeat" items="{{_gistFiles}}">
             <paper-item on-click="_handleSelectedGist">
-              <iron-icon icon="description" item-icon></iron-icon>
+              <iron-icon icon="description" item-icon class="item-icon"></iron-icon>
               <span>{{item.name}}</span>
             </paper-item>
           </template>
         </paper-menu>
       </div>
 
-      <div class="section">
+      <div>
         <content></content>
       </div>
 
     </div>
 
-  <paper-toast id="toast"></paper-toast>
+    <iron-ajax id="gistXHR"
+      handle-as="json"
+      on-response="_handleXhrResponse"
+      on-error="_handleXhrError"></iron-ajax>
+    <paper-toast id="toast"></paper-toast>
 
   </template>
 
@@ -111,20 +118,23 @@ Example:
 
     properties: {
 
-      gistURL: {
+      _gistURL: {
         type: String,
         notify: true
       },
 
-      lastSuccessfulGistURL: {
+      _lastSuccessfulGistURL: {
         type: String,
         value: 'https://gist.github.com/5d2bfc3d7d6ee009ac2c'
       },
 
-      gistURL: String,
+      _gistFiles: Array,
 
-      gistFiles: Array,
-
+      /**
+       * Define a callback function to handle a loaded gist file.
+       * @type {Function}
+       * @params {Function} Gist callback function for onGistLoaded event.
+       */
       onGistLoaded: {
         type: Function,
         value: null
@@ -137,7 +147,7 @@ Example:
     ready: function() {
 
       // Initial XHR with the default URL.
-      this.setGistURL(this.lastSuccessfulGistURL);
+      this.setGistURL(this._lastSuccessfulGistURL);
 
     },
 
@@ -193,12 +203,12 @@ Example:
      */
     _handleXhrResponse: function (event) {
       // Successful transaction. Update the last known URL.
-      this.set('lastSuccessfulGistURL', this.gistURL);
+      this.set('_lastSuccessfulGistURL', this._gistURL);
 
-      this.gistFiles = [];
+      this._gistFiles = [];
       var files = event.detail.response.files;
       for (var gist in files) {
-        this.push('gistFiles', {
+        this.push('_gistFiles', {
           name: gist,
           code: files[gist].content
         });
@@ -211,7 +221,7 @@ Example:
      */
     _handleXhrError: function (event) {
       // Failed. Fall back to the last known URL.
-      this.set('gistURL', this.lastSuccessfulGistURL);
+      this.set('_gistURL', this._lastSuccessfulGistURL);
 
       // Display error message.
       console.log(event.detail.error.message);
@@ -229,6 +239,12 @@ Example:
       }
     },
 
+    _onEnterKey: function (event) {
+      if (event.keyCode === 13) {
+        this._handleGistIdChange();
+      }
+    },
+
     /**
      * Set gist URL (hash) and send XHR request.
      * @param {string} url Gist URL
@@ -237,12 +253,12 @@ Example:
       var gistId = this._extractGistId(url);
       if (gistId) {
         var newURL = 'https://gist.github.com/' + gistId;
-        this.set('gistURL', newURL);
+        this.set('_gistURL', newURL);
         this.$.gistXHR.url = 'https://api.github.com/gists/' + gistId;
         this.$.gistXHR.generateRequest();
       }
       else {
-        this.set('gistURL', this.lastSuccessfulGistURL);
+        this.set('_gistURL', this._lastSuccessfulGistURL);
         this._displayToastMessage('Invalid URL.');
       }
     }

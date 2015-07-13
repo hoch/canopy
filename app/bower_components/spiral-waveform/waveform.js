@@ -5,7 +5,7 @@
     height: 128,
     color: '#03A9F4',
     colorClipped: '#E91E63',
-    colorBackground: '#EEE',
+    colorBackground: '#EFEFEF',
     colorCenterLine: '#B0BEC5',
     colorBorder: '#FFF',
     SPPThreshold: 10.0
@@ -27,6 +27,12 @@
     this.yCenter = this.height / 2;
     this.data = null;
     this.sampleRate = 44100;
+  };
+
+  WaveformDrawer.prototype.setSize = function(width, height) {
+    this.width = (width || STYLE.width);
+    this.height = (height || STYLE.height);
+    this.yCenter = this.height / 2;
   };
 
   WaveformDrawer.prototype.setSampleData = function(channelData, sampleRate) {

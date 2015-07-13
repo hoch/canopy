@@ -3,13 +3,17 @@
 MIT License. Copyright (c) 2015 Hongchan Choi. All rights reserved.
 -->
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 
 <script src="spiral-minimap.js"></script>
 
 <!--
-Draws the time-domain representation of <code>AudioBuffer</code> which
+Renders the time-domain representation of <code>AudioBuffer</code> which
 can be navigated by adjusting the two handles. The region can be
 translated by dragging the center of the region.
+
+This element is designed to be used with <code>spiral-waveform</code> element.
 
 Example:
 
@@ -21,12 +25,11 @@ Example:
 
   <style>
     :host {
+      @apply(--layout);
       display: block;
       box-sizing: border-box;
-    }
-
-    #divWrapper {
       overflow: hidden;
+      background-color: var(--google-grey-100);
     }
 
     canvas {
@@ -35,11 +38,7 @@ Example:
   </style>
 
   <template>
-
-    <div id="divWrapper">
-      <canvas id="canvas" on-track="_onTrack"></canvas>
-    </div>
-
+    <canvas id="canvas" on-track="_onTrack"></canvas>
   </template>
 
 </dom-module>
@@ -52,58 +51,69 @@ Example:
 
     properties: {
 
-      _width: Number,
-      _height: Number,
+      _width: {
+        type: Number,
+        value: 480
+      },
 
-      _ctx: Object,
-
-      _mMiniMapDrawer: Object,
+      _height: {
+        type: Number,
+        value: 48
+      },
 
       _regionStart: Number,
       _reiognEnd: Number,
-      _uiMode: String,
 
+      _ctx: Object,
       _audioBuffer: Object,
-
+      _miniMapDrawer: Object,
       _controller: Object,
-      _componentId: String,
+
+      _componentId: {
+        type: String,
+        value: 'spiral-minimap'
+      },
+
+      _uiMode: {
+        type: String,
+        value: 'IDLE'
+      }
 
     },
+
+    behaviors: [
+      Polymer.IronResizableBehavior
+    ],
+
+    listeners: {
+      'iron-resize': '_onResize'
+    },
+
 
     /** Helpers **/
 
     _initialize: function () {
-      this._width = 700;
-      this._height = 48;
-      this._componentId = 'spiral-minimap';
-      this._uiMode = 'IDLE';
-    },
-
-    _createContext: function () {
+      // Create context.
       this._ctx = this.$.canvas.getContext('2d');
+
+      // Create minimap drawer instance.
+      this._miniMapDrawer = SpiralMiniMap.create(this._ctx, 0, 0,
+        this._width, this._height);
     },
 
-    _doDOMLayout: function () {
-        // Use style.{height, width} for DIVs.
-      this.$.divWrapper.style.width = this._width + 'px';
-      this.$.divWrapper.style.height = this._height + 'px';
-
-      // Use clientWidth to get the internal area size excluding the scroll bar.
-      var clientWidth = this.$.divWrapper.clientWidth;
-      var clientHeight = this.$.divWrapper.clientHeight;
-      this.$.canvas.width = clientWidth;
-      this.$.canvas.height = clientHeight;
-    },
-
-    _createModules: function () {
-      if (!this._audioBuffer)
+    _onResize: function () {
+      // If the context or the drawer is not ready, stop now.
+      if (!this._ctx || !this._miniMapDrawer)
         return;
 
-      // TODO: when it is resized, the modules are created again and resets
-      // the start/end position.
-      this._mMiniMapDrawer = SpiralMiniMap.create(this._ctx, 0, 0,
-        this.$.canvas.width, this.$.canvas.height);
-      this._mMiniMapDrawer.setAudioBuffer(this._audioBuffer);      
+      // Adjust canvas size with the parent node's inner size.
+      this._width = (this.parentNode.clientWidth || this._width);
+      
+      // Update the dimension of minimap drawer.
+      this._miniMapDrawer.setSize(this._width, this._height);
+
+      // Trigger redraw.
+      this._updateView();
     },
 
     _convertSecondToPixel: function (second) {
@@ -134,7 +144,7 @@ Example:
       if (!this._audioBuffer)
         return;
 
-      this._mMiniMapDrawer.draw();
+      this._miniMapDrawer.draw();
     },
 
 
@@ -153,9 +163,9 @@ Example:
       var end = this._convertPixelToSecond(handleR);
 
       if (start < end)
-        this._mMiniMapDrawer.setRegion(start, end);
+        this._miniMapDrawer.setRegion(start, end);
       else
-        this._mMiniMapDrawer.setRegion(end, start);
+        this._miniMapDrawer.setRegion(end, start);
 
       this._notify('region-change', {
         start: start,
@@ -174,7 +184,7 @@ Example:
 
       // Calculate current region area by pixels.
       var needsUpdate = false;
-      var region = this._mMiniMapDrawer.getRegion();
+      var region = this._miniMapDrawer.getRegion();
       var handleL = this._convertSecondToPixel(region.start);
       var handleR = this._convertSecondToPixel(region.end);
 
@@ -245,24 +255,19 @@ Example:
 
     /** Polymer life cycle: created -> ready -> attached **/
 
-    created: function () {
-      this._initialize();
-    },
+    created: function () {},
+    ready: function() {},
 
-    ready: function() {
-      // When initialized, DOM layout requires a bit of delay to figure out
-      // computed width of DIVs. Then Context 2Ds from canvases.
+    attached: function () {
+      // Initialize and force-resize at startup. This is done asynchronously to
+      // ensure the first redraw.
       this.async(function () {
-        this._createContext();
-        this._doDOMLayout();
+        this._initialize();
+        this._onResize();  
       }, 1);
     },
 
-    attached: function () {
 
-    },
-
-    
     /**
      * Sets the controller object for reporting the local state change.
      * @param {Object} controller A controller object. This typically is a
@@ -273,17 +278,14 @@ Example:
     },
 
     /**
-     * Sets the size of the instance. This triggers the redraw of visualization.
-     * @param {Number} width  Width in pixel.
+     * Sets the height of the instance. This triggers the redraw of visualization.
      * @param {Number} height Height in pixel.
      */
-    setSize: function (width, height) {
-      this._width = width;
+    setHeight: function (height) {
       this._height = height;
 
-      this._doDOMLayout();
-      this._createModules();
-      this._updateView();
+      // Force resize.
+      this._onResize();
     },
 
     /**
@@ -295,10 +297,9 @@ Example:
         return;
 
       this._audioBuffer = audioBuffer;
+      this._miniMapDrawer.setAudioBuffer(this._audioBuffer);
 
-      // Handle layout and create new modules.
-      this._doDOMLayout();
-      this._createModules();
+      // Trigger draw.
       this._updateView();
     },
 
@@ -308,10 +309,10 @@ Example:
      * @param {Number} end   Region end position in seconds.
      */
     setRegion: function (start, end) {
-      if (!this._mMiniMapDrawer)
+      if (!this._miniMapDrawer)
         return;
 
-      this._mMiniMapDrawer.setRegion(start, end);
+      this._miniMapDrawer.setRegion(start, end);
       this._updateView();
     }
 
