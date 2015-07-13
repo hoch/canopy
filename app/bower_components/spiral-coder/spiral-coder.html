@@ -1,0 +1,331 @@
+<!--
+Copyright (c) 2015 Hongchan Choi. All rights reserved.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-fit-behavior/iron-fit-behavior.html">
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../paper-button/paper-button.html">
+<link rel="import" href="../paper-dialog/paper-dialog.html">
+<link rel="import" href="../paper-header-panel/paper-header-panel.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-slider/paper-slider.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../paper-toolbar/paper-toolbar.html">
+
+<!-- CodeMirror -->
+<script src="../CodeMirror/lib/codemirror.js"></script>
+<script src="../CodeMirror/mode/javascript/javascript.js"></script>
+<link rel="stylesheet" href="../CodeMirror/lib/codemirror.css">
+<link rel="stylesheet" href="../CodeMirror/theme/elegant.css">
+
+<!-- SpiralCoder::CodeRenderer -->
+<script src="code-renderer.js"></script>
+
+<!--
+An element providing a code editor that renders Web Audio API JS code into an
+AudioBuffer using OfflineAudioContext.
+
+Example:
+
+    <spiral-coder></spiral-coder>
+
+@demo
+-->
+<dom-module id="spiral-coder">
+
+  <style>
+    :host {
+      @apply(--layout);
+      @apply(--shadow-elevation-2dp);
+      font-family: "Roboto";
+      background-color: #eee;
+    }
+
+    paper-header-panel {
+      width: 100%;
+    }
+
+    #eSettings {
+      border-radius: 1em;
+      max-width: 300px;
+      width: 300px;
+      padding: 0 0.5em 0.75em 0.5em;
+      /* change max-height causes a very weird issue. */
+    }
+
+    paper-slider {
+      width: 100%;
+    }
+
+    paper-toolbar {
+      --paper-toolbar-background: var(--google-grey-700);
+    }
+
+    paper-button {
+      background-color: var(--google-grey-300);
+    }
+
+    paper-button:hover {
+      background-color: var(--paper-light-blue-200);
+    }
+  </style>
+
+  <template>
+
+    <paper-header-panel id="ePanel" class="vertical layout">
+      <paper-toolbar>
+        <paper-icon-button icon="close" on-click="hide"></paper-icon-button>
+        <span class="flex"></span>
+        <paper-icon-button icon="settings" on-click="_openRenderSettings"></paper-icon-button>
+        <paper-icon-button id="eBtnRender" icon="send" on-click="_renderAudioBuffer"></paper-icon-button>
+      </paper-toolbar>
+      <div id="eEditor" class="flex"></div>
+    </paper-header-panel>
+
+    <paper-dialog id="eSettings">
+      <h2>Render Settings</h2>
+      <div class="vertical-section">
+        <div>Sample Rate (Hz)</div>
+        <paper-slider on-change="_onRenderSettingChanged" value="{{_renderOptions.sampleRate}}" min="3000" max="192000" step="100" editable></paper-slider>
+        <div>Number of Channels</div>
+        <paper-slider on-change="_onRenderSettingChanged" value="{{_renderOptions.numChannels}}" min="1" max="32" editable></paper-slider>
+        <div>Duration (sec.)</div>
+        <paper-slider on-change="_onRenderSettingChanged" value="{{_renderOptions.duration}}" min="0.5" max="10" step="0.5" editable></paper-slider>
+        </div>
+        <div class="buttons">
+          <paper-button dialog-confirm autofocus>OK</paper-button>
+        </div>
+      </div>
+    </paper-dialog>
+
+  </template>
+
+</dom-module>
+
+<script>
+
+  Polymer({
+
+    is: 'spiral-coder',
+
+    behaviors: [
+      Polymer.IronFitBehavior,
+      Polymer.IronResizableBehavior
+    ],
+
+    properties: {
+
+      _EDITOR_OPTIONS: {
+        type: Object,
+        value: {
+          mode: 'javascript',
+          lineWrapping: true,
+          lineNumbers: true,
+          value: '// Spiral is here!\n\n',
+          theme: 'elegant'
+        }
+      },
+
+      _RENDER_OPTIONS_RANGE: {
+        type: Object,
+        value: {
+          minSampleRate: 3000,
+          maxSampleRate: 192000,
+          minDuration: 0.25,
+          maxDuration: 10.00,
+          minNumChannels: 1,
+          maxNumChannels: 8
+        }
+      },
+
+      _renderOptions: {
+        type: Object,
+        value: {
+          sampleRate: 44100,
+          numChannels: 1,
+          duration: 3
+        }
+      },
+
+      _isDirty: Boolean,
+      _editor: Object,
+      _lastRenderedAudioBuffer: Object,
+      _componentId: {
+        type: String,
+        value: 'spiral-coder'
+      },
+
+      _panelHidden: false,
+      _panelIcon: 'remove',
+
+      /**
+       * Callback function for the 'render-complete' event.
+       * @type {Function}
+       */
+      onRenderComplete: {
+        type: Function,
+        value: null
+      }
+    },
+
+    listeners: {
+      'iron-resize': '_onResize'
+    },
+
+
+    // Private APIs.
+
+    _markAsDirty: function () {
+      if (this._isDirty)
+        return;
+
+      this._isDirty = true;
+      this.$.eBtnRender.removeAttribute('disabled');
+    },
+
+    _markAsClean: function () {
+      if (!this._isDirty)
+        return;
+
+      this._isDirty = false;
+      this.$.eBtnRender.setAttribute('disabled', true);
+    },
+
+    _onResize: function () {
+      var editorHeight = this.$.ePanel.clientHeight - 64;
+      this._editor.setSize('100%', editorHeight);
+      this._editor.refresh();
+    },
+
+    _onCodeChange: function () {
+      this._markAsDirty();
+    },
+
+    _onRenderSettingChanged: function () {
+      this._markAsDirty();
+    },
+
+    _openRenderSettings: function () {
+      this.$.eSettings.toggle();
+    },
+
+    _onRenderComplete: function (buffer) {
+      this._lastRenderedAudioBuffer = buffer;
+
+      if (this.onRenderComplete)
+        this.onRenderComplete(this._lastRenderedAudioBuffer);
+
+      this._markAsClean();
+
+      this._notify('render-complete', {
+        buffer: this._lastRenderedAudioBuffer
+      });
+    },
+
+    _renderAudioBuffer: function () {
+      try {
+        SpiralCoder.renderCodeWithOptions(this._editor.getValue(), {
+          onComplete: this._onRenderComplete.bind(this),
+          sampleRate: this._renderOptions.sampleRate,
+          duration: this._renderOptions.duration,
+          numChannels: this._renderOptions.numChannels
+        });
+      } catch (error) {
+        var message = '[' + error.name + '] ' + error.message;
+        console.log(error.stack, message);
+      }
+    },
+
+
+    // Spiral-specific common methods.
+
+    _initialize: function () {
+      this._onResize();
+      this._editor.on('change', this._onCodeChange.bind(this));
+
+      this._isDirty = false;
+    },
+
+    _notify: function (eventType, data) {
+      if (this._controller)
+        this._controller.postMessage(this._componentId, eventType, data);
+    },
+
+
+    // Public APIs.
+
+    /**
+     * Hide the editor.
+     */
+    hide: function () {
+      this.style.display = 'none';
+    },
+
+    /**
+     * Show the editor.
+     */
+    show: function () {
+      this.style.display = 'flex';
+    },
+
+    /**
+     * Set the controller object. (application message router)
+     * @param {Object} controller An application message router.
+     */
+    setController: function (controller) {
+      this._controller = controller;
+    },
+
+    /**
+     * Set the code content.
+     * @param {String} code Codes as string.
+     */
+    setCode: function (code) {
+      this._editor.setValue(code);
+    },
+
+    /**
+     * Get the current code content.
+     * @return {String} Codes as string.
+     */
+    getCode: function () {
+      return this._editor.getValue();
+    },
+
+    /**
+     * Get the current render options.
+     * @return {Object} The render option as an object.
+     */
+    getRenderSettings: function () {
+      return this._renderOptions;
+    },
+
+    /**
+     * Get the last rendered buffer.
+     * @return {AudioBuffer} The last rendered buffer.
+     */
+    getRenderedBuffer: function () {
+      if (!this._lastRenderedAudioBuffer)
+        return null;
+
+      return this._lastRenderedAudioBuffer;
+    },
+
+    // Life cycle method.
+
+    ready: function() {
+      this._editor = CodeMirror(this.$.eEditor, this._EDITOR_OPTIONS);
+
+      // TODO: this.$.ePanel height takes some times to be initialized properly.
+      // TODO: make this a resize-aware element.
+      this.async(this._initialize, 5);
+    },
+
+    attached: function() {},
+
+    detached: function() {}
+
+  });
+
+</script>
