@@ -9,7 +9,15 @@ body {
   width: 320px;
 }
 
-.canopy-coder {
+#eBtnPlay {
+  /*width: 100px;
+  height: 100px;*/
+  color: var(--paper-light-blue-500);
+  background: var(--paper-orange-50);
+  border-radius: 50%;
+}
+
+.c-canopy-coder {
   position: fixed;
   width: 550px;
   height: 50%;

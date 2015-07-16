@@ -9,7 +9,7 @@
     colorOverlayRect: 'rgba(240, 240, 240, 0.75)',
     colorHandle: '#FF5722',
     colorCenterLine: '#37474F',
-    colorInfo: '#1B5E20',
+    colorInfo: '#FFF',
     colorBorder: '#FFF',
     fontInfo: '11px Arial',
     SPPThreshold: 10.0
@@ -90,7 +90,7 @@
   MiniMap.prototype.handleInvalidAudioBuffer = function () {
     this.ctx.textAlign = 'center';
     this.ctx.font = STYLE.fontInfo;
-    this.ctx.fillText('Nothing to display.', this.width * 0.5, this.height * 0.5 + 5);
+    this.ctx.fillText('Nothing to display.', this.width * 0.5, this.yCenter + 5);
   };
 
   MiniMap.prototype.drawSubSampling = function (startIndex, endIndex) {
@@ -211,20 +211,28 @@
     this.ctx.fillRect(0, 0, regionStartPixel, this.height);
     this.ctx.fillRect(regionEndPixel, 0, this.width - regionEndPixel, this.height);
 
-    // Draw handles.
+    // Draw handles. (boxes)
     this.ctx.fillStyle = STYLE.colorHandle;
-    this.ctx.fillRect(regionStartPixel, this.height * 0.5, regionEndPixel - regionStartPixel, 1);
-    this.ctx.fillRect(regionStartPixel, 0, 4, this.height);
-    this.ctx.fillRect(regionEndPixel - 4, 0, 4, this.height);
+    this.ctx.fillRect(regionStartPixel, this.yCenter, regionEndPixel - regionStartPixel, 1);
+    this.ctx.fillRect(regionStartPixel, 0, 2, this.height);
+    this.ctx.fillRect(regionStartPixel - 40, this.yCenter - 10, 40, 20);
+    this.ctx.fillRect(regionEndPixel - 2, 0, 2, this.height);
+    this.ctx.fillRect(regionEndPixel, this.yCenter - 10, 40, 20);
 
     // Draw texts.
     // TODO: fixed all the hard-coded numbers.
     this.ctx.font = STYLE.fontInfo;
     this.ctx.textAlign = 'center';
-    this.ctx.fillText((this.regionEnd - this.regionStart).toFixed(3), 
-      regionStartPixel + (regionEndPixel - regionStartPixel) * 0.5, this.height * 0.5 + 15);
-    this.ctx.fillText(this.regionStart.toFixed(3), regionStartPixel - 17, this.height * 0.5 + 5);
-    this.ctx.fillText(this.regionEnd.toFixed(3), regionEndPixel + 17, this.height * 0.5 + 5);
+    this.ctx.fillStyle = STYLE.colorInfo;
+    this.ctx.fillText(this.regionStart.toFixed(3), regionStartPixel - 20, this.yCenter + 4);
+    this.ctx.fillText(this.regionEnd.toFixed(3), regionEndPixel + 20, this.yCenter + 4);
+
+    var regionWidth = regionEndPixel - regionStartPixel;
+    if (regionWidth > 40) {
+      this.ctx.fillStyle = STYLE.colorHandle;
+      this.ctx.fillText((this.regionEnd - this.regionStart).toFixed(3), 
+        regionStartPixel + regionWidth * 0.5, this.yCenter + 15);
+    }
   };
 
   MiniMap.prototype.drawInfo = function() {

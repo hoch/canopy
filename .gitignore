@@ -1,5 +1,5 @@
 .DS_Store
 .publish
 node_modules
-app_obsolete
+archive
 test

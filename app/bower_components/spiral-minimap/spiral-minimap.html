@@ -196,11 +196,11 @@ Example:
       switch(pos.state) {
 
         case 'start':
-          if (handleL - 30 <= pos.x && pos.x <= handleL + 30) {
+          if (handleL - 40 <= pos.x && pos.x <= handleL + 5) {
             this._uiMode = 'MOVE_HANDLE_L';
-          } else if (handleR - 30 <= pos.x && pos.x <= handleR + 30) {
+          } else if (handleR - 5 <= pos.x && pos.x <= handleR + 40) {
             this._uiMode = 'MOVE_HANDLE_R';
-          } else if (handleL + 30 < pos.x && pos.x < handleR - 30) {
+          } else if (handleL + 5 < pos.x && pos.x < handleR - 5) {
             this._uiMode = 'MOVE_REGION';
           } else {
             this._uiMode = 'CREATE_REGION';
@@ -215,12 +215,12 @@ Example:
           switch (this._uiMode) {
             case 'MOVE_HANDLE_L':
               handleL += pos.ddx;
-              if (0 <= handleL && handleR - handleL >= 60)
+              if (0 <= handleL)
                 needsUpdate = true;
               break;
             case 'MOVE_HANDLE_R':
               handleR += pos.ddx;
-              if (handleR <= this._width && handleR - handleL >= 60)
+              if (handleR <= this._width)
                 needsUpdate = true;
               break;
             case 'MOVE_REGION':
@@ -275,8 +275,7 @@ Example:
 
     /**
      * Sets the controller object for reporting the local state change.
-     * @param {Object} controller A controller object. This typically is a
-     *                            message router.
+     * @param {Object} controller A controller (message router).
      */
     setController: function (controller) {
       this._controller = controller;
@@ -319,6 +318,17 @@ Example:
 
       this._miniMapDrawer.setRegion(start, end);
       this._updateView();
+    },
+
+    /**
+     * Gets start and end points of user-defined region.
+     * @return {Object} Region start and end points in seconds.
+     */
+    getRegion: function () {
+      if (!this._audioBuffer)
+        return null;
+
+      return this._miniMapDrawer.getRegion();
     }
 
   });
