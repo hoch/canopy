@@ -28,8 +28,10 @@ Example:
     :host {
       @apply(--layout);
       background-color: #FFF;
-      padding: 1em;
+      padding: 0.75em;
       width: 100%;
+      min-width: 320px;
+      overflow: hidden;
     }
 
     .gist-url {
@@ -241,7 +243,7 @@ Example:
 
     _onEnterKey: function (event) {
       if (event.keyCode === 13) {
-        this._handleGistIdChange();
+        this._handleGistIdChange(event);
       }
     },
 
@@ -259,7 +261,7 @@ Example:
       }
       else {
         this.set('_gistURL', this._lastSuccessfulGistURL);
-        this._displayToastMessage('Invalid URL.');
+        this._displayToastMessage('Invalid URL. Reverting to the previous URL.');
       }
     }
 

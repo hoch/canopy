@@ -182,6 +182,11 @@ Example:
 
       var pos = event.detail;
 
+      // Pure x, y coordinates should be contained inside the target element
+      // without padding or margin.
+      pos.x = event.detail.sourceEvent.offsetX;
+      pos.y = event.detail.sourceEvent.offsetY;
+
       // Calculate current region area by pixels.
       var needsUpdate = false;
       var region = this._miniMapDrawer.getRegion();

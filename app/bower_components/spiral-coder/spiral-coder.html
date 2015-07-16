@@ -3,8 +3,8 @@ Copyright (c) 2015 Hongchan Choi. All rights reserved.
 -->
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../iron-fit-behavior/iron-fit-behavior.html">
-<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../iron-icons/iron-icons.html">
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../paper-button/paper-button.html">
 <link rel="import" href="../paper-dialog/paper-dialog.html">
 <link rel="import" href="../paper-header-panel/paper-header-panel.html">
@@ -13,11 +13,16 @@ Copyright (c) 2015 Hongchan Choi. All rights reserved.
 <link rel="import" href="../paper-styles/paper-styles.html">
 <link rel="import" href="../paper-toolbar/paper-toolbar.html">
 
+
 <!-- CodeMirror -->
-<script src="../CodeMirror/lib/codemirror.js"></script>
-<script src="../CodeMirror/mode/javascript/javascript.js"></script>
 <link rel="stylesheet" href="../CodeMirror/lib/codemirror.css">
+<link rel="stylesheet" href="../CodeMirror/addon/hint/show-hint.css">
 <link rel="stylesheet" href="../CodeMirror/theme/elegant.css">
+<script src="../CodeMirror/lib/codemirror.js"></script>
+<script src="../CodeMirror/addon/hint/show-hint.js"></script>
+<script src="../CodeMirror/addon/hint/javascript-hint.js"></script>
+<script src="../CodeMirror/mode/javascript/javascript.js"></script>
+
 
 <!-- SpiralCoder::CodeRenderer -->
 <script src="code-renderer.js"></script>
@@ -40,14 +45,16 @@ Example:
       @apply(--shadow-elevation-2dp);
       font-family: "Roboto";
       background-color: #eee;
+      min-width: 500px;
     }
 
     paper-header-panel {
       width: 100%;
+      min-height: 250px;
     }
 
     #eSettings {
-      border-radius: 1em;
+      border-radius: 0.em;
       max-width: 300px;
       width: 300px;
       padding: 0 0.5em 0.75em 0.5em;
@@ -59,15 +66,16 @@ Example:
     }
 
     paper-toolbar {
-      --paper-toolbar-background: var(--google-grey-700);
+      --paper-toolbar-background: #455A64;
     }
 
     paper-button {
+      color: var(--paper-light-green-900);
       background-color: var(--google-grey-300);
     }
 
     paper-button:hover {
-      background-color: var(--paper-light-blue-200);
+      background-color: var(--paper-light-green-200);
     }
   </style>
 
@@ -76,22 +84,26 @@ Example:
     <paper-header-panel id="ePanel" class="vertical layout">
       <paper-toolbar>
         <paper-icon-button icon="close" on-click="hide"></paper-icon-button>
-        <span class="flex"></span>
         <paper-icon-button icon="settings" on-click="_openRenderSettings"></paper-icon-button>
+        <paper-icon-button icon="file-download" on-click="saveCode" disabled></paper-icon-button>
+        <span class="flex"></span>
         <paper-icon-button id="eBtnRender" icon="send" on-click="_renderAudioBuffer"></paper-icon-button>
       </paper-toolbar>
       <div id="eEditor" class="flex"></div>
     </paper-header-panel>
 
     <paper-dialog id="eSettings">
-      <h2>Render Settings</h2>
+      <h3>Render Settings</h3>
       <div class="vertical-section">
         <div>Sample Rate (Hz)</div>
-        <paper-slider on-change="_onRenderSettingChanged" value="{{_renderOptions.sampleRate}}" min="3000" max="192000" step="100" editable></paper-slider>
+        <paper-slider on-change="_onRenderSettingChanged"
+          value="{{_renderOptions.sampleRate}}" min="3000" max="192000" step="100" editable></paper-slider>
         <div>Number of Channels</div>
-        <paper-slider on-change="_onRenderSettingChanged" value="{{_renderOptions.numChannels}}" min="1" max="32" editable></paper-slider>
+        <paper-slider on-change="_onRenderSettingChanged"
+          value="{{_renderOptions.numChannels}}" min="1" max="32" editable></paper-slider>
         <div>Duration (sec.)</div>
-        <paper-slider on-change="_onRenderSettingChanged" value="{{_renderOptions.duration}}" min="0.5" max="10" step="0.5" editable></paper-slider>
+        <paper-slider on-change="_onRenderSettingChanged"
+          value="{{_renderOptions.duration}}" min="0.5" max="10" step="0.5" editable></paper-slider>
         </div>
         <div class="buttons">
           <paper-button dialog-confirm autofocus>OK</paper-button>
@@ -123,7 +135,8 @@ Example:
           lineWrapping: true,
           lineNumbers: true,
           value: '// Spiral is here!\n\n',
-          theme: 'elegant'
+          theme: 'elegant',
+          extraKeys: { 'Ctrl-Space': 'autocomplete' }
         }
       },
 
@@ -155,9 +168,6 @@ Example:
         type: String,
         value: 'spiral-coder'
       },
-
-      _panelHidden: false,
-      _panelIcon: 'remove',
 
       /**
        * Callback function for the 'render-complete' event.
@@ -192,6 +202,13 @@ Example:
       this.$.eBtnRender.setAttribute('disabled', true);
     },
 
+    _showAutoCompletionIfPossible: function (cm) {
+      // TODO: implement on-the-fly auto-completion. (http://jsfiddle.net/u26mK/6/)
+      // setTimeout(function () {
+      //   CodeMirror.showHint(cm, CodeMirror.hint.javascript, { completeSingle: false });  
+      // }, 150);
+    },
+
     _onResize: function () {
       var editorHeight = this.$.ePanel.clientHeight - 64;
       this._editor.setSize('100%', editorHeight);
@@ -207,7 +224,7 @@ Example:
     },
 
     _openRenderSettings: function () {
-      this.$.eSettings.toggle();
+      this.$.eSettings.open();
     },
 
     _onRenderComplete: function (buffer) {
@@ -243,6 +260,9 @@ Example:
     _initialize: function () {
       this._onResize();
       this._editor.on('change', this._onCodeChange.bind(this));
+      
+      // TODO: implement on-the-fly auto-completion.
+      // this._editor.on('inputRead', this._showAutoCompletionIfPossible.bind(this));
 
       this._isDirty = false;
     },
@@ -312,13 +332,20 @@ Example:
       return this._lastRenderedAudioBuffer;
     },
 
+    /**
+     * Save the current buffer to a file.
+     */
+    saveCode: function () {
+      // TODO: http://jsfiddle.net/UselessCode/qm5AG/
+      // var code = this._editor.getValue();
+    },
+
     // Life cycle method.
 
     ready: function() {
       this._editor = CodeMirror(this.$.eEditor, this._EDITOR_OPTIONS);
 
-      // TODO: this.$.ePanel height takes some times to be initialized properly.
-      // TODO: make this a resize-aware element.
+      // NOTE: this.$.ePanel height takes some times to be initialized properly.
       this.async(this._initialize, 5);
     },
 

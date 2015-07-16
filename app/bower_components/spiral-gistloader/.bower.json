@@ -24,12 +24,12 @@
     "/demo/"
   ],
   "dependencies": {
-    "polymer": "Polymer/polymer#^1.0.0",
-    "iron-ajax": "PolymerElements/iron-ajax#^1.0.0",
-    "paper-icon-button": "PolymerElements/paper-icon-button#^1.0.0",
-    "paper-input": "PolymerElements/paper-input#^1.0.0",
-    "paper-item": "PolymerElements/paper-item#^1.0.0",
-    "paper-menu": "PolymerElements/paper-menu#^1.0.0",
+    "polymer": "Polymer/polymer#^1.0.6",
+    "iron-ajax": "PolymerElements/iron-ajax#^1.0.3",
+    "paper-icon-button": "PolymerElements/paper-icon-button#^1.0.3",
+    "paper-input": "PolymerElements/paper-input#^1.0.6",
+    "paper-item": "PolymerElements/paper-item#^1.0.2",
+    "paper-menu": "PolymerElements/paper-menu#^1.0.1",
     "paper-toast": "PolymerElements/paper-toast#^1.0.0"
   },
   "devDependencies": {
@@ -40,9 +40,9 @@
   "_resolution": {
     "type": "version",
     "tag": "v0.0.2",
-    "commit": "650d131dc5d21752780358cc53961a76b0cdb4c8"
+    "commit": "76454a464cb306a4cc668bc141a6db88f649d701"
   },
   "_source": "git://github.com/hoch/spiral-gistloader.git",
-  "_target": "~0.0.2",
+  "_target": "^0.0.2",
   "_originalSource": "hoch/spiral-gistloader"
 }

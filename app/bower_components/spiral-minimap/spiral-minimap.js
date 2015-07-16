@@ -4,14 +4,14 @@
     width: 400,
     height: 64,
     heightInfoArea: 16,
-    color: '#03A9F4',
-    colorBackground: '#EEE',
+    color: '#4FC3F7',
+    colorBackground: '#ECEFF1',
     colorOverlayRect: 'rgba(240, 240, 240, 0.75)',
-    colorHandle: '#E91E63',
-    colorCenterLine: '#B0BEC5',
+    colorHandle: '#FF5722',
+    colorCenterLine: '#37474F',
     colorInfo: '#1B5E20',
     colorBorder: '#FFF',
-    fontInfo: '10.5px Arial',
+    fontInfo: '11px Arial',
     SPPThreshold: 10.0
   };
 
@@ -38,6 +38,7 @@
     this.sampleRate = 44100;
     this.absPeak = 0.0;
 
+    this.ctx.font = 
     this.ctx.textAlign = 'center';
   };
 
@@ -218,6 +219,7 @@
 
     // Draw texts.
     // TODO: fixed all the hard-coded numbers.
+    this.ctx.font = STYLE.fontInfo;
     this.ctx.textAlign = 'center';
     this.ctx.fillText((this.regionEnd - this.regionStart).toFixed(3), 
       regionStartPixel + (regionEndPixel - regionStartPixel) * 0.5, this.height * 0.5 + 15);

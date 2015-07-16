@@ -25,20 +25,20 @@
     "/demo/"
   ],
   "dependencies": {
-    "polymer": "Polymer/polymer#^1.0.0",
-    "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#^1.0.0"
+    "polymer": "Polymer/polymer#^1.0.6",
+    "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#^1.0.2"
   },
   "devDependencies": {
-    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.5",
     "web-component-tester": "*"
   },
   "_release": "0.0.2",
   "_resolution": {
     "type": "version",
     "tag": "v0.0.2",
-    "commit": "a5133d1e1986d78f746399eab1bb9a1fa7997c88"
+    "commit": "34af7904a0cecf5f871f6dcc04dc7995b5f21862"
   },
   "_source": "git://github.com/hoch/spiral-minimap.git",
-  "_target": "~0.0.2",
+  "_target": "^0.0.2",
   "_originalSource": "hoch/spiral-minimap"
 }
