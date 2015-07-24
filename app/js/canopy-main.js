@@ -8,7 +8,7 @@
   'use strict';
 
   var eAppShell, eGistLoader, eWaveform, eMiniMap, eCoder;
-  var eBtnLoop;
+  var eBtnPlay, eBtnLoop;
 
   Canopy.initialize = function () {
 
@@ -20,6 +20,9 @@
     eCoder = document.querySelector('#eCoder');
 
     eBtnLoop = document.querySelector('#eBtnLoop');
+    eBtnPlay = document.querySelector('#eBtnPlay');
+
+    // Initial states.
     eBtnLoop.style.color = "gray";
 
     // Event handlers.
@@ -60,11 +63,17 @@
       eWaveform.setAudioBuffer(buffer);
       eMiniMap.setAudioBuffer(buffer);
       Canopy.Audio.setAudioBuffer(buffer);
+
+      eWaveform.setViewRange(0, buffer.duration * 0.25);
+      eMiniMap.setRegion(0, buffer.duration * 0.25);
     };
 
     // Set default codes.
     eCoder.setCode(
-      '// Press render button to hear the sound.\n\n' +
+      '// Press RENDER button on the editor`s toolbar.\n' +
+      '//\n' +
+      '// @channels 1\n' +
+      '// @duration 1.0\n\n' +
       'var osc = context.createOscillator();\n' +
       'var gain = context.createGain();\n' +
       'gain.gain.value = 0.5;\n' +
@@ -107,13 +116,10 @@
 
   // Entry point on WebComponentsReady.
   window.addEventListener('WebComponentsReady', function () {
-
     Canopy.initialize();
-
     eWaveform.setController(Canopy.router);
     eMiniMap.setController(Canopy.router);
     eCoder.setController(Canopy.router);
-
   });
 
 })(Canopy);

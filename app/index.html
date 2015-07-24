@@ -16,11 +16,28 @@
     disable-swipe="true" disable-edge-swipe="true">
 
     <!-- drawer -->
-    <div drawer>
-      <spiral-gistloader id="eGistLoader"></spiral-gistloader>
-      <div class="stuff">
-        <span>GitHub</span>
-        <span>Issue Tracker</span>
+    <div drawer class="vertical layout">
+      <div class="c-gistloader-title">Loading Gist</div>
+      <spiral-gistloader id="eGistLoader" class="flex"></spiral-gistloader>
+      <div class="c-about horizontal layout">
+        <!-- <paper-item>
+          <a href="http://hoch.io" target="_blank" class="c-about-link">
+            <iron-icon icon="info" item-icon class="c-about-icon"></iron-icon>
+            <span>hoch?</span>
+          </a>
+        </paper-item> -->
+        <paper-item>
+          <a href="https://github.com/hoch/canopy" target="_blank" class="c-about-link">
+            <iron-icon icon="home" item-icon class="c-about-icon"></iron-icon>
+            <span>GitHub</span>
+          </a>
+        </paper-item>
+        <paper-item>
+          <a href="https://github.com/hoch/canopy/issues" target="_blank" class="c-about-link">
+            <iron-icon icon="report-problem" item-icon class="c-about-icon"></iron-icon>
+            <span>Issue Tracker</span>
+          </a>
+        </paper-item>
       </div>
     </div>
 
@@ -34,6 +51,7 @@
           <paper-icon-button icon="av:play-arrow" onclick="Canopy.onPlay()"></paper-icon-button>
           <paper-icon-button icon="av:repeat" onclick="Canopy.onToggleLoop()" id="eBtnLoop"></paper-icon-button>
           <span class="flex"></span>
+          <paper-icon-button icon="av:equalizer" onclick="Canopy.onToggleSpectra()" disabled></paper-icon-button>
           <paper-icon-button icon="editor:mode-edit" onclick="Canopy.onShowCoder()"></paper-icon-button>
         </paper-toolbar>
       </paper-material>
@@ -44,11 +62,10 @@
         <spiral-waveform id="eWaveform"></spiral-waveform>
       </div>
     </div>
-
   </paper-drawer-panel>
 
-  <!-- code editor -->
-  <spiral-coder id="eCoder" class="c-canopy-coder"></spiral-coder>
+  <!-- code editor and spectrogram -->
+  <spiral-coder id="eCoder" class="c-canopy-coder"></spiral-coder>  
 
   <!-- app entry point -->
   <script src="js/canopy.js"></script>

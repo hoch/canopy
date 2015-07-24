@@ -65,17 +65,19 @@ Example:
       width: 100%;
     }
 
-    paper-toolbar {
-      --paper-toolbar-background: #455A64;
+    #eBtnRender {
+      --iron-icon-width: 36px;
+      --iron-icon-height: 36px;
     }
 
-    paper-button {
-      color: var(--paper-light-green-900);
-      background-color: var(--google-grey-300);
+    #eBtnRender.emphasize {
+      animation: clickme 2s infinite;
     }
 
-    paper-button:hover {
-      background-color: var(--paper-light-green-200);
+    @keyframes clickme {
+      0%    { color: #E1F5FE; width: 24px; }
+      50%   { color: #03A9F4; width: 36px; }
+      100%  { color: #E1F5FE; width: 24px; }
     }
   </style>
 
@@ -84,8 +86,7 @@ Example:
     <paper-header-panel id="ePanel" class="vertical layout">
       <paper-toolbar>
         <paper-icon-button icon="close" on-click="hide"></paper-icon-button>
-        <paper-icon-button icon="settings" on-click="_openRenderSettings"></paper-icon-button>
-        <paper-icon-button icon="file-download" on-click="saveCode" disabled></paper-icon-button>
+        <!-- <paper-icon-button icon="settings" on-click="_openRenderSettings" disabled></paper-icon-button> -->
         <span class="flex"></span>
         <paper-icon-button id="eBtnRender" icon="send" on-click="_renderAudioBuffer"></paper-icon-button>
       </paper-toolbar>
@@ -192,6 +193,7 @@ Example:
 
       this._isDirty = true;
       this.$.eBtnRender.removeAttribute('disabled');
+      this.$.eBtnRender.classList.add('emphasize');
     },
 
     _markAsClean: function () {
@@ -200,12 +202,13 @@ Example:
 
       this._isDirty = false;
       this.$.eBtnRender.setAttribute('disabled', true);
+      this.$.eBtnRender.classList.remove('emphasize');
     },
 
     _showAutoCompletionIfPossible: function (cm) {
       // TODO: implement on-the-fly auto-completion. (http://jsfiddle.net/u26mK/6/)
       // setTimeout(function () {
-      //   CodeMirror.showHint(cm, CodeMirror.hint.javascript, { completeSingle: false });  
+      //   CodeMirror.showHint(cm, CodeMirror.hint.javascript, { completeSingle: false });
       // }, 150);
     },
 
@@ -260,7 +263,7 @@ Example:
     _initialize: function () {
       this._onResize();
       this._editor.on('change', this._onCodeChange.bind(this));
-      
+
       // TODO: implement on-the-fly auto-completion.
       // this._editor.on('inputRead', this._showAutoCompletionIfPossible.bind(this));
 
@@ -345,7 +348,8 @@ Example:
     ready: function() {
       this._editor = CodeMirror(this.$.eEditor, this._EDITOR_OPTIONS);
 
-      // NOTE: this.$.ePanel height takes some times to be initialized properly.
+      // Give 5msec delay. |this.$.ePanel| height takes some times to be
+      // initialized properly.
       this.async(this._initialize, 5);
     },
 

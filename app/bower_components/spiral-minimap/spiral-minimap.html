@@ -196,18 +196,17 @@ Example:
       switch(pos.state) {
 
         case 'start':
-          if (handleL - 40 <= pos.x && pos.x <= handleL + 5) {
+          if (handleL - 40 <= pos.x && pos.x <= handleL + 10) {
             this._uiMode = 'MOVE_HANDLE_L';
-          } else if (handleR - 5 <= pos.x && pos.x <= handleR + 40) {
+          } else if (handleR - 10 <= pos.x && pos.x <= handleR + 40) {
             this._uiMode = 'MOVE_HANDLE_R';
-          } else if (handleL + 5 < pos.x && pos.x < handleR - 5) {
+          } else if (handleL + 10 < pos.x && pos.x < handleR - 10) {
             this._uiMode = 'MOVE_REGION';
           } else {
             this._uiMode = 'CREATE_REGION';
-            // TODO:
-            // handleL = pos.x;
-            // handleR = pos.x;
-            // needsUpdate = true;
+            handleL = pos.x;
+            handleR = pos.x;
+            needsUpdate = true;
           }
           break;
 
@@ -230,12 +229,11 @@ Example:
                 needsUpdate = true;
               break;
             case 'CREATE_REGION':
-              // TODO:
-              // if (pos.ddx > 0)
-              //   handleR = pos.x;
-              // else
-              //   handleL = pos.
-              // needsUpdate = true;
+              if (pos.ddx > 0 && pos.x > handleR)
+                handleR = pos.x;
+              else if (pos.ddx < 0 && pos.x < handleL)
+                handleL = pos.x;
+              needsUpdate = true;
               break;
           }
           break;

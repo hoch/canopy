@@ -11,6 +11,21 @@
   function CodeRenderer(code, options) {
     this.onComplete = options.onComplete;
 
+    // Extract parameters in the header comment.
+    var sampleRate = /\/\/\s*@sampleRate\s*(\S+)/g.exec(code);
+    var numChannels = /\/\/\s*@channels\s*(\S+)/g.exec(code);
+    var duration = /\/\/\s*@duration\s*(\S+)/g.exec(code);
+
+    // Settings in code override the setting from the control panel.
+    if (sampleRate)
+      options.sampleRate = Math.max(3000, Math.min(192000, Number(sampleRate[1])));
+
+    if (numChannels)
+      options.numChannels = Math.max(1, Math.min(32, Number(numChannels[1])));
+    
+    if (duration)
+      options.duration = Math.max(0.5, Math.min(10, Number(duration[1])));
+
     var header = 'var context = new OfflineAudioContext(' + 
       options.numChannels + ', ' +
       options.sampleRate * options.duration + ', ' +

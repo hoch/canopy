@@ -155,6 +155,10 @@ Example:
 
     _createModules: function () {
       // ASSERT(this._audioBuffer);
+      
+      // Initialize view port.
+      this._viewStart = 0;
+      this._viewEnd = this._audioBuffer.duration;
 
       // Create TimeRuler.
       this._timeRuler = SpiralWaveform.createTimeRuler(this._ctxTimeRuler,
@@ -184,14 +188,7 @@ Example:
       var rect = this.getBoundingClientRect();
       this._width = (rect.width || this._width);
       this._height = this.parentNode.clientHeight;
-      // this._height = (this.parentNode.clientHeight || this._height);
       
-      // this._height = rect.height;
-      // console.log(this.parentNode.clientHeight);
-
-      // Forcibly update the size of waveform container div. This is needed to
-      // get the calculated |clientWidth| later.
-      // 
       // TODO: handle the height properly.
       this.$.eWaveformContainer.style.width = this._width + 'px';
       this.$.eWaveformContainer.style.height = (this._height - this._heightTimeRuler) + 'px';
@@ -400,7 +397,7 @@ Example:
         return;
 
       this._audioBuffer = audioBuffer;
-
+      
       // Create modules with the buffer and resize manually.
       this._createModules();
       this._onResize();
