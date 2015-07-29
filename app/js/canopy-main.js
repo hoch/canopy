@@ -7,8 +7,8 @@
 
   'use strict';
 
-  var eAppShell, eGistLoader, eWaveform, eMiniMap, eCoder;
-  var eBtnPlay, eBtnLoop;
+  var eAppShell, eGistLoader, eWaveform, eMiniMap, eCoder, eSpectra;
+  var eBtnPlay, eBtnLoop, eBtnSpectra;
 
   Canopy.initialize = function () {
 
@@ -18,12 +18,14 @@
     eWaveform = document.querySelector('#eWaveform');
     eMiniMap = document.querySelector('#eMiniMap');
     eCoder = document.querySelector('#eCoder');
+    eSpectra = document.querySelector('#eSpectra');
 
     eBtnLoop = document.querySelector('#eBtnLoop');
     eBtnPlay = document.querySelector('#eBtnPlay');
 
     // Initial states.
-    eBtnLoop.style.color = "gray";
+    eBtnLoop.style.color = 'gray';
+    eSpectra.setScale('linear');
 
     // Event handlers.
     Canopy.onOpenGistLoader = function () {
@@ -48,10 +50,17 @@
       Canopy.Audio.toggleLoop();
 
       if (Canopy.Audio.loop)
-        eBtnLoop.style.color = "orange";
+        eBtnLoop.style.color = 'orange';
       else
-        eBtnLoop.style.color = "gray";
+        eBtnLoop.style.color = 'gray';
     };
+
+    Canopy.onToggleSpectra = function () {
+      if (eSpectra.shown)
+        eSpectra.hide();
+      else
+        eSpectra.show();
+    }
 
     // Component-specific event handler.
     eGistLoader.onGistLoaded = function (gist) {
@@ -62,10 +71,12 @@
     eCoder.onRenderComplete = function (buffer) {
       eWaveform.setAudioBuffer(buffer);
       eMiniMap.setAudioBuffer(buffer);
+      eSpectra.setAudioBuffer(buffer);
       Canopy.Audio.setAudioBuffer(buffer);
 
       eWaveform.setViewRange(0, buffer.duration * 0.25);
       eMiniMap.setRegion(0, buffer.duration * 0.25);
+      eSpectra.setRegion(0, buffer.duration * 0.25);
     };
 
     // Set default codes.
@@ -90,10 +101,13 @@
       switch (id) {
         case 'spiral-minimap':
           eWaveform.setViewRange(data.start, data.end);
+          eSpectra.setRegion(data.start, data.end);
           break;
         case 'spiral-waveform':
           eMiniMap.setRegion(data.start, data.end);
+          eSpectra.setRegion(data.start, data.end);
           break;
+        // TODO: more structured event handling.
         // case 'spiral-coder':
         //   eWaveform.setAudioBuffer(data.buffer);
         //   eMiniMap.setAudioBuffer(data.buffer);
@@ -120,6 +134,7 @@
     eWaveform.setController(Canopy.router);
     eMiniMap.setController(Canopy.router);
     eCoder.setController(Canopy.router);
+    eSpectra.setController(Canopy.router);
   });
 
 })(Canopy);

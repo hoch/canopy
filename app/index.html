@@ -51,7 +51,7 @@
           <paper-icon-button icon="av:play-arrow" onclick="Canopy.onPlay()"></paper-icon-button>
           <paper-icon-button icon="av:repeat" onclick="Canopy.onToggleLoop()" id="eBtnLoop"></paper-icon-button>
           <span class="flex"></span>
-          <paper-icon-button icon="av:equalizer" onclick="Canopy.onToggleSpectra()" disabled></paper-icon-button>
+          <paper-icon-button icon="av:equalizer" onclick="Canopy.onToggleSpectra()"></paper-icon-button>
           <paper-icon-button icon="editor:mode-edit" onclick="Canopy.onShowCoder()"></paper-icon-button>
         </paper-toolbar>
       </paper-material>
@@ -61,11 +61,13 @@
       <div class="flex">
         <spiral-waveform id="eWaveform"></spiral-waveform>
       </div>
+      <spiral-spectra id="eSpectra" class="c-canopy-spectra"></spiral-spectra>
     </div>
   </paper-drawer-panel>
 
   <!-- code editor and spectrogram -->
-  <spiral-coder id="eCoder" class="c-canopy-coder"></spiral-coder>  
+  <spiral-coder id="eCoder" class="c-canopy-coder"></spiral-coder>
+  
 
   <!-- app entry point -->
   <script src="js/canopy.js"></script>
