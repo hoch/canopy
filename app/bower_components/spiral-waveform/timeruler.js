@@ -3,12 +3,12 @@
   var STYLE = {
     width: 400,
     height: 32,
-    color: '#CFD8DC',
-    colorShadow: '#607D8B',
-    gridWidth: 55,
+    color: '#B0BEC5',
+    colorShadow: '#78909C',
+    gridWidth: 80,
     gridLineWidth: 1.0,
-    gridColor: '#37474F',
-    font: '10.5px Arial'
+    gridColor: '#263238',
+    font: '11px Arial'
   };
 
   /**
@@ -25,6 +25,7 @@
     this.width = (width || STYLE.width);
     this.height = (height || STYLE.height);
     this.gridDuration = 1.0;
+    this.externalGridDrawer = null;
   };
 
   TimeRuler.prototype.setSize = function (width, height) {

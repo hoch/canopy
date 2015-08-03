@@ -1,6 +1,6 @@
 {
   "name": "spiral-gistloader",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "authors": [
     "Hongchan Choi <hongchan.choi@gmail.com>"
   ],
@@ -24,25 +24,25 @@
     "/demo/"
   ],
   "dependencies": {
-    "polymer": "Polymer/polymer#^1.0.6",
+    "polymer": "Polymer/polymer#^1.0.8",
     "iron-ajax": "PolymerElements/iron-ajax#^1.0.3",
     "paper-icon-button": "PolymerElements/paper-icon-button#^1.0.3",
-    "paper-input": "PolymerElements/paper-input#^1.0.6",
+    "paper-input": "PolymerElements/paper-input#^1.0.7",
     "paper-item": "PolymerElements/paper-item#^1.0.2",
     "paper-menu": "PolymerElements/paper-menu#^1.0.1",
     "paper-toast": "PolymerElements/paper-toast#^1.0.0"
   },
   "devDependencies": {
-    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.5",
     "web-component-tester": "*"
   },
-  "_release": "0.0.2",
+  "_release": "0.0.3",
   "_resolution": {
     "type": "version",
-    "tag": "v0.0.2",
-    "commit": "76454a464cb306a4cc668bc141a6db88f649d701"
+    "tag": "v0.0.3",
+    "commit": "d5a395cdc3c19bb77bfa1a4dd95aa1f36244eaaa"
   },
   "_source": "git://github.com/hoch/spiral-gistloader.git",
-  "_target": "^0.0.2",
+  "_target": "^0.0.3",
   "_originalSource": "hoch/spiral-gistloader"
 }

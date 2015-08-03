@@ -1,6 +1,6 @@
 {
   "name": "spiral-minimap",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "authors": [
     "Hongchan Choi <hongchan.choi@gmail.com>"
   ],
@@ -25,7 +25,7 @@
     "/demo/"
   ],
   "dependencies": {
-    "polymer": "Polymer/polymer#^1.0.6",
+    "polymer": "Polymer/polymer#^1.0.8",
     "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#^1.0.2"
   },
   "devDependencies": {

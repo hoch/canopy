@@ -3,12 +3,12 @@
   var STYLE = {
     width: 38,
     height: 192,
-    color: '#CFD8DC',
-    colorShadow: '#607D8B',
+    color: '#B0BEC5',
+    colorShadow: '#78909C',
     gridHeight: 24,
     colorGrid: '#37474F',
-    colorBorder: '#FFF',
-    font: '10.5px Arial'
+    colorBorder: '#607D8B',
+    font: '11px Arial'
   };
 
   /**
@@ -118,9 +118,8 @@
     }
     this.ctx.stroke();
 
-    // clear residues.
+    // Draw bottom border.
     this.ctx.strokeStyle = STYLE.colorBorder;
-    this.ctx.strokeRect(0, 0, this.width, 0);
     this.ctx.strokeRect(0, this.height, this.width, this.height);
 
     // Pop back up.

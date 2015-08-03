@@ -1,6 +1,6 @@
 {
   "name": "spiral-waveform",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "authors": [
     "Hongchan Choi <hongchan.choi@gmail.com>"
   ],
@@ -25,20 +25,20 @@
     "/demo/"
   ],
   "dependencies": {
-    "polymer": "Polymer/polymer#^1.0.6",
+    "polymer": "Polymer/polymer#^1.0.8",
     "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#^1.0.2"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.5",
     "web-component-tester": "*"
   },
-  "_release": "0.0.2",
+  "_release": "0.0.3",
   "_resolution": {
     "type": "version",
-    "tag": "v0.0.2",
-    "commit": "4666286b6170746a0e51e2007eff9655e4de493c"
+    "tag": "v0.0.3",
+    "commit": "8e05bf0e1fac8a830b0944e91cb899b7b8166638"
   },
   "_source": "git://github.com/hoch/spiral-waveform.git",
-  "_target": "^0.0.2",
+  "_target": "^0.0.3",
   "_originalSource": "hoch/spiral-waveform"
 }

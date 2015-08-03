@@ -162,7 +162,7 @@ Example:
 
       // Create TimeRuler.
       this._timeRuler = SpiralWaveform.createTimeRuler(this._ctxTimeRuler,
-        0, 0, this._width, this._heightTimeRuler);
+        this._widthAmpRuler, 0, this._width, this._heightTimeRuler);
 
       // Create AmpRulers and WaveformDrawers.
       var numChannels = this._audioBuffer.numberOfChannels;
@@ -174,7 +174,7 @@ Example:
         this._ampRulers[i] = SpiralWaveform.createAmpRuler(this._ctxWaveform,
           0, yOffset, this._widthAmpRuler, this._heightChannel);
         this._waveformDrawers[i] = SpiralWaveform.createWaveformDrawer(this._ctxWaveform,
-          0, yOffset, this._width, this._heightChannel);
+          this._widthAmpRuler, yOffset, this._width, this._heightChannel);
         this._waveformDrawers[i].setSampleData(channelData, this._audioBuffer.sampleRate);
       }
     },
@@ -223,7 +223,7 @@ Example:
       // If absPeak is not given and the buffer is available, calculate the peak
       // value.
       if (!absPeak && this._audioBuffer)
-        this._absPeak = this._findAbsolutePeak();
+        this._absPeak = this._findAbsolutePeak() * 1.075;
       else
         this._absPeak = absPeak;
 
@@ -240,6 +240,12 @@ Example:
       }
       
       this._timeRuler.draw(this._viewStart, this._viewEnd);
+
+      // Cleaning up no man's land. (left-upper corder)
+      // color: '#CFD8DC',
+      // colorShadow: '#607D8B',
+      this._ctxTimeRuler.fillStyle = '#90A4AE';
+      this._ctxTimeRuler.fillRect(0, 0, this._widthAmpRuler, this._heightTimeRuler);
     },
 
 

@@ -26,6 +26,7 @@
     // Initial states.
     eBtnLoop.style.color = 'gray';
     eSpectra.setScale('linear');
+    eSpectra.hide();
 
     // Event handlers.
     Canopy.onOpenGistLoader = function () {
@@ -56,10 +57,12 @@
     };
 
     Canopy.onToggleSpectra = function () {
-      if (eSpectra.shown)
-        eSpectra.hide();
-      else
+      console.log(eSpectra.hidden)
+      if (eSpectra.hidden)
         eSpectra.show();
+      else
+        eSpectra.hide();
+      console.log(eSpectra.hidden)
     }
 
     // Component-specific event handler.

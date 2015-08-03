@@ -45,10 +45,6 @@
   MiniMap.prototype.setSize = function (width, height) {
     this.width = (width || STYLE.width);
     this.height = (height || STYLE.height);
-    this.ctx.canvas.width = this.width;
-    this.ctx.canvas.height = this.height;
-    this.ctx.canvas.style.width = this.width + 'px';
-    this.ctx.canvas.style.height = this.height + 'px';
     this.yCenter = this.height / 2;
     this.draw();
   };
@@ -214,9 +210,9 @@
     // Draw handles. (boxes)
     this.ctx.fillStyle = STYLE.colorHandle;
     this.ctx.fillRect(regionStartPixel, this.yCenter, regionEndPixel - regionStartPixel, 1);
-    this.ctx.fillRect(regionStartPixel, 0, 2, this.height);
+    this.ctx.fillRect(regionStartPixel, 0, 4, this.height);
     this.ctx.fillRect(regionStartPixel - 40, this.yCenter - 10, 40, 20);
-    this.ctx.fillRect(regionEndPixel - 2, 0, 2, this.height);
+    this.ctx.fillRect(regionEndPixel - 4, 0, 4, this.height);
     this.ctx.fillRect(regionEndPixel, this.yCenter - 10, 40, 20);
 
     // Draw texts.

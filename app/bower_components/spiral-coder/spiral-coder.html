@@ -6,23 +6,19 @@ Copyright (c) 2015 Hongchan Choi. All rights reserved.
 <link rel="import" href="../iron-icons/iron-icons.html">
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../paper-button/paper-button.html">
-<link rel="import" href="../paper-dialog/paper-dialog.html">
 <link rel="import" href="../paper-header-panel/paper-header-panel.html">
 <link rel="import" href="../paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../paper-slider/paper-slider.html">
 <link rel="import" href="../paper-styles/paper-styles.html">
 <link rel="import" href="../paper-toolbar/paper-toolbar.html">
-
 
 <!-- CodeMirror -->
 <link rel="stylesheet" href="../CodeMirror/lib/codemirror.css">
 <link rel="stylesheet" href="../CodeMirror/addon/hint/show-hint.css">
 <link rel="stylesheet" href="../CodeMirror/theme/elegant.css">
 <script src="../CodeMirror/lib/codemirror.js"></script>
-<script src="../CodeMirror/addon/hint/show-hint.js"></script>
-<script src="../CodeMirror/addon/hint/javascript-hint.js"></script>
 <script src="../CodeMirror/mode/javascript/javascript.js"></script>
-
+<script src="../CodeMirror/addon/hint/show-hint.js"></script>
+<script src="waa-hint.js"></script>
 
 <!-- SpiralCoder::CodeRenderer -->
 <script src="code-renderer.js"></script>
@@ -44,7 +40,6 @@ Example:
       @apply(--layout);
       @apply(--shadow-elevation-2dp);
       font-family: "Roboto";
-      background-color: #eee;
       min-width: 500px;
     }
 
@@ -53,31 +48,36 @@ Example:
       min-height: 250px;
     }
 
-    #eSettings {
-      border-radius: 0.em;
-      max-width: 300px;
-      width: 300px;
-      padding: 0 0.5em 0.75em 0.5em;
-      /* change max-height causes a very weird issue. */
+    paper-toolbar {
+      --paper-toolbar: {
+        background-color: #455A64;
+      };
     }
 
-    paper-slider {
-      width: 100%;
-    }
-
-    #eBtnRender {
-      --iron-icon-width: 36px;
-      --iron-icon-height: 36px;
-    }
-
-    #eBtnRender.emphasize {
-      animation: clickme 2s infinite;
+    #eBtnRender.on-codechange {
+      color: #F48FB1;
+      animation: clickme 1s 1;
     }
 
     @keyframes clickme {
-      0%    { color: #E1F5FE; width: 24px; }
-      50%   { color: #03A9F4; width: 36px; }
-      100%  { color: #E1F5FE; width: 24px; }
+      0%    { -webkit-transform: scale(1.75) rotate(0); }
+      100%  { -webkit-transform: scale(1) rotate(1.0turn); }
+    }
+
+    #eStatusBar {
+      color: #37474F;
+      background-color: #ECEFF1;
+      height: 23px;
+      line-height: 23px;
+      border-top: 1px solid #ccc;
+      font-size: 10px;
+      text-align: right;
+      padding: 0 7.5px;
+      overflow: hidden;
+    }
+
+    #eStatusBar.on-error {
+      background-color: #F48FB1;
     }
   </style>
 
@@ -91,26 +91,8 @@ Example:
         <paper-icon-button id="eBtnRender" icon="send" on-click="_renderAudioBuffer"></paper-icon-button>
       </paper-toolbar>
       <div id="eEditor" class="flex"></div>
+      <div id="eStatusBar"></div>
     </paper-header-panel>
-
-    <paper-dialog id="eSettings">
-      <h3>Render Settings</h3>
-      <div class="vertical-section">
-        <div>Sample Rate (Hz)</div>
-        <paper-slider on-change="_onRenderSettingChanged"
-          value="{{_renderOptions.sampleRate}}" min="3000" max="192000" step="100" editable></paper-slider>
-        <div>Number of Channels</div>
-        <paper-slider on-change="_onRenderSettingChanged"
-          value="{{_renderOptions.numChannels}}" min="1" max="32" editable></paper-slider>
-        <div>Duration (sec.)</div>
-        <paper-slider on-change="_onRenderSettingChanged"
-          value="{{_renderOptions.duration}}" min="0.5" max="10" step="0.5" editable></paper-slider>
-        </div>
-        <div class="buttons">
-          <paper-button dialog-confirm autofocus>OK</paper-button>
-        </div>
-      </div>
-    </paper-dialog>
 
   </template>
 
@@ -136,8 +118,7 @@ Example:
           lineWrapping: true,
           lineNumbers: true,
           value: '// Spiral is here!\n\n',
-          theme: 'elegant',
-          extraKeys: { 'Ctrl-Space': 'autocomplete' }
+          theme: 'elegant'
         }
       },
 
@@ -165,6 +146,7 @@ Example:
       _isDirty: Boolean,
       _editor: Object,
       _lastRenderedAudioBuffer: Object,
+      
       _componentId: {
         type: String,
         value: 'spiral-coder'
@@ -193,7 +175,7 @@ Example:
 
       this._isDirty = true;
       this.$.eBtnRender.removeAttribute('disabled');
-      this.$.eBtnRender.classList.add('emphasize');
+      this.$.eBtnRender.classList.add('on-codechange');
     },
 
     _markAsClean: function () {
@@ -202,18 +184,18 @@ Example:
 
       this._isDirty = false;
       this.$.eBtnRender.setAttribute('disabled', true);
-      this.$.eBtnRender.classList.remove('emphasize');
+      this.$.eBtnRender.classList.remove('on-codechange');
     },
 
     _showAutoCompletionIfPossible: function (cm) {
-      // TODO: implement on-the-fly auto-completion. (http://jsfiddle.net/u26mK/6/)
-      // setTimeout(function () {
-      //   CodeMirror.showHint(cm, CodeMirror.hint.javascript, { completeSingle: false });
-      // }, 150);
+      // On-the-fly auto-completion. (http://jsfiddle.net/u26mK/6/)
+      setTimeout(function () {
+        CodeMirror.showHint(cm, CodeMirror.hint.webaudioapi, { completeSingle: false });
+      }, 250);
     },
 
     _onResize: function () {
-      var editorHeight = this.$.ePanel.clientHeight - 64;
+      var editorHeight = this.$.ePanel.clientHeight - 64 - 24;
       this._editor.setSize('100%', editorHeight);
       this._editor.refresh();
     },
@@ -238,6 +220,8 @@ Example:
 
       this._markAsClean();
 
+      this._setStatusBar('post', 'Successfully rendered');
+
       this._notify('render-complete', {
         buffer: this._lastRenderedAudioBuffer
       });
@@ -252,9 +236,28 @@ Example:
           numChannels: this._renderOptions.numChannels
         });
       } catch (error) {
-        var message = '[' + error.name + '] ' + error.message;
-        console.log(error.stack, message);
+        // console.dir(error);
+        var message = '[' + error.name + '] ' + error.message + '.';
+        this._setStatusBar('error', message);
       }
+    },
+
+    _setStatusBar: function (type, message) {
+      switch (type) {
+        case 'post':
+          this.$.eStatusBar.classList.remove('on-error');
+          break;
+        case 'error':
+          this.$.eStatusBar.classList.add('on-error');
+          break;
+      }
+
+      var d = new Date();
+
+      var now = d.getMonth() + '/' + d.getDate() + '/' + d.getFullYear() + ' ' + 
+        d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
+
+      eStatusBar.textContent = message + ' (' + now + ')';
     },
 
 
@@ -264,9 +267,10 @@ Example:
       this._onResize();
       this._editor.on('change', this._onCodeChange.bind(this));
 
-      // TODO: implement on-the-fly auto-completion.
-      // this._editor.on('inputRead', this._showAutoCompletionIfPossible.bind(this));
+      // Implement on-the-fly auto-completion.
+      this._editor.on('inputRead', this._showAutoCompletionIfPossible.bind(this));
 
+      this._setStatusBar('post', '<spiral-coder> is ready.');
       this._isDirty = false;
     },
 
@@ -351,11 +355,7 @@ Example:
       // Give 5msec delay. |this.$.ePanel| height takes some times to be
       // initialized properly.
       this.async(this._initialize, 5);
-    },
-
-    attached: function() {},
-
-    detached: function() {}
+    }
 
   });
 

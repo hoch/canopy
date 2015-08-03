@@ -3,11 +3,11 @@
   var STYLE = {
     width: 400,
     height: 128,
-    color: '#03A9F4',
+    color: '#2196F3',
     colorClipped: '#E91E63',
-    colorBackground: '#EFEFEF',
-    colorCenterLine: '#B0BEC5',
-    colorBorder: '#FFF',
+    colorBackground: '#ECEFF1',
+    colorCenterLine: '#607D8B',
+    colorBorder: '#546E7A',
     SPPThreshold: 10.0
   };
 
@@ -64,8 +64,8 @@
     // Draw center line.
     this.ctx.beginPath();
     this.ctx.strokeStyle = STYLE.colorCenterLine;
-    this.ctx.moveTo(0, this.yCenter);
-    this.ctx.lineTo(this.width, this.yCenter);
+    this.ctx.moveTo(0, this.yCenter + 0.5);
+    this.ctx.lineTo(this.width, this.yCenter + 0.5);
     this.ctx.stroke();
 
     this.ctx.fillStyle = this.ctx.strokeStyle = STYLE.color;
@@ -78,7 +78,7 @@
 
     // clear residues.
     this.ctx.strokeStyle = STYLE.colorBorder;
-    this.ctx.strokeRect(0, 0, this.width, this.height);
+    this.ctx.strokeRect(0, this.height, this.width, 1);
 
     // Pop back up context.
     this.ctx.restore();
@@ -172,6 +172,10 @@
     }
 
     this.ctx.stroke();
+  };
+
+  WaveformDrawer.prototype.gridDrawer = function (xPos) {
+
   };
 
   SpiralWaveform.createWaveformDrawer = function (ctx, x, y, width, height) {

@@ -29,9 +29,9 @@
     var header = 'var context = new OfflineAudioContext(' + 
       options.numChannels + ', ' +
       options.sampleRate * options.duration + ', ' +
-      options.sampleRate + ');';
+      options.sampleRate + ');\n';
 
-    var footer = 'context.oncomplete = this._onComplete.bind(this);' +
+    var footer = '\ncontext.oncomplete = this._onComplete.bind(this);' +
       'context.startRendering();';
 
     // NOTE: be careful with Function. It is same with 'eval()'.
