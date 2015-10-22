@@ -17,6 +17,7 @@ gulp.task('serve', function () {
 
   gulp.watch([
     'app/*.html',
+    'app/assets/*',
     'app/js/*.js',
     'app/css/*.css',
     '!app/codemirror/**/*'

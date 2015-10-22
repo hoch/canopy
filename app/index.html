@@ -5,73 +5,11 @@
   <title>&#9835; Canopy</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-  <link rel="import" href="canopy-header.html">
+  <link rel="import" href="assets/canopy-app.html">
 </head>
 
 <body class="unresolved fullbleed">
-
-  <!-- app-scaffolding: drawer-panel -->
-  <paper-drawer-panel id="eAppShell"
-    force-narrow="true" drawer-width="352px"
-    disable-swipe="true" disable-edge-swipe="true">
-
-    <!-- drawer -->
-    <div drawer class="vertical layout">
-      <div class="c-gistloader-title">Loading Gist</div>
-      <spiral-gistloader id="eGistLoader" class="flex"></spiral-gistloader>
-      <div class="c-about horizontal layout">
-        <!-- <paper-item>
-          <a href="http://hoch.io" target="_blank" class="c-about-link">
-            <iron-icon icon="info" item-icon class="c-about-icon"></iron-icon>
-            <span>hoch?</span>
-          </a>
-        </paper-item> -->
-        <paper-item>
-          <a href="https://github.com/hoch/canopy" target="_blank" class="c-about-link">
-            <iron-icon icon="home" item-icon class="c-about-icon"></iron-icon>
-            <span>GitHub</span>
-          </a>
-        </paper-item>
-        <paper-item>
-          <a href="https://github.com/hoch/canopy/issues" target="_blank" class="c-about-link">
-            <iron-icon icon="report-problem" item-icon class="c-about-icon"></iron-icon>
-            <span>Issue Tracker</span>
-          </a>
-        </paper-item>
-      </div>
-    </div>
-
-    <!-- main -->
-    <div main class="vertical layout fit">
-      <paper-material elevation="2">
-        <paper-toolbar>
-          <paper-icon-button icon="menu" onclick="Canopy.onOpenGistLoader()"></paper-icon-button>
-          <span class="title">Canopy</span>
-          <paper-icon-button icon="av:stop" onclick="Canopy.onStop()"></paper-icon-button>
-          <paper-icon-button icon="av:play-arrow" onclick="Canopy.onPlay()"></paper-icon-button>
-          <paper-icon-button icon="av:repeat" onclick="Canopy.onToggleLoop()" id="eBtnLoop"></paper-icon-button>
-          <span class="flex"></span>
-          <paper-icon-button icon="av:equalizer" onclick="Canopy.onToggleSpectra()"></paper-icon-button>
-          <paper-icon-button icon="editor:mode-edit" onclick="Canopy.onShowCoder()"></paper-icon-button>
-        </paper-toolbar>
-      </paper-material>
-      <div>
-        <spiral-minimap id="eMiniMap" class="c-canopy-minimap"></spiral-minimap>
-      </div>
-      <div class="flex">
-        <spiral-waveform id="eWaveform"></spiral-waveform>
-      </div>
-      <spiral-spectra id="eSpectra" class="c-canopy-spectra"></spiral-spectra>
-    </div>
-  </paper-drawer-panel>
-
-  <!-- code editor and spectrogram -->
-  <spiral-coder id="eCoder" class="c-canopy-coder"></spiral-coder>
-  
-
-  <!-- app entry point -->
-  <script src="js/canopy.js"></script>
-  <script src="js/canopy-main.js"></script>
+  <canopy-app></canopy-app>
 </body>
 
 </html>

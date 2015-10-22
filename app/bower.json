@@ -14,7 +14,7 @@
     "tests"
   ],
   "dependencies": {
-    "polymer": "Polymer/polymer#^1.0.8",
+    "polymer": "Polymer/polymer#^1.1.0",
     "paper-drawer-panel": "PolymerElements/paper-drawer-panel#^1.0.3",
     "paper-header-panel": "PolymerElements/paper-header-panel#^1.0.2",
     "paper-spinner": "PolymerElements/paper-spinner#^1.0.2",
