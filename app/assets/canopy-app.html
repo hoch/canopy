@@ -89,6 +89,7 @@
 
     #eTools {
       @apply(--layout-vertical);
+      width: ;
       color: #FFF;
       background-color: #607D8B;
     }
@@ -176,6 +177,8 @@
 
       properties: {
 
+        _waveformHeight: Number,
+
         _editorHeight: {
           type: Number,
           value: 480
@@ -188,27 +191,67 @@
 
       },
 
+      _initialize: function () {
+        this.$.eWaveform.setController(this);
+        this.$.eMiniMap.setController(this);
+        this.$.eCoder.setController(this);
+
+        // Define callback for onRenderComplete for spiral-coder.
+        this.$.eCoder.onRenderComplete = this._onRenderComplete.bind(this);
+        this.$.eGistLoader.onGistLoaded = this._onGistLoaded.bind(this);
+
+        // Initialize pane heights.
+        this._updateEditorWidthByDelta(0);
+      },
+
+      postMessage: function (id, type, data) {
+        switch (id) {
+          case 'spiral-minimap':
+            this.$.eWaveform.setViewRange(data.start, data.end);
+            break;
+          case 'spiral-waveform':
+            this.$.eMiniMap.setRegion(data.start, data.end);
+            break;
+        }
+      },
+
+      _onRenderComplete: function (buffer) {
+        this.$.eWaveform.setAudioBuffer(buffer);
+        this.$.eWaveform.setViewRange(0, buffer.duration * 0.25);
+
+        this.$.eMiniMap.setAudioBuffer(buffer);
+        this.$.eMiniMap.setRegion(0, buffer.duration * 0.25);
+      },
+
+      _onGistLoaded: function (gist) {
+        this.$.eCoder.setCode(gist.code);
+      },
+
       _onBtnMenu: function () {
         this.$.eAppShell.openDrawer();
       },
 
       _onBtnRender: function () {
-        
+        this.$.eCoder.renderAudioBuffer();
       },
 
       _onBtnOpenGistLoader: function () {
         this.$.eLoaderModal.open();
       },
 
-
       _resizePanes: function () {
+        // waveform H = total H - title bar H - splitter H - editor H.
+        var waveformHeight = this.clientHeight - 42 - 16 - this._editorHeight;
+
         this.$.ePaneEditor.style.height = this._editorHeight + 'px';
-        this.$.eCoder.style.height = this._editorHeight + 'px';
-        this.async(this.notifyResize, 20);
+        this.$.ePaneWaveform.style.height = waveformHeight + 'px';
+        // this.$.eCoder.style.height = this._editorHeight + 'px';
+        this.async(this.notifyResize, 1);
       },
 
       _updateEditorWidthByDelta: function (delta) {
         this._editorHeight -= delta;
+
         if (this._editorHeight < this._paneMinHeight) {
           this._editorHeight = this._paneMinHeight;
           return;
@@ -234,7 +277,7 @@
       },
 
       ready: function () {
-        this._updateEditorWidthByDelta(0);
+        this._initialize();
       }
     });
   </script>

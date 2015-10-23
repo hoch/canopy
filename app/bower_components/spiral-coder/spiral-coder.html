@@ -178,8 +178,8 @@ Example:
         return;
 
       this._isDirty = true;
-      this.$.eBtnRender.removeAttribute('disabled');
-      this.$.eBtnRender.classList.add('on-codechange');
+      // this.$.eBtnRender.removeAttribute('disabled');
+      // this.$.eBtnRender.classList.add('on-codechange');
     },
 
     _markAsClean: function () {
@@ -187,8 +187,8 @@ Example:
         return;
 
       this._isDirty = false;
-      this.$.eBtnRender.setAttribute('disabled', true);
-      this.$.eBtnRender.classList.remove('on-codechange');
+      // this.$.eBtnRender.setAttribute('disabled', true);
+      // this.$.eBtnRender.classList.remove('on-codechange');
     },
 
     _showAutoCompletionIfPossible: function (cm) {
@@ -231,7 +231,7 @@ Example:
       });
     },
 
-    _renderAudioBuffer: function () {
+    renderAudioBuffer: function () {
       try {
         SpiralCoder.renderCodeWithOptions(this._editor.getValue(), {
           onComplete: this._onRenderComplete.bind(this),
