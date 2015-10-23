@@ -1,0 +1,33 @@
+{
+  "name": "spiral-spectra",
+  "version": "0.0.3",
+  "authors": [
+    "Hongchan Choi <hongchan.choi@gmail.com>"
+  ],
+  "description": "A Polymer element Draws the spectrogram of AudioBuffer",
+  "keywords": [
+    "web-component",
+    "web-components",
+    "polymer",
+    "audio",
+    "spiral",
+    "web-audio",
+    "spectrogram"
+  ],
+  "main": "spiral-spectra.html",
+  "license": "http://polymer.github.io/LICENSE.txt",
+  "homepage": "https://github.com/hoch/spiral-spectra/",
+  "ignore": [
+    "/.*",
+    "/test/",
+    "/demo/"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.6",
+    "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#^1.0.2"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.5",
+    "web-component-tester": "*"
+  }
+}

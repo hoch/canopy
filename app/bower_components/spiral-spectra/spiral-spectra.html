@@ -1,0 +1,277 @@
+<!--
+@license
+MIT License. Copyright (c) 2015 Hongchan Choi. All rights reserved.
+-->
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
+
+<script src="fft.js"></script>
+<script src="spiral-spectra.js"></script>
+
+<!--
+Draws the spectrogram of `AudioBuffer`.
+
+Example:
+
+    <spiral-spectra></spiral-spectra>
+
+@demo
+-->
+<dom-module id="spiral-spectra">
+
+  <style>
+    :host {
+      position: relative;
+      display: block;
+      box-sizing: border-box;
+      background-color: var(--google-grey-100);
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+
+  <template>
+    <canvas id="canvas" on-track="_onTrack"></canvas>
+  </template>
+
+</dom-module>
+
+<script>
+
+  Polymer({
+
+    is: 'spiral-spectra',
+
+    properties: {
+
+      _width: {
+        type: Number,
+        value: 480
+      },
+
+      _height: {
+        type: Number,
+        value: 240
+      },
+
+      _regionStart: Number,
+      _reiognEnd: Number,
+
+      _ctx: Object,
+      _audioBuffer: Object,
+      _spectrogramDrawer: Object,
+      _controller: Object,
+
+      _componentId: {
+        type: String,
+        value: 'spiral-spectra'
+      },
+
+      _uiMode: {
+        type: String,
+        value: 'IDLE'
+      }
+
+    },
+
+    behaviors: [
+      Polymer.IronResizableBehavior
+    ],
+
+    listeners: {
+      'iron-resize': '_onResize'
+    },
+
+
+    /** Helpers **/
+
+    _initialize: function () {
+      // Create context.
+      this._ctx = this.$.canvas.getContext('2d');
+
+      // Create minimap drawer instance.
+      this._spectrogramDrawer = SpiralSpectra.create(this._ctx, 0, 0,
+        this._width, this._height);
+    },
+
+    _onResize: function () {
+      // If the context or the drawer is not ready, stop now.
+      if (!this._ctx || !this._spectrogramDrawer)
+        return;
+
+      // Adjust canvas size with the parent node's inner size.
+      this._width = this.$.canvas.width = this.$.canvas.offsetWidth;
+      this._height = this.$.canvas.height = this.$.canvas.offsetHeight;
+      
+      // Update the dimension of minimap drawer.
+      this._spectrogramDrawer.setSize(this._width, this._height);
+
+      // Trigger redraw.
+      this._updateView();
+    },
+
+
+    /** Render-related **/
+
+    _updateView: function () {
+      if (!this._audioBuffer)
+        return;
+
+      this._render();
+    },
+
+    _render: function () {
+      if (!this._audioBuffer)
+        return;
+
+      this._spectrogramDrawer.draw();
+    },
+
+
+    /** UI helpers */
+
+    // TODO: abstract track handlers.
+    // _onLeftHandleDragged: function (deltaX) {},
+    // _onRightHandleDragged: function (deltaX) {},
+    // _onRegionDragged: function (deltaX) {},
+    // _onDragged: function (deltaX) {},
+
+    /** Track handlers */
+
+    // _updateRegion: function (handleL, handleR) {
+    //   var start = this._convertPixelToSecond(handleL);
+    //   var end = this._convertPixelToSecond(handleR);
+
+    //   if (start < end)
+    //     this._spectrogramDrawer.setRegion(start, end);
+    //   else
+    //     this._spectrogramDrawer.setRegion(end, start);
+
+    //   this._notify('region-change', {
+    //     start: start,
+    //     end: end
+    //   });
+    // },
+
+    _onTrack: function (event) {
+      if (!this._audioBuffer)
+        return;
+
+      // uiMode:
+      // { CREATE_REGION, MOVE_HANDLE_L, MOVE_HANDLE_R, MOVE_REGION, IDLE }
+
+      // var pos = event.detail;
+
+      // // Pure x, y coordinates should be contained inside the target element
+      // // without padding or margin.
+      // pos.x = event.detail.sourceEvent.offsetX;
+      // pos.y = event.detail.sourceEvent.offsetY;
+
+      // // Calculate current region area by pixels.
+      // var needsUpdate = false;
+      // var region = this._spectrogramDrawer.getRegion();
+
+      // switch(pos.state) {
+
+      //   case 'start':
+      //     break;
+
+      //   case 'track':
+      //     break;
+
+      //   case 'end':
+      //     break;
+      // }
+
+      // if (needsUpdate)
+      //   this._updateRegion(handleL, handleR);
+    },
+
+
+    /** communication */
+
+    _notify: function (eventType, data) {
+      if (this._controller)
+        this._controller.postMessage(this._componentId, eventType, data);
+    },
+
+
+    /** Polymer life cycle: created -> ready -> attached **/
+
+    // created: function () {},
+    // ready: function() {},
+
+    attached: function () {
+      // Initialize and force-resize at startup. This is done asynchronously to
+      // ensure the first redraw.
+      this.async(function () {
+        this._initialize();
+        this._onResize();  
+      }, 1);
+    },
+
+
+    /**
+     * Sets the controller object for reporting the local state change.
+     * @param {Object} controller A controller (message router).
+     */
+    setController: function (controller) {
+      this._controller = controller;
+    },
+
+    /**
+     * Sets the audio buffer object to visualize.
+     * @param {Object} audioBuffer AudioBuffer object to be rendered.
+     */
+    setAudioBuffer: function (audioBuffer) {
+      if (!audioBuffer)
+        return;
+
+      this._audioBuffer = audioBuffer;
+      this._spectrogramDrawer.setAudioBuffer(this._audioBuffer);
+
+      // Trigger draw.
+      this._updateView();
+    },
+
+    /**
+     * Sets start and end points of user-defined region.
+     * @param {Number} start Region start position in seconds.
+     * @param {Number} end   Region end position in seconds.
+     */
+    setRegion: function (start, end) {
+      if (!this._spectrogramDrawer)
+        return;
+
+      this._spectrogramDrawer.setRegion(start, end);
+      this._updateView();
+    },
+
+    /**
+     * Gets start and end points of user-defined region.
+     * @return {Object} Region start and end points in seconds.
+     */
+    getRegion: function () {
+      if (!this._audioBuffer)
+        return null;
+
+      return this._spectrogramDrawer.getRegion();
+    },
+
+    /**
+     * Sets the vertical scale of spectrogram.
+     * @param {String} mode The vertical scale of spectrogram: ['linear', 'log']
+     */
+    setScale: function (mode) {
+      this._spectrogramDrawer.setScale(mode);
+      this._updateView();
+    }
+
+  });
+
+</script>

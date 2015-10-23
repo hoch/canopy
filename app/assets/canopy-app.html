@@ -1,0 +1,242 @@
+<!--
+  <canopy-app>
+
+  @description Canopy application element. (app-shell)
+  @version 0.1.0-alpha
+  @author Hongchan Choi (hongchan.choi@gmail.com)
+-->
+
+<!-- iron/paper elements -->
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../bower_components/paper-styles/paper-styles.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-drawer-panel/paper-drawer-panel.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+
+<!-- <link rel="import" href="../bower_components/iron-icons/av-icons.html">
+<link rel="import" href="../bower_components/iron-icons/editor-icons.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+
+ -->
+
+<link rel="import" href="canopy-toolbar.html">
+
+<!-- spiral elements -->
+<link rel="import" href="../bower_components/spiral-coder/spiral-coder.html">
+<link rel="import" href="../bower_components/spiral-gistloader/spiral-gistloader.html">
+<link rel="import" href="../bower_components/spiral-minimap/spiral-minimap.html">
+<link rel="import" href="../bower_components/spiral-waveform/spiral-waveform.html">
+
+<dom-module id="canopy-app">
+
+  <style is="custom-style">
+    :host {
+      -webkit-user-select: none;
+      display: block;
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+    }
+
+    .drawer {
+      @apply(--layout-vertical);
+      z-index: 9999;
+    }
+
+    .workspace {
+      @apply(--layout-vertical);
+      z-index: 0;
+    }
+
+    #ePaneWaveform {
+      @apply(--layout-flex);
+      min-height: 256px;
+      overflow: hidden;
+    }
+
+    #eSplitter {
+      height: 16px;
+      min-height: 16px;
+      background-color: #484847;
+      box-shadow:
+        inset 0px 7px 5px -7px hsla(0, 100%, 100%, 0.45),
+        inset 0px -12px 1px -11px rgba(0,0,0,0.5);
+      cursor: row-resize;
+    }
+
+    .c-splitter-handle {
+      margin: 5px auto;
+      height: 3px;
+      width: 100px;
+      border-top: 1px solid #888888;
+      border-bottom: 1px solid #888888;
+    }
+
+    #ePaneEditor {
+      @apply(--layout-horizontal);
+      min-height: 256px;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    #eMiniMap {
+      height: 64px;
+    }
+
+    #eTools {
+      @apply(--layout-vertical);
+      color: #FFF;
+      background-color: #607D8B;
+    }
+
+    #eLoaderModal {
+      border-radius: 0.4em;
+      padding: 1em;
+    }
+
+    #eLoaderModal .c-modal-title {
+      padding: 0 1em;
+      font-size: 1.2em;
+    }
+  </style>
+
+  <template>
+
+    <!-- wrapper -->
+    <paper-drawer-panel id="eAppShell" force-narrow="true" drawer-width="352px"
+      disable-swipe="true" disable-edge-swipe="true">
+
+      <!-- drawer -->
+      <div drawer class="drawer vertical layout">
+        <paper-item>
+          <a href="https://github.com/hoch/canopy" target="_blank" class="c-about-link">
+            <iron-icon icon="home" item-icon class="c-about-icon"></iron-icon>
+            <span>GitHub</span>
+          </a>
+        </paper-item>
+      </div>
+
+      <!-- workspace -->
+      <div main class="workspace">
+
+        <div id="ePaneWaveform" class="vertical layout">
+
+          <canopy-toolbar>
+            <paper-icon-button icon="menu" on-click="_onBtnMenu"></paper-icon-button>
+            <span class="title">Canopy</span>
+          </canopy-toolbar>          
+
+          <div>
+            <spiral-minimap id="eMiniMap"></spiral-minimap>
+          </div>
+          
+          <div class="flex">
+            <spiral-waveform id="eWaveform"></spiral-waveform>
+          </div>
+        </div>
+
+        <div id="eSplitter" on-track="_handleSplitterDrag">
+          <div class="c-splitter-handle"></div>
+        </div>
+
+        <div id="ePaneEditor">
+          <div id="eTools">
+            <paper-icon-button icon="send" on-click="_onBtnRender"></paper-icon-button>
+            <paper-icon-button icon="description" on-click="_onBtnOpenGistLoader"></paper-icon-button>
+          </div>
+          <spiral-coder id="eCoder"></spiral-coder>
+        </div>
+
+      </div>
+
+    </paper-drawer-panel>
+
+    <!-- GistLoader -->
+    <paper-dialog id="eLoaderModal" modal>
+      <div class="c-modal-title">Loading Gist</div>
+      <spiral-gistloader id="eGistLoader" class="flex"></spiral-gistloader>
+      <div class="buttons">
+        <paper-button dialog-confirm autofocus raised>CLOSE</paper-button>
+      </div>
+    </paper-dialog>
+
+  </template>
+
+  <script>
+    Polymer({
+      is: 'canopy-app',
+
+      behaviors: [
+        Polymer.IronResizableBehavior
+      ],
+
+      properties: {
+
+        _editorHeight: {
+          type: Number,
+          value: 480
+        },
+
+        _paneMinHeight: {
+          type: Number,
+          value: 256
+        }
+
+      },
+
+      _onBtnMenu: function () {
+        this.$.eAppShell.openDrawer();
+      },
+
+      _onBtnRender: function () {
+        
+      },
+
+      _onBtnOpenGistLoader: function () {
+        this.$.eLoaderModal.open();
+      },
+
+
+      _resizePanes: function () {
+        this.$.ePaneEditor.style.height = this._editorHeight + 'px';
+        this.$.eCoder.style.height = this._editorHeight + 'px';
+        this.async(this.notifyResize, 20);
+      },
+
+      _updateEditorWidthByDelta: function (delta) {
+        this._editorHeight -= delta;
+        if (this._editorHeight < this._paneMinHeight) {
+          this._editorHeight = this._paneMinHeight;
+          return;
+        }
+
+        this._resizePanes();
+      },
+
+      _handleSplitterDrag: function (event) {
+        switch(event.detail.state) {
+          case 'track':
+            this.style.cursor = 'row-resize';
+            this._updateEditorWidthByDelta(event.detail.ddy);
+            break;
+          case 'end':
+            this.style.cursor = 'default';
+            break;
+        }
+      },
+
+      created: function () {
+
+      },
+
+      ready: function () {
+        this._updateEditorWidthByDelta(0);
+      }
+    });
+  </script>
+
+</dom-module>
