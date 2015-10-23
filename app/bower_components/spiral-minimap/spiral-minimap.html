@@ -268,6 +268,7 @@ Example:
       // Initialize and force-resize at startup. This is done asynchronously to
       // ensure the first redraw.
       this.async(function () {
+        this.notifyResize();
         this._initialize();
         this._onResize();  
       }, 1);
