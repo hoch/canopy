@@ -25,7 +25,7 @@
     this.width = (width || STYLE.width);
     this.height = (height || STYLE.height);
     this.gridDuration = 1.0;
-    this.externalGridDrawer = null;
+    this.currentGridsPos = [];
   };
 
   TimeRuler.prototype.setSize = function (width, height) {
@@ -112,12 +112,14 @@
     // Draw grid.
     this.ctx.beginPath();
     this.ctx.fillStyle = STYLE.gridColor;
+    this.currentGridsPos.length = 0;
     while (startGrid <= endGrid) {
       xPos = this.timeToPixel(startGrid, start, totalDuration);
       this.ctx.fillText(this.formatTime(startGrid), xPos, this.height * 0.5);
       this.ctx.moveTo(xPos, this.height * 0.7);
       this.ctx.lineTo(xPos, this.height);
       startGrid += this.gridDuration;
+      this.currentGridsPos.push(xPos);
     }
     this.ctx.stroke();
 
