@@ -70,10 +70,10 @@
 
     // Draw waveform. Branch based on the SPP level; if SPP is below than the
     // threshold, use sub-sampling for optimum visualization.
-    if (SPP > STYLE.SPPThreshold)
-      this.drawSubSampling(startIndex, endIndex, SPP);
-    else
-      this.drawLinearInterpolation(startIndex, endIndex, SPP);
+    // if (SPP > STYLE.SPPThreshold)
+    this.drawSubSampling(startIndex, endIndex, SPP);
+    // else
+    //   this.drawLinearInterpolation(startIndex, endIndex, SPP);
 
     // Clear residues.
     this.ctx.strokeStyle = STYLE.colorBorder;
@@ -164,7 +164,7 @@
       }
 
       if (x - px >= 1) {
-        var renderValue = this.data[maxValueIndex] / maxPeak;
+        var renderValue = this.data[maxValueIndex] / maxValue;
         // renderValue = Math.min(1.0, Math.max(-1.0, renderValue));
         yOffset = (1 - renderValue) * this.yCenter;
         yOffset = Math.min(this.height - 0.5, Math.max(0.5, yOffset));

@@ -31,8 +31,7 @@
       options.sampleRate * options.duration + ', ' +
       options.sampleRate + ');\n';
 
-    var footer = '\ncontext.oncomplete = this._onComplete.bind(this);' +
-      'context.startRendering();';
+    var footer = 'context.startRendering().then(this._onComplete.bind(this));';
 
     // NOTE: be careful with Function. It is same with 'eval()'.
     this.task = new Function('', header + code + footer);
@@ -40,8 +39,8 @@
     this.task();
   }
 
-  CodeRenderer.prototype._onComplete = function (event) {
-    this.onComplete(event.renderedBuffer);
+  CodeRenderer.prototype._onComplete = function (buffer) {
+    this.onComplete(buffer);
   };
 
   // Editor Factory.
