@@ -105,11 +105,11 @@
       
       if (yNeg < this.height - 4) {
         if (gain !== 0.0) {
-          this.ctx.fillText(this.formatGain(gain), this.width * 0.8, yPos + 4);
+          this.ctx.fillText(this.formatGain(gain), this.width * 0.75, yPos + 4);
           this.ctx.moveTo(this.width * 0.85, yPos);
           this.ctx.lineTo(this.width, yPos);
         }
-        this.ctx.fillText(this.formatGain(-gain), this.width * 0.8, yNeg + 4);
+        this.ctx.fillText(this.formatGain(-gain), this.width * 0.75, yNeg + 4);
         this.ctx.moveTo(this.width * 0.85, yNeg);
         this.ctx.lineTo(this.width, yNeg);
       }

@@ -13,14 +13,9 @@
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../bower_components/paper-drawer-panel/paper-drawer-panel.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../bower_components/iron-icons/av-icons.html">
 
-<!-- <link rel="import" href="../bower_components/iron-icons/av-icons.html">
-<link rel="import" href="../bower_components/iron-icons/editor-icons.html">
-<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
-<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
-
- -->
-
+<!-- canopy specific element -->
 <link rel="import" href="canopy-toolbar.html">
 
 <!-- spiral elements -->
@@ -29,6 +24,10 @@
 <link rel="import" href="../bower_components/spiral-minimap/spiral-minimap.html">
 <link rel="import" href="../bower_components/spiral-waveform/spiral-waveform.html">
 
+<!-- canopy specific class -->
+<script src="canopyaudio.js"></script>
+
+<!-- element definition -->
 <dom-module id="canopy-app">
 
   <style is="custom-style">
@@ -45,6 +44,36 @@
     .drawer {
       @apply(--layout-vertical);
       z-index: 9999;
+    }
+
+    .drawer .app-title {
+      font-family: 'Roboto Condensed';
+      font-size: 2.2em;
+      font-weight: 100;
+      color: #00695C;
+      background-color: #B2DFDB;
+      padding: 0.5em;
+      margin-bottom: 0.5em;
+
+    }
+
+    .drawer .app-title .version {
+      font-size: 0.5em;
+    }
+
+    .drawer .about {
+      @apply(--layout-horizontal);
+      border-top: 1px solid #E8EAF6;
+      height: 64px;
+    }
+
+    .drawer .about > paper-item {
+      font-size: 0.85em;
+    }
+
+    .drawer .about > paper-item > a {
+      color: #455A64;
+      text-decoration: none;
     }
 
     .workspace {
@@ -68,7 +97,7 @@
       cursor: row-resize;
     }
 
-    .c-splitter-handle {
+    .splitter-handle {
       margin: 5px auto;
       height: 3px;
       width: 100px;
@@ -89,36 +118,57 @@
 
     #eTools {
       @apply(--layout-vertical);
-      width: ;
-      color: #FFF;
-      background-color: #607D8B;
+      color: #B7DAD7;
+      background-color: #506067;
+      padding-right: 4px;
     }
 
-    #eLoaderModal {
+    .modal-container {
       border-radius: 0.4em;
       padding: 1em;
+      max-width: 50%;
     }
 
-    #eLoaderModal .c-modal-title {
+    .modal-title {
       padding: 0 1em;
-      font-size: 1.2em;
+      font-size: 1.4em;
+      font-weight: 700;
+    }
+
+    .version {
+      text-align: center;
+      font-size: 1em;
+      font-weight: 100;
+      width: 100%;
     }
   </style>
 
   <template>
 
     <!-- wrapper -->
-    <paper-drawer-panel id="eAppShell" force-narrow="true" drawer-width="352px"
+    <paper-drawer-panel id="eAppShell" force-narrow="true" drawer-width="256px"
       disable-swipe="true" disable-edge-swipe="true">
 
       <!-- drawer -->
       <div drawer class="drawer vertical layout">
-        <paper-item>
-          <a href="https://github.com/hoch/canopy" target="_blank" class="c-about-link">
-            <iron-icon icon="home" item-icon class="c-about-icon"></iron-icon>
-            <span>GitHub</span>
-          </a>
-        </paper-item>
+        <div class="app-title">Canopy</div>
+        <div class="flex">
+          <paper-item on-click="_onBtnOpenAbout">About</paper-item>
+        </div>
+        <div class="about">
+          <paper-item>
+            <a href="https://github.com/hoch/canopy" target="_blank">
+              <iron-icon icon="home" item-icon></iron-icon>
+              <span>GitHub</span>
+            </a>
+          </paper-item>
+          <paper-item>
+            <a href="https://github.com/hoch/canopy/issues" target="_blank">
+              <iron-icon icon="report-problem" item-icon></iron-icon>
+              <span>Issue Tracker</span>
+            </a>
+          </paper-item>
+        </div>
       </div>
 
       <!-- workspace -->
@@ -129,19 +179,23 @@
           <canopy-toolbar>
             <paper-icon-button icon="menu" on-click="_onBtnMenu"></paper-icon-button>
             <span class="title">Canopy</span>
-          </canopy-toolbar>          
+            <paper-icon-button icon="av:stop" on-click="_onAudioStop"></paper-icon-button>
+            <paper-icon-button icon="av:play-arrow" on-click="_onAudioPlay"></paper-icon-button>
+            <paper-icon-button id="eBtnLoop" icon="av:repeat" on-click="_onAudioToggleLoop"></paper-icon-button>
+            <span class="flex"></span>
+          </canopy-toolbar>
 
           <div>
             <spiral-minimap id="eMiniMap"></spiral-minimap>
           </div>
-          
+
           <div class="flex">
             <spiral-waveform id="eWaveform"></spiral-waveform>
           </div>
         </div>
 
         <div id="eSplitter" on-track="_handleSplitterDrag">
-          <div class="c-splitter-handle"></div>
+          <div class="splitter-handle"></div>
         </div>
 
         <div id="ePaneEditor">
@@ -156,9 +210,38 @@
 
     </paper-drawer-panel>
 
-    <!-- GistLoader -->
-    <paper-dialog id="eLoaderModal" modal>
-      <div class="c-modal-title">Loading Gist</div>
+    <!-- Modal: About -->
+    <paper-dialog id="eAboutModal" class="modal-container" modal>
+      <div class="modal-title">About</div>
+      <div class="modal-body">
+        <p><a href="https://github.com/hoch/canopy" target="_blank">Canopy</a> 
+          is a debugging suite for Web Audio API programming featuring:</p>
+        <ul>
+          <li>Interactive Waveform inspector with seamless zoom in/out.</li>
+          <li>Web Audio API code editor with:
+            <ul>
+              <li>Web Audio API autocompletion</li>
+              <li>Gist integration</li>
+              <li>Embedded context configuration</li>
+            </ul>
+          </li>
+          <li>On demand playback with looping.</li>
+        </ul>
+        <p><a href="https://github.com/hoch/canopy" target="_blank">Canopy</a>
+          is created by <a href="http://hoch.io" target="_blank">Hongchan Choi</a>
+          for Chromium Web Audio API project.<br>For feedback, question or contribution,
+          please use <a href="https://github.com/hoch/canopy/issues" target="_blank">
+          GitHub issue tracker</a>.</p>
+        <div class="version">0.1.0-alpha</div>
+      </div>
+      <div class="buttons">
+        <paper-button dialog-confirm autofocus raised>CLOSE</paper-button>
+      </div>
+    </paper-dialog>
+
+    <!-- Modal: GistLoader -->
+    <paper-dialog id="eLoaderModal" class="modal-container" modal>
+      <div class="modal-title">Loading Gist</div>
       <spiral-gistloader id="eGistLoader" class="flex"></spiral-gistloader>
       <div class="buttons">
         <paper-button dialog-confirm autofocus raised>CLOSE</paper-button>
@@ -181,7 +264,7 @@
 
         _editorHeight: {
           type: Number,
-          value: 480
+          value: 400
         },
 
         _paneMinHeight: {
@@ -221,6 +304,8 @@
 
         this.$.eMiniMap.setAudioBuffer(buffer);
         this.$.eMiniMap.setRegion(0, buffer.duration * 0.25);
+
+        CanopyAudio.setAudioBuffer(buffer);
       },
 
       _onGistLoaded: function (gist) {
@@ -239,6 +324,29 @@
         this.$.eLoaderModal.open();
       },
 
+      _onBtnOpenAbout: function () {
+        this.$.eAboutModal.open();
+      },
+
+      _onAudioStop: function () {
+        CanopyAudio.stop();
+      },
+
+      _onAudioPlay: function () {
+        var region = this.$.eMiniMap.getRegion();
+        if (region)
+          CanopyAudio.play(region.start, region.end);
+      },
+
+      _onAudioToggleLoop: function () {
+        CanopyAudio.toggleLoop();
+
+        if (CanopyAudio.loop)
+          eBtnLoop.style.color = 'orange';
+        else
+          eBtnLoop.style.color = 'gray';
+      },
+
       _resizePanes: function () {
         // waveform H = total H - title bar H - splitter H - editor H.
         var waveformHeight = this.clientHeight - 42 - 16 - this._editorHeight;
@@ -246,6 +354,7 @@
         this.$.ePaneEditor.style.height = this._editorHeight + 'px';
         this.$.ePaneWaveform.style.height = waveformHeight + 'px';
         // this.$.eCoder.style.height = this._editorHeight + 'px';
+        
         this.async(this.notifyResize, 1);
       },
 
