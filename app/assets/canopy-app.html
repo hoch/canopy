@@ -279,6 +279,22 @@
         this.$.eMiniMap.setController(this);
         this.$.eCoder.setController(this);
 
+        this.$.eCoder.setCode(
+          '// Press ARROW button on the tool bar left.\n' +
+          '//\n' +
+          '// @channels 1\n' +
+          '// @duration 1.0\n' +
+          '// @sampleRate 44100\n\n' +
+          'var osc = context.createOscillator();\n' +
+          'var gain = context.createGain();\n\n' +
+          'osc.frequency.setValueAtTime(261.6, 0.0);\n' +
+          'gain.gain.value = 0.5;\n\n' +
+          'osc.connect(gain);\n' +
+          'gain.connect(context.destination);\n\n' +
+          'osc.start();\n' +
+          'osc.stop(1.0);'
+        );
+
         // Define callback for onRenderComplete for spiral-coder.
         this.$.eCoder.onRenderComplete = this._onRenderComplete.bind(this);
         this.$.eGistLoader.onGistLoaded = this._onGistLoaded.bind(this);
