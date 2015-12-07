@@ -1,6 +1,6 @@
 {
   "name": "canopy",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "homepage": "https://github.com/hoch/canopy",
   "authors": [
     "Hongchan Choi"
@@ -14,15 +14,15 @@
     "tests"
   ],
   "dependencies": {
-    "polymer": "Polymer/polymer#^1.1.0",
-    "paper-styles": "PolymerElements/paper-styles#^1.0.12",
-    "paper-button": "PolymerElements/paper-button#^1.0.0",
-    "paper-drawer-panel": "PolymerElements/paper-drawer-panel#^1.0.3",
-    "spiral-coder": "hoch/spiral-coder#^0.0.3",
-    "spiral-gistloader": "hoch/spiral-gistloader#^0.0.3",
-    "spiral-minimap": "hoch/spiral-minimap#^0.0.3",
-    "spiral-spectra": "hoch/spiral-spectra#^0.0.3",
-    "spiral-waveform": "hoch/spiral-waveform#^0.0.3",
-    "paper-dialog": "PolymerElements/paper-dialog#^1.0.0"
+    "paper-button": "PolymerElements/paper-button#^1.0.10",
+    "paper-dialog": "PolymerElements/paper-dialog#^1.0.0",
+    "paper-drawer-panel": "PolymerElements/paper-drawer-panel#^1.0.5",
+    "paper-styles": "PolymerElements/paper-styles#^1.0.13",
+    "polymer": "Polymer/polymer#^1.2.3",
+    "spiral-audiograph": "hoch/spiral-audiograph#^0.0.1",
+    "spiral-coder": "hoch/spiral-coder#^0.0.4",
+    "spiral-gistloader": "hoch/spiral-gistloader#^0.0.4",
+    "spiral-minimap": "hoch/spiral-minimap#^0.0.4",
+    "spiral-waveform": "hoch/spiral-waveform#^0.0.4"
   }
 }
