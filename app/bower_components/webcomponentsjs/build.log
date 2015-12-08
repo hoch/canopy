@@ -1,33 +1,33 @@
 BUILD LOG
 ---------
-Build Time: 2015-10-16T14:18:33-0700
+Build Time: 2015-12-04T16:22:57-0800
 
 NODEJS INFORMATION
 ==================
-nodejs: v4.2.0
+nodejs: v4.2.2
 gulp: 3.9.0
-gulp-audit: 1.0.0
 gulp-concat: 2.6.0
+gulp-audit: 1.0.0
 gulp-header: 1.7.1
-gulp-uglify: 1.4.2
-run-sequence: 1.1.4
-web-component-tester: 3.3.26
+gulp-uglify: 1.5.1
+run-sequence: 1.1.5
+web-component-tester: 3.4.2
 
 REPO REVISIONS
 ==============
-webcomponentsjs: 185a01c1e6c9941e8d568d321eaec242e5ddd229
+webcomponentsjs: 396430f7a0b6c6576fd89c0cb4d452e5de751acc
 
 BUILD HASHES
 ============
-CustomElements.js: 943d9f48ad71b444a2eff5c995081b5364777a5f
-CustomElements.min.js: e11be05c876cc665b51dc0f693c200b68c172cd7
-HTMLImports.js: d65caa6ed3b4aff6640da7b1c00ad2661a8e2f79
-HTMLImports.min.js: bb01992d2b0889613f7c64bb89745ee64b819106
-MutationObserver.js: 92f7182e2491f59108795b1d4fdec0cc10937f40
-MutationObserver.min.js: e563d884955f03335a7ad928497561bdaef7c3a4
-ShadowDOM.js: fb8c9b07450dd52a6f63119d1236d02da67e5f9b
-ShadowDOM.min.js: 8f463e01093c9f4f272c465f1a67aaa98e12f11e
-webcomponents-lite.js: de3ae0944d938a3f604c024d41f42e75284c7a78
-webcomponents-lite.min.js: b45f7a55ae166f10da35759ef1c8a08164cec639
-webcomponents.js: d0c9136405a15ad263eed2a2df4b7179ef8dd0ba
-webcomponents.min.js: 73f28593e35232c67e31bacbf612b168e1f24e1f
+CustomElements.js: 6ed97c5b08aa167e6816d14e44dced89125456d4
+CustomElements.min.js: fb06a7ae03a1c53981f8dddf12378fea950939e8
+HTMLImports.js: 4268ee56ebe672636cd655300d1181a4c89e6134
+HTMLImports.min.js: b194ceb2d7f8fd44cb204b3010d39ca6e61be7ed
+MutationObserver.js: 04f260c8b08afc70b9ae79958d23f4265117a5f2
+MutationObserver.min.js: c2b1521086c2ba2aac8e66ca8f5b9d0af86f1a7c
+ShadowDOM.js: 2f7ec402ccec544786ac107b356b873f9922d14d
+ShadowDOM.min.js: 6405b36a169e8e64940726338899f4b43d4d7e30
+webcomponents-lite.js: 9ce76c55a884c4b40c63bae34923a8cd5fa6b697
+webcomponents-lite.min.js: 574896188fe95eed9c522d48e9199d136625cf55
+webcomponents.js: 0ff38ede58a56bb6817af7eb9f8cd92033118331
+webcomponents.min.js: 954404b8dce8d01e3476b3b69e47f9ae39d74c43

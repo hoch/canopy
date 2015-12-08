@@ -3,10 +3,7 @@ Copyright (c) 2015 Hongchan Choi. All rights reserved.
 -->
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../iron-fit-behavior/iron-fit-behavior.html">
-<link rel="import" href="../iron-icons/iron-icons.html">
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
-<link rel="import" href="../paper-button/paper-button.html">
-<link rel="import" href="../paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../paper-styles/paper-styles.html">
 
 <!-- CodeMirror -->
@@ -44,22 +41,6 @@ Example:
       width: 100%;
     }
 
-    #eTools {
-      width: 40px;
-      color: #fff;
-      background-color: #666666;
-    }
-
-    #eBtnRender.on-codechange {
-      color: #F48FB1;
-      animation: clickme 1s 1;
-    }
-
-    @keyframes clickme {
-      0%    { -webkit-transform: scale(1.75) rotate(0); }
-      100%  { -webkit-transform: scale(1) rotate(1.0turn); }
-    }
-
     #eStatusBar {
       color: #37474F;
       background-color: #ECEFF1;
@@ -79,24 +60,10 @@ Example:
 
   <template>
 
-    <!-- <div id="eTools">
-      <paper-icon-button id="eBtnRender" icon="send" on-click="_renderAudioBuffer"></paper-icon-button>
-    </div>
- -->
     <div class="flex">
       <div id="eEditor" class="flex"></div>
       <div id="eStatusBar"></div>
     </div>    
-
-    <!-- <paper-header-panel id="ePanel" class="vertical layout">
-      <paper-toolbar>
-        <paper-icon-button icon="close" on-click="hide"></paper-icon-button>
-        <paper-icon-button icon="settings" on-click="_openRenderSettings" disabled></paper-icon-button>
-        <span class="flex"></span>
-        
-      </paper-toolbar>
-      
-    </paper-header-panel> -->
 
   </template>
 
@@ -178,8 +145,6 @@ Example:
         return;
 
       this._isDirty = true;
-      // this.$.eBtnRender.removeAttribute('disabled');
-      // this.$.eBtnRender.classList.add('on-codechange');
     },
 
     _markAsClean: function () {
@@ -187,8 +152,6 @@ Example:
         return;
 
       this._isDirty = false;
-      // this.$.eBtnRender.setAttribute('disabled', true);
-      // this.$.eBtnRender.classList.remove('on-codechange');
     },
 
     _showAutoCompletionIfPossible: function (cm) {
@@ -206,10 +169,12 @@ Example:
 
     _onCodeChange: function () {
       this._markAsDirty();
+      this._setStatusBar('post', 'Code changed.');
     },
 
     _onRenderSettingChanged: function () {
       this._markAsDirty();
+      this._setStatusBar('post', 'Render setting changed.');
     },
 
     _openRenderSettings: function () {
@@ -224,27 +189,12 @@ Example:
 
       this._markAsClean();
 
-      this._setStatusBar('post', 'Successfully rendered');
+      this._setStatusBar('post', 'Successfully rendered.');
 
       this._notify('render-complete', {
         buffer: this._lastRenderedAudioBuffer
       });
-    },
-
-    renderAudioBuffer: function () {
-      try {
-        SpiralCoder.renderCodeWithOptions(this._editor.getValue(), {
-          onComplete: this._onRenderComplete.bind(this),
-          sampleRate: this._renderOptions.sampleRate,
-          duration: this._renderOptions.duration,
-          numChannels: this._renderOptions.numChannels
-        });
-      } catch (error) {
-        // console.dir(error);
-        var message = '[' + error.name + '] ' + error.message + '.';
-        this._setStatusBar('error', message);
-      }
-    },
+    },    
 
     _setStatusBar: function (type, message) {
       switch (type) {
@@ -287,17 +237,20 @@ Example:
     // Public APIs.
 
     /**
-     * Hide the editor.
+     * Render an AudioBuffer with the current code.
      */
-    hide: function () {
-      this.style.display = 'none';
-    },
-
-    /**
-     * Show the editor.
-     */
-    show: function () {
-      this.style.display = 'flex';
+    renderAudioBuffer: function () {
+      try {
+        SpiralCoder.renderCodeWithOptions(this._editor.getValue(), {
+          onComplete: this._onRenderComplete.bind(this),
+          sampleRate: this._renderOptions.sampleRate,
+          duration: this._renderOptions.duration,
+          numChannels: this._renderOptions.numChannels
+        });
+      } catch (error) {
+        var message = '[' + error.name + '] ' + error.message + '.';
+        this._setStatusBar('error', message);
+      }
     },
 
     /**
@@ -356,7 +309,7 @@ Example:
     ready: function() {
       this._editor = CodeMirror(this.$.eEditor, this._EDITOR_OPTIONS);
 
-      // Give 5msec delay. |this.$.ePanel| height takes some times to be
+      // Give 5m delay. |this.$.ePanel| height takes some times to be
       // initialized properly.
       this.async(this._initialize, 5);
     }

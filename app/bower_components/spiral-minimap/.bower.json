@@ -1,6 +1,6 @@
 {
   "name": "spiral-minimap",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "authors": [
     "Hongchan Choi <hongchan.choi@gmail.com>"
   ],
@@ -25,20 +25,20 @@
     "/demo/"
   ],
   "dependencies": {
-    "polymer": "Polymer/polymer#^1.0.8",
+    "polymer": "Polymer/polymer#^1.2.3",
     "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#^1.0.2"
   },
   "devDependencies": {
-    "iron-component-page": "PolymerElements/iron-component-page#^1.0.5",
+    "iron-component-page": "PolymerElements/iron-component-page#^1.1.2",
     "web-component-tester": "*"
   },
-  "_release": "0.0.3",
+  "_release": "0.0.4",
   "_resolution": {
     "type": "version",
-    "tag": "v0.0.3",
-    "commit": "cd57028783359f3ee7240229cbeb5c86a27889a7"
+    "tag": "v0.0.4",
+    "commit": "6cf1e51d67b058468d5f6dae91ee1051973b92ae"
   },
   "_source": "git://github.com/hoch/spiral-minimap.git",
-  "_target": "^0.0.3",
+  "_target": "^0.0.4",
   "_originalSource": "hoch/spiral-minimap"
 }
