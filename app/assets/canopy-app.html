@@ -2,7 +2,7 @@
   <canopy-app>
 
   @description Canopy application element. (app-shell)
-  @version 0.1.0-alpha
+  @version 0.0.4
   @author Hongchan Choi (hongchan.choi@gmail.com)
 -->
 
@@ -12,6 +12,7 @@
 <link rel="import" href="../bower_components/paper-styles/paper-styles.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../bower_components/paper-drawer-panel/paper-drawer-panel.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../bower_components/iron-icons/av-icons.html">
 
@@ -23,6 +24,7 @@
 <link rel="import" href="../bower_components/spiral-gistloader/spiral-gistloader.html">
 <link rel="import" href="../bower_components/spiral-minimap/spiral-minimap.html">
 <link rel="import" href="../bower_components/spiral-waveform/spiral-waveform.html">
+<link rel="import" href="../bower_components/spiral-audiograph/spiral-audiograph.html">
 
 <!-- canopy specific class -->
 <script src="canopyaudio.js"></script>
@@ -81,10 +83,19 @@
       z-index: 0;
     }
 
-    #ePaneWaveform {
+    #eWorkspace {
       @apply(--layout-flex);
       min-height: 256px;
       overflow: hidden;
+    }
+
+    #eWaveformView {
+      @apply(--layout-vertical);
+      display: block;
+    }
+
+    #eAudioGraphView {
+      display: none;
     }
 
     #eSplitter {
@@ -141,6 +152,12 @@
       font-weight: 100;
       width: 100%;
     }
+
+    paper-dropdown-menu {
+      --paper-dropdown-menu: {
+
+      };
+    }
   </style>
 
   <template>
@@ -174,7 +191,7 @@
       <!-- workspace -->
       <div main class="workspace">
 
-        <div id="ePaneWaveform" class="vertical layout">
+        <div id="eWorkspace">
 
           <canopy-toolbar>
             <paper-icon-button icon="menu" on-click="_onBtnMenu"></paper-icon-button>
@@ -183,15 +200,22 @@
             <paper-icon-button icon="av:play-arrow" on-click="_onAudioPlay"></paper-icon-button>
             <paper-icon-button id="eBtnLoop" icon="av:repeat" on-click="_onAudioToggleLoop"></paper-icon-button>
             <span class="flex"></span>
+            <paper-icon-button id="eBtnViewChange" icon="visibility" on-click="_onBtnViewChange"></paper-icon-button>
           </canopy-toolbar>
 
-          <div>
-            <spiral-minimap id="eMiniMap"></spiral-minimap>
+          <div id="eWaveformView">
+            <div>
+              <spiral-minimap id="eMiniMap"></spiral-minimap>
+            </div>
+            <div class="flex">
+              <spiral-waveform id="eWaveform"></spiral-waveform>
+            </div>
           </div>
 
-          <div class="flex">
-            <spiral-waveform id="eWaveform"></spiral-waveform>
+          <div id="eAudioGraphView">
+            <spiral-audiograph id="eAudioGraph"></spiral-audiograph>
           </div>
+
         </div>
 
         <div id="eSplitter" on-track="_handleSplitterDrag">
@@ -232,7 +256,7 @@
           for Chromium Web Audio API project.<br>For feedback, question or contribution,
           please use <a href="https://github.com/hoch/canopy/issues" target="_blank">
           GitHub issue tracker</a>.</p>
-        <div class="version">0.1.0-alpha</div>
+        <div class="version">0.9.0-alpha</div>
       </div>
       <div class="buttons">
         <paper-button dialog-confirm autofocus raised>CLOSE</paper-button>
@@ -259,6 +283,11 @@
       ],
 
       properties: {
+
+        _currentView: {
+          type: String,
+          value: 'Waveform'
+        },
 
         _waveformHeight: Number,
 
@@ -292,7 +321,7 @@
           'osc.connect(gain);\n' +
           'gain.connect(context.destination);\n\n' +
           'osc.start();\n' +
-          'osc.stop(1.0);'
+          'osc.stop(1.0);\n'
         );
 
         // Define callback for onRenderComplete for spiral-coder.
@@ -333,6 +362,9 @@
       },
 
       _onBtnRender: function () {
+        SpiralAudioGraphService.clear();
+        this.$.eCoder.setPreCode('SpiralAudioGraphService.trackContext(context);');
+        this.$.eCoder.setPostCode('SpiralAudioGraphService.draw();');
         this.$.eCoder.renderAudioBuffer();
       },
 
@@ -342,6 +374,19 @@
 
       _onBtnOpenAbout: function () {
         this.$.eAboutModal.open();
+      },
+
+      _onBtnViewChange: function () {
+        this._currentView = this._currentView === 'Waveform' 
+          ? 'AudioGraph' 
+          : 'Waveform';
+
+        var isWaveform = this._currentView === 'Waveform';
+        this.$.eWaveformView.style.display = isWaveform ? 'block' : 'none';
+        this.$.eAudioGraphView.style.display = isWaveform ? 'none' : 'block';
+
+        // Forced resize.
+        this.async(this.notifyResize, 1);
       },
 
       _onAudioStop: function () {
@@ -364,11 +409,14 @@
       },
 
       _resizePanes: function () {
-        // waveform H = total H - title bar H - splitter H - editor H.
-        var waveformHeight = this.clientHeight - 42 - 16 - this._editorHeight;
+        // workspace H = total H - title bar H - splitter H - editor H.
+        var workspaceHeight = this.clientHeight - 42 - 16 - this._editorHeight;
 
         this.$.ePaneEditor.style.height = this._editorHeight + 'px';
-        this.$.ePaneWaveform.style.height = waveformHeight + 'px';
+        this.$.eWorkspace.style.height = workspaceHeight + 'px';
+
+        this.$.eWaveformView.style.height = workspaceHeight + 'px';
+        this.$.eAudioGraphView.style.height = workspaceHeight + 'px';
         
         this.async(this.notifyResize, 1);
       },
@@ -396,9 +444,7 @@
         }
       },
 
-      created: function () {
-
-      },
+      created: function () {},
 
       ready: function () {
         this._initialize();

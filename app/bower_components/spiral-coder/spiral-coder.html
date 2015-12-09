@@ -117,7 +117,9 @@ Example:
       _isDirty: Boolean,
       _editor: Object,
       _lastRenderedAudioBuffer: Object,
-      
+      _preCode: String,
+      _postCode: String,
+
       _componentId: {
         type: String,
         value: 'spiral-coder'
@@ -241,13 +243,23 @@ Example:
      */
     renderAudioBuffer: function () {
       try {
-        SpiralCoder.renderCodeWithOptions(this._editor.getValue(), {
+        var code = this._editor.getValue();
+        
+        if (this._preCode)
+          code = this._preCode + code;
+
+        if (this._postCode)
+          code += this._postCode;
+
+        SpiralCoder.renderCodeWithOptions(code, {
           onComplete: this._onRenderComplete.bind(this),
           sampleRate: this._renderOptions.sampleRate,
           duration: this._renderOptions.duration,
-          numChannels: this._renderOptions.numChannels
+          numChannels: this._renderOptions.numChannels,
+          audiograph: this._audiograph
         });
       } catch (error) {
+        console.dir(error);
         var message = '[' + error.name + '] ' + error.message + '.';
         this._setStatusBar('error', message);
       }
@@ -261,6 +273,10 @@ Example:
       this._controller = controller;
     },
 
+    setAudioGraphView: function (audiograph) {
+      this._audiograph = audiograph;
+    },
+
     /**
      * Set the code content.
      * @param {String} code Codes as string.
@@ -268,6 +284,22 @@ Example:
     setCode: function (code) {
       this._editor.setValue(code);
     },
+
+    /**
+     * Set the code before the body content;
+     * @param {String]} code Code to be prepended to the content.
+     */
+    setPreCode: function (code) {
+      this._preCode = code;
+    },
+
+    /**
+     * Set the code after the body content;
+     * @param {String} code Code to be appended to the content.
+     */
+    setPostCode: function (code) {
+      this._postCode = code;
+    },  
 
     /**
      * Get the current code content.
