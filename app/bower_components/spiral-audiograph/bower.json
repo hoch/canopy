@@ -1,0 +1,32 @@
+{
+  "name": "spiral-audiograph",
+  "version": "0.0.1",
+  "authors": [
+    "Hongchan Choi <hongchan.choi@gmail.com>"
+  ],
+  "description": "Spiral Polymer element for audio graph visualization.",
+  "keywords": [
+    "web-component",
+    "polymer",
+    "webaudio",
+    "spiral",
+    "visualization",
+    "audiograph"
+  ],
+  "main": "spiral-audiograph.html",
+  "license": "http://hoch.github.io/spiral/LICENSE.txt",
+  "homepage": "https://github.com/hoch/spiral-audiograph/",
+  "ignore": [
+    "/.*",
+    "/test/"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.2.0",
+    "iron-resizable-behavior": "PolymerElements/iron-resizable-behavior#^1.0.2",
+    "dagre-d3": "~0.4.10"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "web-component-tester": "*"
+  }
+}

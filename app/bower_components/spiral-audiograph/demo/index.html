@@ -1,0 +1,155 @@
+<!doctype html>
+<!--
+@license Copyright (c) 2015 Hongchan Choi. MIT License.
+-->
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+    <title>spiral-audiograph Demo</title>
+    <script src="../../webcomponentsjs/webcomponents-lite.min.js"></script>
+    <link rel="import" href="../spiral-audiograph.html">
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        -webkit-user-select: none;
+        display: block;
+      }
+
+      .element-info {
+        padding: 1.0em;
+        margin-bottom: 1.0em;
+        box-shadow: 2px 0 5px #607D8B;
+        color: #263238;
+        background-color: #ECEFF1;
+        font-family: sans-serif;
+      }
+
+      .element-demo {
+        padding: 1.0em;
+        font-family: sans-serif;
+      }
+
+      #my-graph {
+        width: 100%;
+        height: 480px;
+      }
+    </style>
+  </head>
+
+  <body class="fullbleed">
+    <div class="vertical layout fit">
+      <div class="element-info">
+
+        <!-- element description -->
+        <h1><code>&lt;spiral-audiograph&gt;</code></h1>
+        <p>Draws the visualization of the audio graph registered in the context.
+          </p>
+        <p>Note that this element activates the event hook on the audio context
+          to catch the event from node creation, connection and disconnection.
+          The event hook applied as a global effect.</p>
+        <p>Attaching the event hook can be done by calling 'trackContext()'
+          method from this element. Calling 'releaseContext()' will do the
+          opposite.</p>
+        <p>In order to use the interactive audio node inspector, the element
+          needs to be attached to the target audio context. See the source code of
+          the following example.</p>
+      </div>
+      <div class="element-demo">
+
+        <spiral-audiograph id="my-graph"></spiral-audiograph>
+
+      </div>
+    </div>
+
+    <script>
+
+      function demo1() {
+        var audiograph = document.querySelector('#my-graph');
+        var context = new AudioContext();
+
+        audiograph.trackContext(context);
+
+        // Test 1
+        var sin = context.createOscillator();
+        var saw = context.createOscillator();
+        var sqr = context.createOscillator();
+        var merger = context.createChannelMerger(3);
+
+        saw.type = 'sawtooth';
+        sqr.type = 'square';
+
+        sin.frequency.value = 60;
+        saw.frequency.value = 60;
+        sqr.frequency.value = 60;
+
+        sin.connect(merger, 0, 0);
+        saw.connect(merger, 0, 1);
+        sqr.connect(merger, 0, 2);
+        merger.connect(context.destination);
+
+        // Test 2
+        var osc1 = context.createOscillator();
+        var modGain = context.createGain();
+        var osc2 = context.createOscillator();
+
+        osc1.connect(modGain);
+        modGain.connect(osc2.frequency);
+        osc2.connect(context.destination);
+
+        osc1.frequency.value = 31;
+        modGain.gain.value = 113;
+        osc2.frequency.value = 97;
+
+        // Test 3
+        var saw = context.createOscillator();
+        var lfo = context.createOscillator();
+        var lfoDepth = context.createGain();
+        var lpf = context.createBiquadFilter();
+        var amp = context.createGain();
+
+        saw.connect(lpf);
+        lfo.connect(lfoDepth);
+        lfoDepth.connect(saw.frequency);
+        lfoDepth.connect(lpf.frequency);
+        lpf.connect(amp);
+        amp.connect(context.destination);
+
+        saw.type = 'sawtooth';
+        lpf.frequency.value = 2000;
+        lpf.Q.value = 8;
+        amp.gain.value = 0.5;
+
+        audiograph.draw();
+      }
+
+      function demo2() {
+        var audiograph = document.querySelector('#my-graph');
+
+        var context = new OfflineAudioContext(1, 44100, 44100);
+
+        audiograph.trackContext(context);
+
+        var osc = context.createOscillator();
+        var gain = context.createGain();
+
+        osc.frequency.setValueAtTime(261.6, 0.0);
+        gain.gain.value = 0.5;
+
+        osc.connect(gain);
+        gain.connect(context.destination);
+
+        osc.start();
+        osc.stop(1.0);
+
+        context.startRendering();
+        
+        audiograph.draw();
+      }
+
+      window.addEventListener('WebComponentsReady', demo1);
+    </script>
+
+  </body>
+</html>
