@@ -35,7 +35,7 @@ Example:
       #eSVG {
         z-index: 1;
         min-width: 300px;
-        min-height: 200px;
+        min-height: 256px;
         background-color: #ECEFF1;
       }
 
@@ -43,33 +43,34 @@ Example:
         display: none;
         float: right;
         position: absolute;
-        z-index: 9999;
+        z-index: 1;
         border: 1px solid #ccc;
+        top: 15px;
         right: 15px;
-        bottom: 15px;
-        width: 256px;
+        width: 180px;
         background-color: #FFFFFF;
-        box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.37);
-        padding: 10px 10px;
+        box-shadow: 0 1px 7px 0 rgba(0, 0, 0, 0.37);
+        padding: 5px 5px;
       }
 
       #eHideButton {
         float: right;
-        width: 24px;
-        height: 24px;
+        width: 32px;
+        height: 32px;
         text-align: right;
         line-height: 16px;
         cursor: pointer;
-        color: #9E9E9E;
+        color: #D48FA7;
         font-family: Arial;
+        font-size: 1.2em;
       }
 
       #eInspectorContent {
-        font-family: 'Roboto';
+        font-family: 'Roboto', 'Arial';
       }
 
       #eInspectorContent > span.node-name {
-        font-size: 1.2em;
+        font-size: 0.85em;
         font-weight: 700;
       }
 
@@ -80,23 +81,25 @@ Example:
 
       #eInspectorContent > dl {
         font-size: 0.85em;
-        font-family: 'Roboto Condensed';
+        font-family: 'Roboto Condensed', 'Arial';
         overflow: hidden;
         margin: 15px 0 0;
       }
 
       #eInspectorContent > dl > dt {
         float: left;
-        margin: 0;
-        width: 130px;
-        height: 24px;
+        margin-right: 5px;
+        width: 110px;
+        height: 20px;
         color: #667B86;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       #eInspectorContent > dl > dd {
         float: left;
         margin: 0;
-        width: 120px;
+        width: 65px;
         overflow: hidden;
         text-overflow: ellipsis;
       }
@@ -137,27 +140,29 @@ Example:
         _g: Object,
         _renderGraph: Function,
         _svgGroup: Object,
+        _zoom: Object,
 
         _nodeStyle: {
           type: Object,
           value: {
             'AnalyserNode': '#607D88',
-            'AudioBufferSourceNode': '#FF9800',
-            'AudioDestinationNode': '#E91E63',
-            'BiquadFilterNode': '#4CAF50',
-            'ChannelMergerNode': '#607D88',
-            'ChannelSplitterNode': '#607D88',
-            'ConvolverNode': '#4CAF50',
-            'DelayNode': '#4CAF50',
-            'DynamicsCompressorNode': '#4CAF50',
-            'GainNode': '#9E9E9E',
-            'IIRFilterNode': '#4CAF50',
-            'OscillatorNode': '#FF9800',
-            'PannerNode': '#4CAF50',
+            'AudioBufferSourceNode': '#4CAF50',
+            'AudioDestinationNode': '#37474F',
+            'BiquadFilterNode': '#8BC34A',
+            'ChannelMergerNode': '#607D8B',
+            'ChannelSplitterNode': '#607D8B',
+            'ConvolverNode': '#8BC34A',
+            'DelayNode': '#8BC34A',
+            'DynamicsCompressorNode': '#8BC34A',
+            'GainNode': '#607D8B',
+            'IIRFilterNode': '#8BC34A',
+            'OscillatorNode': '#4CAF50',
+            'PannerNode': '#8BC34A',
             'ScriptProcessorNode': '#607D88',
-            'SpatialPannerNode': '#4CAF50',
-            'StereoPannerNode': '#4CAF50',
-            'WaveShaperNode': '#4CAF50'
+            'SpatialPannerNode': '#8BC34A',
+            'StereoPannerNode': '#8BC34A',
+            'WaveShaperNode': '#8BC34A',
+            'AudioParam': '#B0BEC5'
           }
         },
 
@@ -304,6 +309,7 @@ Example:
        * Draw the current graph configuration.
        */
       draw: function () {
+        this._hideInspector();
         this._updateGraph();
       },
 
@@ -351,13 +357,13 @@ Example:
         this._svgGroup = this._svg.append('g').attr('id', 'eD3Graph');
 
         // Add zoom behavior.
-        var zoom = d3.behavior.zoom().on('zoom', function () {
+        this._zoom = d3.behavior.zoom().on('zoom', function () {
           this._svgGroup.attr('transform',
             'translate(' + d3.event.translate + ')' +
             'scale(' + d3.event.scale + ')');
         }.bind(this));
 
-        this._svg.call(zoom);
+        this._svg.call(this._zoom);
       },
 
       // Create a node in the graph.
@@ -370,8 +376,8 @@ Example:
           label: label,
           style: 'fill: ' + this._nodeStyle[node.constructor.name],
           labelStyle: 'color: white; font-family: Arial;',
-          rx: 4,
-          ry: 4
+          rx: 2,
+          ry: 2
         };
 
         this._g.setNode(node._uid, options);
@@ -382,8 +388,8 @@ Example:
       _connectNodes: function (source, destination) {
         var options = {
           lineInterpolate: 'basis',
-          style: 'stroke-width: 2px; stroke: #90A4AE; fill: none;',
-          arrowheadStyle: 'fill: #607D8B',
+          style: 'stroke-width: 2.5px; stroke: #90A4AE; fill: none;',
+          arrowheadStyle: 'fill: #90A4AE',
           width: 35
         };
 
@@ -398,23 +404,24 @@ Example:
         var paramNodeOptions = {
           labelType: 'html',
           label: label,
-          style: 'fill: #CCC',
+          style: 'fill: ' + this._nodeStyle[destination.constructor.name],
           labelStyle: 'color: black; font-family: Arial; text-transform: uppercase;',
           rx: 20,
           ry: 20
         };
 
+        // AudioParam to associated AudioNode
         var paramEdgeOptions = {
-          lineInterpolate: 'basis',
-          style: 'stroke-width: 2px; stroke: #90A4AE; stroke-dasharray: 2,2; fill: none;',
-          arrowheadStyle: 'fill: #90A4AE',
-          width: 2
+          lineInterpolate: 'linear',
+          style: 'stroke-width: 2.5px; stroke-dasharray: 2.5, 2.5;stroke: #B0BEC5; fill: none;',
+          arrowheadStyle: 'fill: none',
+          width: 1
         };
 
         var nodeEdgeOptions = {
           lineInterpolate: 'basis',
-          style: 'stroke-width: 2px; stroke: #90A4AE; fill: none;',
-          arrowheadStyle: 'fill: #607D8B',
+          style: 'stroke-width: 2.5px; stroke: #90A4AE; fill: none;',
+          arrowheadStyle: 'fill: #90A4AE',
           width: 35
         };
 
@@ -435,29 +442,36 @@ Example:
         console.log(object);
       },
 
+      _resetGraphToCenter: function () {
+        var rect = this.$.eSVG.getBoundingClientRect();
+        if (rect.width <= 0)
+          return;
+
+        this._zoom
+          .translate([
+            (rect.width - this._g.graph().width) / 2,
+            (rect.height - this._g.graph().height) / 2
+          ]).scale(1.0).event(this._svg);
+      },
+
       // (un)highlight a node.
       _highlightNode: function (node, flag) {
         if (flag) {
-          node.firstChild.style.stroke = '#37474F';
-          node.firstChild.style.strokeWidth = '2px';
-          node.firstChild.style.strokeDasharray = '5,5';
+          node.firstChild.style.fill = '#F50057';
         } else {
-          node.firstChild.style.stroke = 'none';
-          node.firstChild.style.strokeWidth = 'none';
-          node.firstChild.style.strokeDasharray = 'none';
+          // TODO: fix this. graph utilities should not access the context.
+          var context = SpiralAudioGraph.getCurrentContext();
+          var audionode = context.getNodeByUID(node.__data__);
+          node.firstChild.style.fill = this._nodeStyle[audionode.constructor.name];
         }
       },
 
       // (un)highlight a node.
       _highlightEdge: function (edge, flag) {
         if (flag) {
-          edge.firstChild.style.stroke = '#37474F';
-          edge.firstChild.style.strokeWidth = '2px';
-          edge.firstChild.style.strokeDasharray = '5,5';
+          edge.firstChild.style.stroke = '#F50057';
         } else {
           edge.firstChild.style.stroke = '#90A4AE';
-          edge.firstChild.style.strokeWidth = '2px';
-          edge.firstChild.style.strokeDasharray = 'none';
         }
       },
 
@@ -541,6 +555,8 @@ Example:
             me._selectObject(this);
           };
         }
+
+        this._resetGraphToCenter();
 
         this._graphDirty = false;
       }

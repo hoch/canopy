@@ -192,7 +192,9 @@ Example:
       
       // TODO: handle the height properly.
       this.$.eWaveformContainer.style.width = this._width + 'px';
-      this.$.eWaveformContainer.style.height = (this._height - this._heightTimeRuler) + 'px';
+
+      // TODO: 64 is hack for minimap element.
+      this.$.eWaveformContainer.style.height = (this._height - this._heightTimeRuler - 64) + 'px';
 
       if (this._audioBuffer) {
 

@@ -92,10 +92,12 @@
     #eWaveformView {
       @apply(--layout-vertical);
       display: block;
+      min-height: 256px;
     }
 
     #eAudioGraphView {
       display: none;
+      min-height: 256px;
     }
 
     #eSplitter {
@@ -200,16 +202,13 @@
             <paper-icon-button icon="av:play-arrow" on-click="_onAudioPlay"></paper-icon-button>
             <paper-icon-button id="eBtnLoop" icon="av:repeat" on-click="_onAudioToggleLoop"></paper-icon-button>
             <span class="flex"></span>
-            <paper-icon-button id="eBtnViewChange" icon="visibility" on-click="_onBtnViewChange"></paper-icon-button>
           </canopy-toolbar>
 
           <div id="eWaveformView">
             <div>
               <spiral-minimap id="eMiniMap"></spiral-minimap>
             </div>
-            <div class="flex">
-              <spiral-waveform id="eWaveform"></spiral-waveform>
-            </div>
+            <spiral-waveform id="eWaveform"></spiral-waveform>
           </div>
 
           <div id="eAudioGraphView">
@@ -225,6 +224,8 @@
         <div id="ePaneEditor">
           <div id="eTools">
             <paper-icon-button icon="send" on-click="_onBtnRender"></paper-icon-button>
+            <paper-icon-button id="eBtnViewChange" icon="visibility" on-click="_onBtnViewChange"></paper-icon-button>
+            <div class="flex"></div>
             <paper-icon-button icon="description" on-click="_onBtnOpenGistLoader"></paper-icon-button>
           </div>
           <spiral-coder id="eCoder"></spiral-coder>
@@ -256,7 +257,7 @@
           for Chromium Web Audio API project.<br>For feedback, question or contribution,
           please use <a href="https://github.com/hoch/canopy/issues" target="_blank">
           GitHub issue tracker</a>.</p>
-        <div class="version">0.9.0-alpha</div>
+        <div class="version">0.9.1-alpha</div>
       </div>
       <div class="buttons">
         <paper-button dialog-confirm autofocus raised>CLOSE</paper-button>
