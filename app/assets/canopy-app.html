@@ -1,8 +1,7 @@
 <!--
-  <canopy-app>
-
-  @description Canopy application element. (app-shell)
-  @version 0.0.4
+  canopy-app.html
+  @description Canopy application. (app-shell)
+  @version 0.9.2
   @author Hongchan Choi (hongchan.choi@gmail.com)
 -->
 
@@ -12,7 +11,6 @@
 <link rel="import" href="../bower_components/paper-styles/paper-styles.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../bower_components/paper-drawer-panel/paper-drawer-panel.html">
-<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../bower_components/iron-icons/av-icons.html">
 
@@ -118,6 +116,9 @@
       border-bottom: 1px solid #888888;
     }
 
+    #eAppShell {
+    }
+
     #ePaneEditor {
       @apply(--layout-horizontal);
       min-height: 256px;
@@ -148,6 +149,15 @@
       font-weight: 700;
     }
 
+    .modal-body {
+
+    }
+
+    .modal-options ul {
+      margin: 0 0 0 2em;
+      padding: 0;
+    }
+
     .version {
       text-align: center;
       font-size: 1em;
@@ -155,10 +165,19 @@
       width: 100%;
     }
 
-    paper-dropdown-menu {
-      --paper-dropdown-menu: {
+    #eBrowserCheck {
+      margin: 8em auto;
+      width: 70%;
+      font-family: "Arial";
+      font-weight: 300;
+      font-size: 1em;
+      line-height: 1.5em;
+      z-index: 101;
+    }
 
-      };
+    .browser-check-title {
+      font-size: 2em;
+      font-weight: 700;
     }
   </style>
 
@@ -233,45 +252,45 @@
 
       </div>
 
+      <!-- Modal: About -->
+      <paper-dialog id="eAboutModal" class="modal-container" modal>
+        <div class="modal-title">About</div>
+        <div class="modal-body">
+          <p><a href="https://github.com/hoch/canopy" target="_blank">Canopy</a> 
+            is a debugging suite for Web Audio API programming featuring:</p>
+          <ul>
+            <li>Interactive Waveform inspector with seamless zoom in/out.</li>
+            <li>Web Audio API code editor with:
+              <ul>
+                <li>Web Audio API autocompletion</li>
+                <li>Gist integration</li>
+                <li>Embedded context configuration</li>
+              </ul>
+            </li>
+            <li>On demand playback with looping.</li>
+          </ul>
+          <p><a href="https://github.com/hoch/canopy" target="_blank">Canopy</a>
+            is created by <a href="http://hoch.io" target="_blank">Hongchan Choi</a>
+            for Chromium Web Audio API project.<br>For feedback, question or contribution,
+            please use <a href="https://github.com/hoch/canopy/issues" target="_blank">
+            GitHub issue tracker</a>.</p>
+          <div class="version">0.9.1-alpha</div>
+        </div>
+        <div class="buttons">
+          <paper-button dialog-confirm autofocus raised>CLOSE</paper-button>
+        </div>
+      </paper-dialog>
+
+      <!-- Modal: GistLoader -->
+      <paper-dialog id="eLoaderModal" class="modal-container" modal>
+        <div class="modal-title">Loading Gist</div>
+        <spiral-gistloader id="eGistLoader" class="flex"></spiral-gistloader>
+        <div class="buttons">
+          <paper-button dialog-confirm autofocus raised>CLOSE</paper-button>
+        </div>
+      </paper-dialog>
+
     </paper-drawer-panel>
-
-    <!-- Modal: About -->
-    <paper-dialog id="eAboutModal" class="modal-container" modal>
-      <div class="modal-title">About</div>
-      <div class="modal-body">
-        <p><a href="https://github.com/hoch/canopy" target="_blank">Canopy</a> 
-          is a debugging suite for Web Audio API programming featuring:</p>
-        <ul>
-          <li>Interactive Waveform inspector with seamless zoom in/out.</li>
-          <li>Web Audio API code editor with:
-            <ul>
-              <li>Web Audio API autocompletion</li>
-              <li>Gist integration</li>
-              <li>Embedded context configuration</li>
-            </ul>
-          </li>
-          <li>On demand playback with looping.</li>
-        </ul>
-        <p><a href="https://github.com/hoch/canopy" target="_blank">Canopy</a>
-          is created by <a href="http://hoch.io" target="_blank">Hongchan Choi</a>
-          for Chromium Web Audio API project.<br>For feedback, question or contribution,
-          please use <a href="https://github.com/hoch/canopy/issues" target="_blank">
-          GitHub issue tracker</a>.</p>
-        <div class="version">0.9.1-alpha</div>
-      </div>
-      <div class="buttons">
-        <paper-button dialog-confirm autofocus raised>CLOSE</paper-button>
-      </div>
-    </paper-dialog>
-
-    <!-- Modal: GistLoader -->
-    <paper-dialog id="eLoaderModal" class="modal-container" modal>
-      <div class="modal-title">Loading Gist</div>
-      <spiral-gistloader id="eGistLoader" class="flex"></spiral-gistloader>
-      <div class="buttons">
-        <paper-button dialog-confirm autofocus raised>CLOSE</paper-button>
-      </div>
-    </paper-dialog>
 
   </template>
 

@@ -1,6 +1,6 @@
 {
   "name": "canopy",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "homepage": "https://github.com/hoch/canopy",
   "authors": [
     "Hongchan Choi"
@@ -23,7 +23,6 @@
     "spiral-coder": "hoch/spiral-coder#^0.0.4",
     "spiral-gistloader": "hoch/spiral-gistloader#^0.0.4",
     "spiral-minimap": "hoch/spiral-minimap#^0.0.4",
-    "spiral-waveform": "hoch/spiral-waveform#^0.0.4",
-    "paper-dropdown-menu": "PolymerElements/paper-dropdown-menu#~1.1.1"
+    "spiral-waveform": "hoch/spiral-waveform#^0.0.4"
   }
 }
