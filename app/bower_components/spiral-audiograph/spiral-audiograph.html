@@ -5,12 +5,14 @@
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 
+<!-- dependencies -->
 <script src="../d3/d3.min.js"></script>
 <script src="../lodash/lodash.js"></script>
 <script src="../graphlib/dist/graphlib.core.js"></script>
 <script src="../dagre/dist/dagre.core.js"></script>
 <script src="../dagre-d3/dist/dagre-d3.core.js"></script>
 
+<!-- Spiral AudioContext wrapper -->
 <script src="spiral-audiograph.js"></script>
 
 <!--
@@ -47,10 +49,10 @@ Example:
         border: 1px solid #ccc;
         top: 15px;
         right: 15px;
-        width: 180px;
+        width: 256px;
         background-color: #FFFFFF;
         box-shadow: 0 1px 7px 0 rgba(0, 0, 0, 0.37);
-        padding: 5px 5px;
+        padding: 10px 10px;
       }
 
       #eHideButton {
@@ -62,34 +64,35 @@ Example:
         cursor: pointer;
         color: #D48FA7;
         font-family: Arial;
-        font-size: 1.2em;
+        font-size: 1.4em;
       }
 
       #eInspectorContent {
-        font-family: 'Roboto', 'Arial';
+        font-family: 'Arial';
       }
 
       #eInspectorContent > span.node-name {
-        font-size: 0.85em;
+        font-size: 1.0em;
         font-weight: 700;
       }
 
       #eInspectorContent > span.node-uid {
         font-size: 0.75em;
         font-weight: 400;
+        color: #667B86;
       }
 
       #eInspectorContent > dl {
-        font-size: 0.85em;
-        font-family: 'Roboto Condensed', 'Arial';
+        font-size: 0.8em;
         overflow: hidden;
-        margin: 15px 0 0;
+        margin: 20px 0 0;
       }
 
       #eInspectorContent > dl > dt {
         float: left;
         margin-right: 5px;
-        width: 110px;
+        width: 50%;
+        line-height: 20px;
         height: 20px;
         color: #667B86;
         overflow: hidden;
@@ -98,8 +101,10 @@ Example:
 
       #eInspectorContent > dl > dd {
         float: left;
-        margin: 0;
-        width: 65px;
+        margin: 0 0 0 5px;
+        width: 45%;
+        line-height: 20px;
+        height: 20px;
         overflow: hidden;
         text-overflow: ellipsis;
       }
@@ -438,10 +443,6 @@ Example:
         this._graphDirty = true;
       },
 
-      _handleClick: function (object) {
-        console.log(object);
-      },
-
       _resetGraphToCenter: function () {
         var rect = this.$.eSVG.getBoundingClientRect();
         if (rect.width <= 0)
@@ -462,6 +463,11 @@ Example:
           // TODO: fix this. graph utilities should not access the context.
           var context = SpiralAudioGraph.getCurrentContext();
           var audionode = context.getNodeByUID(node.__data__);
+
+          // TODO: how can audionode be null?
+          if (!audionode)
+            return;
+
           node.firstChild.style.fill = this._nodeStyle[audionode.constructor.name];
         }
       },

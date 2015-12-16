@@ -1,28 +1,32 @@
 <!--
   canopy-app.html
   @description Canopy application. (app-shell)
-  @version 0.9.2
+  @version 0.9.3
   @author Hongchan Choi (hongchan.choi@gmail.com)
 -->
 
 <!-- iron/paper elements -->
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../bower_components/iron-icons/av-icons.html">
 <link rel="import" href="../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
-<link rel="import" href="../bower_components/paper-styles/paper-styles.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
 <link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="../bower_components/paper-drawer-panel/paper-drawer-panel.html">
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../bower_components/iron-icons/av-icons.html">
+<link rel="import" href="../bower_components/paper-styles/paper-styles.html">
+<link rel="import" href="../bower_components/neon-animation/neon-animated-pages.html">
+<link rel="import" href="../bower_components/neon-animation/neon-animatable.html">
+<link rel="import" href="../bower_components/neon-animation/neon-animations.html">
 
 <!-- canopy specific element -->
 <link rel="import" href="canopy-toolbar.html">
 
 <!-- spiral elements -->
+<link rel="import" href="../bower_components/spiral-audiograph/spiral-audiograph.html">
 <link rel="import" href="../bower_components/spiral-coder/spiral-coder.html">
 <link rel="import" href="../bower_components/spiral-gistloader/spiral-gistloader.html">
 <link rel="import" href="../bower_components/spiral-minimap/spiral-minimap.html">
 <link rel="import" href="../bower_components/spiral-waveform/spiral-waveform.html">
-<link rel="import" href="../bower_components/spiral-audiograph/spiral-audiograph.html">
 
 <!-- canopy specific class -->
 <script src="canopyaudio.js"></script>
@@ -135,6 +139,13 @@
       color: #B7DAD7;
       background-color: #506067;
       padding-right: 4px;
+      width: 40px;
+    }
+
+    #eTutorialPages {
+      width: 384px;
+      height: 512px;
+      overflow: hidden;
     }
 
     .modal-container {
@@ -145,16 +156,12 @@
 
     .modal-title {
       padding: 0 1em;
-      font-size: 1.4em;
+      font-size: 1.75em;
       font-weight: 700;
     }
 
-    .modal-body {
-
-    }
-
-    .modal-options ul {
-      margin: 0 0 0 2em;
+    .modal-body ol {
+      margin: 0 0 0 1em;
       padding: 0;
     }
 
@@ -165,18 +172,8 @@
       width: 100%;
     }
 
-    #eBrowserCheck {
-      margin: 8em auto;
-      width: 70%;
-      font-family: "Arial";
-      font-weight: 300;
-      font-size: 1em;
-      line-height: 1.5em;
-      z-index: 101;
-    }
-
-    .browser-check-title {
-      font-size: 2em;
+    .tutorial-title {
+      font-size: 1.2em;
       font-weight: 700;
     }
   </style>
@@ -192,6 +189,7 @@
         <div class="app-title">Canopy</div>
         <div class="flex">
           <paper-item on-click="_onBtnOpenAbout">About</paper-item>
+          <paper-item on-click="_onBtnOpenTutorial">Getting Started</paper-item>
         </div>
         <div class="about">
           <paper-item>
@@ -217,7 +215,8 @@
           <canopy-toolbar>
             <paper-icon-button icon="menu" on-click="_onBtnMenu"></paper-icon-button>
             <span class="title">Canopy</span>
-            <paper-icon-button icon="av:stop" on-click="_onAudioStop"></paper-icon-button>
+            <paper-icon-button icon="av:stop" on-click="_onAudioStop">
+            </paper-icon-button>
             <paper-icon-button icon="av:play-arrow" on-click="_onAudioPlay"></paper-icon-button>
             <paper-icon-button id="eBtnLoop" icon="av:repeat" on-click="_onAudioToggleLoop"></paper-icon-button>
             <span class="flex"></span>
@@ -252,45 +251,110 @@
 
       </div>
 
-      <!-- Modal: About -->
-      <paper-dialog id="eAboutModal" class="modal-container" modal>
-        <div class="modal-title">About</div>
-        <div class="modal-body">
-          <p><a href="https://github.com/hoch/canopy" target="_blank">Canopy</a> 
-            is a debugging suite for Web Audio API programming featuring:</p>
-          <ul>
-            <li>Interactive Waveform inspector with seamless zoom in/out.</li>
-            <li>Web Audio API code editor with:
-              <ul>
-                <li>Web Audio API autocompletion</li>
-                <li>Gist integration</li>
-                <li>Embedded context configuration</li>
-              </ul>
-            </li>
-            <li>On demand playback with looping.</li>
-          </ul>
-          <p><a href="https://github.com/hoch/canopy" target="_blank">Canopy</a>
-            is created by <a href="http://hoch.io" target="_blank">Hongchan Choi</a>
-            for Chromium Web Audio API project.<br>For feedback, question or contribution,
-            please use <a href="https://github.com/hoch/canopy/issues" target="_blank">
-            GitHub issue tracker</a>.</p>
-          <div class="version">0.9.1-alpha</div>
-        </div>
-        <div class="buttons">
-          <paper-button dialog-confirm autofocus raised>CLOSE</paper-button>
-        </div>
-      </paper-dialog>
-
-      <!-- Modal: GistLoader -->
-      <paper-dialog id="eLoaderModal" class="modal-container" modal>
-        <div class="modal-title">Loading Gist</div>
-        <spiral-gistloader id="eGistLoader" class="flex"></spiral-gistloader>
-        <div class="buttons">
-          <paper-button dialog-confirm autofocus raised>CLOSE</paper-button>
-        </div>
-      </paper-dialog>
-
     </paper-drawer-panel>
+
+    <!-- Modal: About -->
+    <paper-dialog id="eAboutModal" class="modal-container" modal>
+      <div class="modal-title">About</div>
+      <div class="modal-body">
+        <p><a href="https://github.com/hoch/canopy" target="_blank">Canopy</a> 
+          is a debugging suite for Web Audio API programming. It offers:</p>
+        <ul>
+          <li>Interactive Waveform inspector with seamless zoom in/out.</li>
+          <li>Interactive audiograph visualization.</li>
+          <li>Web Audio API code editor with:
+            <ul>
+              <li>Web Audio API autocompletion</li>
+              <li>Gist integration</li>
+              <li>Embedded context configuration</li>
+            </ul>
+          </li>
+          <li>On demand playback with looping.</li>
+        </ul>
+        <p><a href="https://github.com/hoch/canopy" target="_blank">Canopy</a>
+          is created by <a href="http://hoch.io" target="_blank">Hongchan Choi</a>
+          for Chromium Web Audio API project with 
+          <a href="https://www.polymer-project.org/1.0/">Polymer</a> and 
+          <a href="https://github.com/hoch/spiral">Spiral</a>.</p>
+        <p>For feedback, question, contribution or concern, please use 
+          <a href="https://github.com/hoch/canopy/issues" target="_blank">
+          GitHub issue tracker</a>.</p>
+        <div class="version">0.9.4-alpha</div>
+      </div>
+      <div class="buttons">
+        <paper-button dialog-confirm autofocus raised>CLOSE</paper-button>
+      </div>
+    </paper-dialog>
+
+    <!-- Modal: Tutorial -->
+    <paper-dialog id="eTutorialModal" class="modal-container" modal>
+      <div class="modal-title">Using Canopy</div>
+      <div class="modal-body">
+        <neon-animated-pages id="eTutorialPages" selected="0">
+          <neon-animatable>
+            <img src="images/step-1.png">
+            <p class="tutorial-title">Write or load code.</p>
+            <p>Load a code snippet by clicking the document icon at the bottom
+              left or you can just write code in the editor.</p>
+          </neon-animatable>
+          <neon-animatable>
+            <img src="images/step-2.png">
+            <p class="tutorial-title">Render the code.</p>
+            <p>Once you have code in the editor, click the arrow icon to render
+              the code. This will play the sound and draw the visualization.</p>
+          </neon-animatable>
+          <neon-animatable>
+            <img src="images/step-3.png">
+            <p class="tutorial-title">Inspect waveform.</p>
+            <p>You can inspect the waveform by dragging around. Drag vertically
+              to zoom in and out on the time, and horizontally to pan the 
+              view port.</p>
+          </neon-animatable>
+          <neon-animatable>
+            <img src="images/step-4.png">
+            <p class="tutorial-title">Navigate waveform.</p>
+            <p>You can use the mini map to navigate the waveform faster.</p>
+          </neon-animatable>
+          <neon-animatable>
+            <img src="images/step-5.png">
+            <p class="tutorial-title">Play sound.</p>
+            <p>The rendered audio buffer can be played without re-rendering.
+              You can also loop the range selected by the view port.</p>
+          </neon-animatable>
+          <neon-animatable>
+            <img src="images/step-6.png">
+            <p class="tutorial-title">Change view mode.</p>
+            <p>You can also inspect the graph after rendering the code.
+              Clicking the eye icon will toggle the view mode between the 
+              waveform and the audio graph.</p>
+          </neon-animatable>
+          <neon-animatable>
+            <img src="images/step-7.png">
+            <p class="tutorial-title">Inspect audiograph.</p>
+            <p>In the audio graph mode, you can zoom in and out by the mouse
+              wheel, move by dragging and click a node or an edge to inspect 
+              AudioNode, AudioParam or even the connection.</p>
+          </neon-animatable>
+          <neon-animatable>
+            <p class="tutorial-title">That's it!</p>
+            <p>Have fun with Canopy!</p>
+          </neon-animatable>
+        </neon-animated-pages>
+        <div class="buttons">
+          <paper-button dialog-dismiss raised>Dismiss</paper-button>
+          <paper-button raised on-click="_onNextTutorialStep">Next</paper-button>
+        </div>
+      </div>
+    </paper-dialog>
+
+    <!-- Modal: GistLoader -->
+    <paper-dialog id="eLoaderModal" class="modal-container" modal>
+      <div class="modal-title">Loading Gist</div>
+      <spiral-gistloader id="eGistLoader" class="flex"></spiral-gistloader>
+      <div class="buttons">
+        <paper-button dialog-confirm autofocus raised>CLOSE</paper-button>
+      </div>
+    </paper-dialog>
 
   </template>
 
@@ -309,17 +373,21 @@
           value: 'Waveform'
         },
 
-        _waveformHeight: Number,
-
-        _editorHeight: {
+        _workspaceHeight: {
           type: Number,
-          value: 400
+          value: 290
         },
+
+        _editorHeight: Number,
 
         _paneMinHeight: {
           type: Number,
           value: 256
-        }
+        },
+
+        _resizeAsyncTask: Object,
+
+        _currentTutorialStep: Number,
 
       },
 
@@ -344,12 +412,13 @@
           'osc.stop(1.0);\n'
         );
 
-        // Define callback for onRenderComplete for spiral-coder.
+        // Define callbacks for onRenderComplete for spiral-coder.
         this.$.eCoder.onRenderComplete = this._onRenderComplete.bind(this);
         this.$.eGistLoader.onGistLoaded = this._onGistLoaded.bind(this);
 
-        // Initialize pane heights.
-        this._updateEditorWidthByDelta(0);
+        // Initialize pane heights. This is a hack for 0 bounding box issue of
+        // Polymer element.
+        this.async(this._resizePanes, 1);
       },
 
       postMessage: function (id, type, data) {
@@ -396,6 +465,27 @@
         this.$.eAboutModal.open();
       },
 
+      _onBtnOpenTutorial: function () {
+        this._currentTutorialStep = 0;
+        this.$.eTutorialPages.selected = '0';
+        this.$.eTutorialModal.open();
+      },
+
+      _onNextTutorialStep: function () {
+        if (this._currentTutorialStep++ > 6) {
+          this.$.eTutorialModal.close();
+          this.$.eTutorialPages.entryAnimation= ''; 
+          this.$.eTutorialPages.exitAnimation = '';
+          this._currentTutorialStep = 0;
+          this.$.eTutorialPages.selected = 0;
+          return;
+        }
+
+        this.$.eTutorialPages.entryAnimation= 'slide-from-right-animation'; 
+        this.$.eTutorialPages.exitAnimation = 'fade-out-animation';
+        this.$.eTutorialPages.selected = this._currentTutorialStep;
+      },
+
       _onBtnViewChange: function () {
         this._currentView = this._currentView === 'Waveform' 
           ? 'AudioGraph' 
@@ -429,25 +519,42 @@
       },
 
       _resizePanes: function () {
+        if (this._resizeAsyncTask)
+          this.cancelAsync(this._resizeAsyncTask);
+
+        // Initial resizing.
+        if (!this._editorHeight) {
+          this._editorHeight = this.clientHeight - 42 - 16 - this._workspaceHeight;
+        }
+
         // workspace H = total H - title bar H - splitter H - editor H.
         var workspaceHeight = this.clientHeight - 42 - 16 - this._editorHeight;
 
-        this.$.ePaneEditor.style.height = this._editorHeight + 'px';
         this.$.eWorkspace.style.height = workspaceHeight + 'px';
+        this.$.ePaneEditor.style.height = this._editorHeight + 'px';
+        this.$.eTools.style.height = this._editorHeight + 'px';
 
         this.$.eWaveformView.style.height = workspaceHeight + 'px';
         this.$.eAudioGraphView.style.height = workspaceHeight + 'px';
-        
-        this.async(this.notifyResize, 1);
+
+        this._resizeAsyncTask = this.async(this.notifyResize, 16);
       },
 
       _updateEditorWidthByDelta: function (delta) {
-        this._editorHeight -= delta;
+        var maxEditorHeight = this.clientHeight - 42 - 16 - this._paneMinHeight;
+        var newEditorHeight = this._editorHeight - delta;
 
-        if (this._editorHeight < this._paneMinHeight) {
+        if (newEditorHeight >= maxEditorHeight) {
+          this._editorHeight = maxEditorHeight;
+          return;
+        }
+
+        if (newEditorHeight <= this._paneMinHeight) {
           this._editorHeight = this._paneMinHeight;
           return;
         }
+
+        this._editorHeight = newEditorHeight;
 
         this._resizePanes();
       },
@@ -466,7 +573,9 @@
 
       created: function () {},
 
-      ready: function () {
+      ready: function () {},
+
+      attached: function () {
         this._initialize();
       }
     });

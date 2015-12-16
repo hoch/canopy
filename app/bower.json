@@ -23,6 +23,8 @@
     "spiral-coder": "hoch/spiral-coder#^0.0.4",
     "spiral-gistloader": "hoch/spiral-gistloader#^0.0.4",
     "spiral-minimap": "hoch/spiral-minimap#^0.0.4",
-    "spiral-waveform": "hoch/spiral-waveform#^0.0.4"
+    "spiral-waveform": "hoch/spiral-waveform#^0.0.4",
+    "iron-pages": "PolymerElements/iron-pages#~1.0.5",
+    "neon-animation": "PolymerElements/neon-animation#~1.0.8"
   }
 }
