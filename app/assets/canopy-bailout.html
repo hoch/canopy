@@ -1,0 +1,76 @@
+<link rel="import" href="../bower_components/paper-styles/paper-styles.html">
+
+<dom-module id="canopy-bailout">
+
+  <style is="custom-style">
+    :host {
+      -webkit-user-select: none;
+      display: block;
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background-color: #eceff1;
+    }
+
+    #eBailOutContainer {
+      width: 65%;
+      margin: 8em auto;
+      color: #37474f;
+      text-align: center;
+    }
+
+    .title {
+      font-family: 'Roboto Condensed';
+      font-size: 4em;
+      margin-bottom: 1em;
+    }
+
+    .message {
+      font-family: 'Roboto';
+      font-weight: 300;
+      font-size: 1.1em;
+      line-height: 1.75em;
+    }
+
+    ul {
+      margin: 0px;
+      padding: 0px;
+      list-style: none;
+    }
+
+    ul li {
+      font-family: 'Roboto';
+      line-height: 2em;
+    }
+  </style>
+
+  <template>
+
+    <!-- Modal: About -->
+    <div id="eBailOutContainer">
+      <div class="title">Sorry...</div>
+      <div class="message">
+        <p>Well, Canopy is not ready for your browser, just yet.<br>
+          Meanwhile, consider using the latest version of 
+          <a href="http://www.google.com/chrome">Chrome</a>.</p>
+      </div>
+      <div class="buttons">
+        <ul>
+          <li><a href="https://github.com/hoch/canopy/issues">Canopy Issue 
+            Tracker @ GitHub</a></li>
+        </ul>
+      </div>
+    </div>
+
+  </template>
+
+  <script>
+    Polymer({
+      is: 'canopy-bailout',
+      properties: {}
+    });
+  </script>
+
+</dom-module>
