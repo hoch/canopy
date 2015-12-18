@@ -28,8 +28,13 @@
 
     var browserIsGood = which[0] === 'Chrome';
 
-    // Not Chrome, bailing out.
-    if (!browserIsGood) {
+    // Detect URL has the dev mode query.
+    var devMode = window.location.href.split('?q=')[1] === 'dev';
+
+    console.log(window.location.href.split('?q=')[1]);
+    
+    // Not Chrome or dev mode, bailing out.
+    if (!browserIsGood && !devMode) {
       Polymer.Base.importHref(['assets/canopy-bailout.html']);
       var bailoutDialog = document.createElement('canopy-bailout');
       document.body.appendChild(bailoutDialog);
@@ -41,6 +46,8 @@
     var canopyAppShell = document.createElement('canopy-app');
     document.body.appendChild(canopyAppShell);
   }
+
+  console.log('[canopy] loading components: ' + performance.now());
 
   window.addEventListener('WebComponentsReady', handleLanding);
 
