@@ -30,8 +30,6 @@
 
     // Detect URL has the dev mode query.
     var devMode = window.location.href.split('?q=')[1] === 'dev';
-
-    console.log(window.location.href.split('?q=')[1]);
     
     // Not Chrome or dev mode, bailing out.
     if (!browserIsGood && !devMode) {
