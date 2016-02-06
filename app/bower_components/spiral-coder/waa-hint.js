@@ -171,7 +171,7 @@
     return found;
   }
 
-  // Web Audio API keywords.
+  // Web Audio API keyword dictionary.
   var WEBAUDIOAPI_KEYWORDS = ("AudioContext suspend resume close createBuffer createBufferSource " +
     "createMediaElementSource createMediaStreamSource createMediaStreamDestination createAnalyser " +
     "createGain createDelay createBiquadFilter createWaveShaper createPanner createStereoPanner " +
@@ -181,7 +181,7 @@
     "setValueCurveAtTime cancelScheduledValues getChannelData copyFromChannel copyToChannel " +
     "connect disconnect start stop setPosition setOrientation setVelocity setPosition setOrientation " +
     "setVelocity getFloatFrequencyData getByteFrequencyData getFloatTimeDomainData getByteTimeDomainData " +
-    "getFrequencyResponse start stop setPeriodicWave" +
+    "getFrequencyResponse start stop setPeriodicWave " +
     "attack buffer channelCount channelCountMode channelInterpretation " +
     "coneInnerAngle coneOuterAngle coneOuterGain context currentTime curve custom defaultValue destination " +
     "detune distanceModel dopplerFactor duration fftSize frequency frequencyBinCount gain " +
@@ -194,8 +194,4 @@
     "'highpass' 'highshelf' 'clamped-max' 'max' 'bandpass' 'explicit' 'discrete' 'notch' 'speakers' " +
     "case continue default do else false for function " +
     "if in instanceof new null return switch true try typeof var while").split(" ");
-
-  // var WEBAUDIOAPI_ENUMS = ("sawtooth sine square 2x 4x none allpass triangle lowpass lowshelf peaking " +
-  //   "highpass highshelf clamped-max max bandpass explicit discrete notch speakers").split(" ");
-
 });

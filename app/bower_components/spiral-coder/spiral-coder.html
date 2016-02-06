@@ -1,10 +1,17 @@
 <!--
-Copyright (c) 2015 Hongchan Choi. All rights reserved.
--->
+  Copyright (c) 2015 Hongchan Choi. MIT License.
+
+  @description: The code editor for Web Audio API with auto complete and the
+  audio renderer. Internally this uses CodeMirror editor.
+ -->
+
+ <!-- Polymer vanilla elements -->
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../iron-fit-behavior/iron-fit-behavior.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../paper-styles/paper-styles.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
 
 <!-- CodeMirror -->
 <link rel="stylesheet" href="../CodeMirror/lib/codemirror.css">
@@ -15,7 +22,7 @@ Copyright (c) 2015 Hongchan Choi. All rights reserved.
 <script src="../CodeMirror/addon/hint/show-hint.js"></script>
 <script src="waa-hint.js"></script>
 
-<!-- SpiralCoder::CodeRenderer -->
+<!-- SpiralCoder::CodeRenderer module -->
 <script src="code-renderer.js"></script>
 
 <!--
@@ -50,6 +57,7 @@ Example:
     }
 
     #eStatusBar {
+      @apply(--layout-horizontal);
       color: #37474F;
       background-color: #ECEFF1;
       position: absolute;
@@ -59,17 +67,29 @@ Example:
       line-height: 23px;
       border-top: 1px solid #ccc;
       font-size: 10px;
-      text-align: right;
       overflow: hidden;
       z-index: 10;
     }
 
+    #eRenderSetting {
+      padding-left: 7.5px;
+      width: 300px;
+    }
+
     #eStatusMessage {
-      margin-right: 7.5px;
+      @apply(--layout-flex);
+      text-align: right;
+      padding-right: 7.5px;
     }
 
     #eStatusBar.on-error {
       background-color: #F48FB1;
+    }
+
+    paper-icon-button {
+      --paper-icon-button-disabled: {
+        color: #000;
+      };
     }
   </style>
 
@@ -78,7 +98,8 @@ Example:
     <div class="flex">
       <div id="eEditor"></div>
       <div id="eStatusBar">
-        <span id="eStatusMessage"></span>
+        <div id="eRenderSetting"></div>
+        <div id="eStatusMessage"></div>
       </div>
     </div>
 
@@ -87,7 +108,6 @@ Example:
 </dom-module>
 
 <script>
-
   Polymer({
 
     is: 'spiral-coder',
@@ -122,12 +142,12 @@ Example:
         }
       },
 
-      _renderOptions: {
+      _defaultRenderSetting: {
         type: Object,
         value: {
           sampleRate: 44100,
           numChannels: 1,
-          duration: 3
+          duration: 1
         }
       },
 
@@ -145,15 +165,6 @@ Example:
       _heightStatusBar: {
         type: Number,
         value: 24
-      },
-
-      /**
-       * Callback function for the 'render-complete' event.
-       * @type {Function}
-       */
-      onRenderComplete: {
-        type: Function,
-        value: null
       }
     },
 
@@ -161,79 +172,132 @@ Example:
       'iron-resize': '_onResize'
     },
 
-
-    // Private APIs.
-
     _markAsDirty: function () {
-      if (this._isDirty)
-        return;
-
       this._isDirty = true;
     },
 
     _markAsClean: function () {
-      if (!this._isDirty)
-        return;
-
       this._isDirty = false;
     },
 
+    // Display autocompletion on type with CodeMirror.
+    // http://jsfiddle.net/u26mK/6/
     _showAutoCompletionIfPossible: function (cm) {
-      // On-the-fly auto-completion. (http://jsfiddle.net/u26mK/6/)
       setTimeout(function () {
-        CodeMirror.showHint(cm, CodeMirror.hint.webaudioapi, { completeSingle: false });
+        CodeMirror.showHint(cm, CodeMirror.hint.webaudioapi, {
+          completeSingle: false
+        });
       }, 250);
     },
 
+    // Handle resize event.
     _onResize: function () {
       var rect = this.getBoundingClientRect();
+
+      // If rect is not initialized, stop here.
       if (rect.width === 0)
         return;
 
       this.$.eEditor.style.height = rect.height + 'px';
       this.$.eEditor.style.width = rect.width + 'px';
       this.$.eStatusBar.style.width = rect.width + 'px';
-
-      // 24 is the height of status bar.
       this._editor.setSize('100%', rect.height - this._heightStatusBar);
-      
     },
 
+    // Handle code-changed event.
     _onCodeChange: function () {
+      this._updateStatusMessage('post', 'Code changed.');
+
       this._markAsDirty();
-      this._setStatusBar('post', 'Code changed.');
 
-      // If the code is dirty, warn user first.
-      window.onbeforeunload = function () {
-        return 'Your work will be lost.';
-      };
+      this._notify('canopy-code-changed');
+
+      // If the code is dirty, warn user first before closing the tab.
+      if (!window.onbeforeunload) {
+        window.onbeforeunload = function () {
+          return 'Your work on Canopy editor will be lost.';
+        };
+      }
     },
 
-    _onRenderSettingChanged: function () {
-      this._markAsDirty();
-      this._setStatusBar('post', 'Render setting changed.');
-    },
-
-    _openRenderSettings: function () {
-      this.$.eSettings.open();
-    },
-
+    // Handler render-complete event
     _onRenderComplete: function (buffer) {
-      this._lastRenderedAudioBuffer = buffer;
-
-      if (this.onRenderComplete)
-        this.onRenderComplete(this._lastRenderedAudioBuffer);
+      this._updateLastRenderedBuffer(buffer);
+      this._updateStatusMessage('post', {
+        message: 'Successfully rendered.'
+      });
 
       this._markAsClean();
 
-      this._setStatusBar('post', 'Successfully rendered.');
-
-      this._notify('render-complete', {
-        buffer: this._lastRenderedAudioBuffer
+      this._notify('canopy-render-complete', {
+        buffer: buffer
       });
     },
 
-    _setStatusBar: function (type, message) {
+    _renderCode: function (code, options) {
+      // Default setting.
+      var setting = {
+        numChannels: this._defaultRenderSetting.numChannels,
+        duration: this._defaultRenderSetting.duration,
+        sampleRate: this._defaultRenderSetting.sampleRate,
+        oncomplete: this._onRenderComplete.bind(this)
+      };
+
+      // Extract setting parameters from the code body and clamp them.
+      var sampleRateTokens = /\/\/\s*@sampleRate\s*(\S+)/g.exec(code);
+      var numChannelsTokens = /\/\/\s*@channels\s*(\S+)/g.exec(code);
+      var durationTokens = /\/\/\s*@duration\s*(\S+)/g.exec(code);
+
+      if (numChannelsTokens) {
+        var numChannel = Number(numChannelsTokens[1]);
+        if (numChannel < 1 || numChannel > 32) {
+          this._updateStatusMessage('error', {
+            message: 'Number of channel is out of range. (1 ~ 32)'
+          });
+          return;
+        }
+
+        setting.numChannels = numChannel;
+      }
+
+      if (durationTokens) {
+        var duration = Number(durationTokens[1]);
+        if (duration < 0.5 || duration > 10) {
+          this._updateStatusMessage('error', {
+            message: 'Duration is out of range. (0.5 ~ 10sec)'
+          });
+          return;
+        }
+
+        setting.duration = duration;
+      }
+
+      if (sampleRateTokens) {
+        var sampleRate = Number(sampleRateTokens[1]);
+        if (sampleRate < 3000 || sampleRate > 192000) {
+          this._updateStatusMessage('error', {
+            message: 'Sample rate is out of range. (3000 ~ 192000Hz)'
+          });
+          return;
+        }
+
+        setting.sampleRate = sampleRate;
+      }
+      
+      // All good. Render buffer!
+      SpiralCoder.runCodeWithRenderSetting(code, setting);
+    },
+
+    _updateLastRenderedBuffer: function (buffer) {
+      this._lastRenderedBuffer = buffer;
+
+      this.$.eRenderSetting.textContent =
+        'Channels = ' + buffer.numberOfChannels +
+        ', Duration = ' + buffer.duration + ' sec, ' +
+        'SampleRate = ' + buffer.sampleRate + ' Hz';
+    },
+
+    _updateStatusMessage: function (type, data) {
       switch (type) {
         case 'post':
           this.$.eStatusBar.classList.remove('on-error');
@@ -244,34 +308,35 @@ Example:
       }
 
       var d = new Date();
-
       var now = d.getMonth() + '/' + d.getDate() + '/' + d.getFullYear() + ' ' +
         d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
 
-      eStatusMessage.textContent = message + ' (' + now + ')';
+      this.$.eStatusMessage.textContent = data.message + ' (' + now + ')';
     },
 
-
-    // Spiral-specific common methods.
-
+    // Spiral: initialize element.
     _initialize: function () {
+      // Forced resize.
       this._onResize();
-      this._editor.on('change', this._onCodeChange.bind(this));
 
-      // Implement on-the-fly auto-completion.
+      // Binding event with CodeMirror editor.
+      this._editor.on('change', this._onCodeChange.bind(this));
       this._editor.on('inputRead', this._showAutoCompletionIfPossible.bind(this));
 
-      this._setStatusBar('post', '<spiral-coder> is ready.');
-      this._isDirty = false;
+      this._updateStatusMessage('post', {
+        message: '<spiral-coder> is ready.'
+      });
+
+      this._markAsClean();
     },
 
+    // Spiral element internal method for communication to app router.
+    // |data.buffer| is the rendered audio content.
     _notify: function (eventType, data) {
       if (this._controller)
         this._controller.postMessage(this._componentId, eventType, data);
     },
 
-
-    // Public APIs.
 
     /**
      * Render an AudioBuffer with the current code.
@@ -279,24 +344,12 @@ Example:
     renderAudioBuffer: function () {
       try {
         var code = this._editor.getValue();
-
-        if (this._preCode)
-          code = this._preCode + code;
-
-        if (this._postCode)
-          code += this._postCode;
-
-        SpiralCoder.renderCodeWithOptions(code, {
-          onComplete: this._onRenderComplete.bind(this),
-          sampleRate: this._renderOptions.sampleRate,
-          duration: this._renderOptions.duration,
-          numChannels: this._renderOptions.numChannels,
-          audiograph: this._audiograph
-        });
+        code = (this._preCode || '') + code + (this._postCode || '');;
+        this._renderCode(code);
       } catch (error) {
         console.dir(error);
         var message = '[' + error.name + '] ' + error.message + '.';
-        this._setStatusBar('error', message);
+        this._updateStatusMessage('error', message);
       }
     },
 
@@ -306,10 +359,6 @@ Example:
      */
     setController: function (controller) {
       this._controller = controller;
-    },
-
-    setAudioGraphView: function (audiograph) {
-      this._audiograph = audiograph;
     },
 
     /**
@@ -322,7 +371,7 @@ Example:
 
     /**
      * Set the code before the body content;
-     * @param {String]} code Code to be prepended to the content.
+     * @param {String} code Code to be prepended to the content.
      */
     setPreCode: function (code) {
       this._preCode = code;
@@ -345,14 +394,6 @@ Example:
     },
 
     /**
-     * Get the current render options.
-     * @return {Object} The render option as an object.
-     */
-    getRenderSettings: function () {
-      return this._renderOptions;
-    },
-
-    /**
      * Get the last rendered buffer.
      * @return {AudioBuffer} The last rendered buffer.
      */
@@ -364,19 +405,17 @@ Example:
     },
 
     /**
-     * Save the current buffer to a file.
+     * TODO: Save the current buffer to the local cache.
      */
-    saveCode: function () {
-      // TODO: http://jsfiddle.net/UselessCode/qm5AG/
-      // var code = this._editor.getValue();
-    },
-
-    // Life cycle method.
+    // saveCodeToCache: function () {
+    //   // TODO: http://jsfiddle.net/UselessCode/qm5AG/
+    //   // var code = this._editor.getValue();
+    // },
 
     ready: function() {
       this._editor = CodeMirror(this.$.eEditor, this._EDITOR_OPTIONS);
 
-      // Give 5m delay. |this.$.ePanel| height takes some times to be
+      // HACK: Give 5m delay. |this.$.ePanel| height takes some times to be
       // initialized properly.
       this.async(this._initialize, 5);
     }

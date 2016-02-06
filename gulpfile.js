@@ -1,11 +1,17 @@
-var gulp        = require('gulp'),
-    plugins     = require('gulp-load-plugins')(),
-    runSequence = require('run-sequence'),
-    del         = require('del');
-
+/**
+ * Copyright (c) 2015 Hongchan Choi. MIT License.
+ *
+ * Project Gulp file.
+ */
+var gulp        = require('gulp');
+var plugins     = require('gulp-load-plugins')();
+var runSequence = require('run-sequence');
+var del         = require('del');
 var browserSync = require('browser-sync').create();
 var deploy      = require('gulp-gh-pages');
 
+
+// serve: launch local dev server.
 gulp.task('serve', function () {
 
   browserSync.init({
@@ -16,22 +22,31 @@ gulp.task('serve', function () {
   });
 
   gulp.watch([
-    'app/*.html',
-    'app/assets/*',
-    'app/js/*.js',
-    'app/css/*.css',
-    '!app/codemirror/**/*'
+    'app/index.html',
+    'app/assets/**/*',
+    'bower_components/spiral-audiograph/**/*',
+    'bower_components/spiral-code/**/*',
+    'bower_components/spiral-gistloader/**/*',
+    'bower_components/spiral-minimap/**/*',
+    'bower_components/spiral-waveform/**/*',
   ], browserSync.reload);
 });
 
 
-// gh-pages integration
+// deploy: deploy current build to the gh-pages branch.
 gulp.task('deploy', function () {
   return gulp.src('app/**/*')
     .pipe(deploy());
 });
 
 
-gulp.task('default', function (cb) {
-  runSequence('serve', cb);
+// clean: clean the deploy residue.
+gulp.task('clean', function () {
+  del('.publish/');
+});
+
+
+// publish: deploy and clean.
+gulp.task('publish', function (callback) {
+  runSequence('deploy', 'clean', callback);
 });

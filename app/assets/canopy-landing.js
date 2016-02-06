@@ -1,12 +1,17 @@
 /**
- * canopy-landing.js
- * @version 0.9.2
+ * Copyright (c) 2015 Hongchan Choi. MIT License.
+ *
+ * This is a gate logic based on the browser type.  If the browser is Chrome,
+ * the site will launch without any issue.  However, for the case of FireFox or
+ * Safari, the gate will display warning that the application might not be fully
+ * functioning.
  */
 (function (window) {
   
   'use strict';
   
   function handleLanding() {
+    
     // Detect browser and version.
     var which = (function () {
       var ua = navigator.userAgent, tem,

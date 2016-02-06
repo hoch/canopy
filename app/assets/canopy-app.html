@@ -1,11 +1,10 @@
 <!--
-  canopy-app.html
-  @description Canopy application. (app-shell)
-  @version 0.9.5-alpha
-  @author Hongchan Choi (hongchan.choi@gmail.com)
--->
+  Copyright (c) 2015 Hongchan Choi. MIT License.
 
-<!-- iron/paper elements -->
+  @description: Main app shell for Canopy.
+ -->
+
+<!-- Polymer vanilla elements -->
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../bower_components/iron-icons/av-icons.html">
 <link rel="import" href="../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
@@ -18,17 +17,17 @@
 <link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="../bower_components/paper-styles/paper-styles.html">
 
-<!-- canopy custom element -->
+<!-- Canopy custom element -->
 <link rel="import" href="canopy-toolbar.html">
 
-<!-- spiral elements -->
+<!-- Spiral elements -->
 <link rel="import" href="../bower_components/spiral-audiograph/spiral-audiograph.html">
 <link rel="import" href="../bower_components/spiral-coder/spiral-coder.html">
 <link rel="import" href="../bower_components/spiral-gistloader/spiral-gistloader.html">
 <link rel="import" href="../bower_components/spiral-minimap/spiral-minimap.html">
 <link rel="import" href="../bower_components/spiral-waveform/spiral-waveform.html">
 
-<!-- canopy specific class -->
+<!-- Canopy specific module -->
 <script src="canopy-audio.js"></script>
 
 <!-- dom-module definition -->
@@ -245,8 +244,8 @@
 
         <div id="ePaneEditor">
           <div id="eTools">
-            <paper-icon-button icon="send" on-click="_onBtnRender">
-            </paper-icon-button>
+            <paper-icon-button id="eBtnRender" icon="send" 
+              on-click="_onBtnRender"></paper-icon-button>
             <paper-icon-button id="eBtnViewChange" icon="visibility" 
               on-click="_onBtnViewChange">
             </paper-icon-button>
@@ -378,7 +377,7 @@
 
         _version: {
           type: String,
-          value: '0.9.5-alpha'
+          value: '0.9.6-dev'
         },
 
         _currentView: {
@@ -423,7 +422,7 @@
         this.$.eCoder.setController(this);
 
         // Define callbacks for onRenderComplete for spiral-coder.
-        this.$.eCoder.onRenderComplete = this._onRenderComplete.bind(this);
+        // this.$.eCoder.onRenderComplete = this._onRenderComplete.bind(this);
         this.$.eGistLoader.onGistLoaded = this._onGistLoaded.bind(this);
 
         // Default code snippet.
@@ -443,6 +442,10 @@
           'osc.stop(1.0);\n'
         );
 
+        // Set pre/post code for graph visualization.
+        this.$.eCoder.setPreCode('SpiralAudioGraphService.trackContext(context);');
+        this.$.eCoder.setPostCode('SpiralAudioGraphService.draw();');
+
         // Initialize pane heights. 
         // TODO: This is a hack for 0 bounding box issue of Polymer element.
         this.async(this._resizePanes, 1);
@@ -450,6 +453,7 @@
         console.log('[canopy] Ready (' + this._version + '): ' 
           + performance.now());
 
+        // This activates the developer mode.
         // this._DEV_activate();
       },
 
@@ -503,7 +507,9 @@
       // Activate DEV mode.
       _DEV_activate: function () {
         console.log('[canopy] Entering dev mode...');
-        this._onMenuTutorial();
+
+        // Below you can put any thing that you want to test.
+        // this._onMenuTutorial();
       },
 
 
@@ -525,7 +531,7 @@
       },
 
       // When spiral-coder finishes rendering.
-      _onRenderComplete: function (buffer) {
+      _onRenderBufferToViews: function (buffer) {
         this.$.eWaveform.setAudioBuffer(buffer);
         this.$.eWaveform.setViewRange(0, buffer.duration * 0.25);
         this.$.eMiniMap.setAudioBuffer(buffer);
@@ -574,18 +580,18 @@
 
       // Button: Render
       _onBtnRender: function () {
+        // Clear the previous graph visualization.
         SpiralAudioGraphService.clear();
-        this.$.eCoder.setPreCode('SpiralAudioGraphService.trackContext(context);');
-        this.$.eCoder.setPostCode('SpiralAudioGraphService.draw();');
+        this.$.eBtnRender.disabled = true;
+
         this.$.eCoder.renderAudioBuffer();
       },
 
       // Button: View Change
       _onBtnViewChange: function () {
-        this._currentView = this._currentView === 'Waveform'
-          ? 'AudioGraph'
-          : 'Waveform';
-
+        // Toggle the current view.
+        this._currentView = this._currentView === 'Waveform' ? 
+          'AudioGraph' : 'Waveform';
         var isWaveform = this._currentView === 'Waveform';
         this.$.eWaveformView.style.display = isWaveform ? 'block' : 'none';
         this.$.eAudioGraphView.style.display = isWaveform ? 'none' : 'block';
@@ -621,12 +627,8 @@
           eBtnLoop.style.color = 'gray';
       },
 
-      created: function () {
-      },
-
-      ready: function () {
-
-      },
+      created: function () {},
+      ready: function () {},
 
       // Built-in life cycle: entry point.
       attached: function () {
@@ -646,12 +648,24 @@
        */
       postMessage: function (id, type, data) {
         switch (id) {
+          
           case 'spiral-minimap':
             this.$.eWaveform.setViewRange(data.start, data.end);
             break;
+          
           case 'spiral-waveform':
             this.$.eMiniMap.setRegion(data.start, data.end);
             break;
+
+          case 'spiral-coder':
+            switch(type) {
+              case 'canopy-render-complete':
+                this._onRenderBufferToViews(data.buffer);
+                break;
+              case 'canopy-code-changed':
+                this.$.eBtnRender.disabled = false;
+                break;
+            }
         }
       }
     });
