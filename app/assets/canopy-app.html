@@ -209,6 +209,7 @@
       <!-- workspace -->
       <div main class="workspace">
 
+        <!-- pane::workspace -->
         <div id="eWorkspace">
 
           <canopy-toolbar>
@@ -242,6 +243,7 @@
           <div class="splitter-handle"></div>
         </div>
 
+        <!-- pane::editor -->
         <div id="ePaneEditor">
           <div id="eTools">
             <paper-icon-button id="eBtnRender" icon="send" 
@@ -438,8 +440,7 @@
           'gain.gain.value = 0.5;\n\n' +
           'osc.connect(gain);\n' +
           'gain.connect(context.destination);\n\n' +
-          'osc.start();\n' +
-          'osc.stop(1.0);\n'
+          'osc.start();\n\n'
         );
 
         // Set pre/post code for graph visualization.
@@ -641,7 +642,7 @@
       // =======================================================================
 
       /**
-       * Receives posted messages from other Spiral elements.
+       * The app router. Receives posted messages from other Spiral elements.
        * @param  {String} id   Spiral component ID
        * @param  {String} type Event type
        * @param  {Object} data Data
