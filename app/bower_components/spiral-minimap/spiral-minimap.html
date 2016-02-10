@@ -99,8 +99,10 @@ Example:
       this._ctx = this.$.canvas.getContext('2d');
 
       // Create minimap drawer instance.
-      this._miniMapDrawer = SpiralMiniMap.create(this._ctx, 0, 0,
-        this._width, this._height);
+      this._miniMapDrawer = SpiralMiniMap.create(this._ctx, this._width, this._height);
+
+      // Initial forced resize.
+      this._onResize();
     },
 
     _onResize: function () {
@@ -114,9 +116,6 @@ Example:
 
       // Update the dimension of minimap drawer.
       this._miniMapDrawer.setSize(this._width, this._height);
-
-      // Trigger redraw.
-      this._updateView();
     },
 
     _convertSecondToPixel: function (second) {
@@ -195,15 +194,19 @@ Example:
       var region = this._miniMapDrawer.getRegion();
       var handleL = this._convertSecondToPixel(region.start);
       var handleR = this._convertSecondToPixel(region.end);
+      var centerLine = this._miniMapDrawer.getCenterCoord();
 
       switch(pos.state) {
 
+        // TODO: check pos.y for the better user interaction. If pos.y is above
+        // the center line, select handleL, otherwise select handleR.
+        // TODO: use dy rather than ddy.
         case 'start':
-          if (handleL - 40 <= pos.x && pos.x <= handleL + 10) {
+          if (handleL - 10 <= pos.x && pos.x <= handleL + 40) {
             this._uiMode = 'MOVE_HANDLE_L';
-          } else if (handleR - 10 <= pos.x && pos.x <= handleR + 40) {
+          } else if (handleR - 40 <= pos.x && pos.x <= handleR + 10) {
             this._uiMode = 'MOVE_HANDLE_R';
-          } else if (handleL + 10 < pos.x && pos.x < handleR - 10) {
+          } else if (handleL + 40 < pos.x && pos.x < handleR - 40) {
             this._uiMode = 'MOVE_REGION';
           } else {
             this._uiMode = 'CREATE_REGION';
@@ -267,13 +270,8 @@ Example:
     attached: function () {
       // Initialize and force-resize at startup. This is done asynchronously to
       // ensure the first redraw.
-      this.async(function () {
-        this.notifyResize();
-        this._initialize();
-        this._onResize();  
-      }, 1);
+      this.async(this._initialize, 1);
     },
-
 
     /**
      * Sets the controller object for reporting the local state change.
@@ -304,9 +302,6 @@ Example:
 
       this._audioBuffer = audioBuffer;
       this._miniMapDrawer.setAudioBuffer(this._audioBuffer);
-
-      // Trigger draw.
-      this._updateView();
     },
 
     /**
@@ -319,7 +314,6 @@ Example:
         return;
 
       this._miniMapDrawer.setRegion(start, end);
-      this._updateView();
     },
 
     /**

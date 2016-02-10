@@ -29,7 +29,9 @@
     this.data = null;
     this.dataDuration = 0;
     this.sampleRate = 44100;
+    
     this.timeRuler = null;
+    this.ampRuler = null;
   };
 
   WaveformDrawer.prototype.setSize = function (width, height) {
@@ -46,6 +48,10 @@
 
   WaveformDrawer.prototype.setTimeRuler = function (timeRuler) {
     this.timeRuler = timeRuler;
+  };
+
+  WaveformDrawer.prototype.setAmpRuler = function (ampRuler) {
+    this.ampRuler = ampRuler;
   };
 
   // start and end as in seconds.
@@ -96,14 +102,23 @@
   };
 
   WaveformDrawer.prototype._drawGrids = function () {
-    var grid = this.timeRuler.currentGridsPos;
+    var timeGrids = this.timeRuler.currentGridsPos;
+    var ampGrids = this.ampRuler.currentGridsPos;
 
     this.ctx.strokeStyle = STYLE.colorGridLine;
+    
     this.ctx.beginPath();
-    for (var i = 0; i < grid.length; i++) {
-      this.ctx.moveTo(grid[i], 0);
-      this.ctx.lineTo(grid[i], this.height);
+    
+    for (var i = 0; i < timeGrids.length; i++) {
+      this.ctx.moveTo(timeGrids[i], 0);
+      this.ctx.lineTo(timeGrids[i], this.height);
     }
+    
+    for (i = 0; i < ampGrids.length; i++) {
+      this.ctx.moveTo(0, ampGrids[i]);
+      this.ctx.lineTo(this.width, ampGrids[i]);
+    }
+    
     this.ctx.stroke();
   };
 
@@ -173,10 +188,6 @@
         this.ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
     }
     this.ctx.stroke();
-
-  };
-
-  WaveformDrawer.prototype.gridDrawer = function (xPos) {
 
   };
 

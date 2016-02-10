@@ -39,68 +39,59 @@ Example:
 
   <style>
     :host {
-      @apply(--layout);
-      @apply(--layout-horizontal);
+      @apply(--layout-wrap);
+      position: relative;
       font-family: "Roboto";
-      min-width: 256px;
-      min-height: 256px;
       width: 100%;
     }
 
     .CodeMirror {
+      width: 100%;
       height: auto;
     }
 
     #eEditor {
-      z-index: 1;
+      background-color: #FFDCE0;
       overflow: hidden;
+      z-index: 1;
     }
 
     #eStatusBar {
       @apply(--layout-horizontal);
-      color: #37474F;
-      background-color: #ECEFF1;
+      width: 100%;
+      height: 24px;
       position: absolute;
       bottom: 0;
-      right: 0;
-      height: 23px;
-      line-height: 23px;
-      border-top: 1px solid #ccc;
+      color: #37474F;
+      background-color: #D1DCE0;
+      line-height: 24px;
       font-size: 10px;
       overflow: hidden;
-      z-index: 10;
+      z-index: 5;
     }
 
     #eRenderSetting {
-      padding-left: 7.5px;
+      margin-left: 7.5px;
       width: 300px;
     }
 
     #eStatusMessage {
       @apply(--layout-flex);
       text-align: right;
-      padding-right: 7.5px;
+      margin-right: 7.5px;
     }
 
     #eStatusBar.on-error {
       background-color: #F48FB1;
     }
-
-    paper-icon-button {
-      --paper-icon-button-disabled: {
-        color: #000;
-      };
-    }
   </style>
 
   <template>
 
-    <div class="flex">
-      <div id="eEditor"></div>
-      <div id="eStatusBar">
-        <div id="eRenderSetting"></div>
-        <div id="eStatusMessage"></div>
-      </div>
+    <div id="eEditor"></div>
+    <div id="eStatusBar">
+      <div id="eRenderSetting"></div>
+      <div id="eStatusMessage"></div>
     </div>
 
   </template>
@@ -113,7 +104,6 @@ Example:
     is: 'spiral-coder',
 
     behaviors: [
-      Polymer.IronFitBehavior,
       Polymer.IronResizableBehavior
     ],
 
@@ -192,24 +182,19 @@ Example:
 
     // Handle resize event.
     _onResize: function () {
-      var rect = this.getBoundingClientRect();
-
-      // If rect is not initialized, stop here.
-      if (rect.width === 0)
-        return;
-
-      this.$.eEditor.style.height = rect.height + 'px';
-      this.$.eEditor.style.width = rect.width + 'px';
-      this.$.eStatusBar.style.width = rect.width + 'px';
-      this._editor.setSize('100%', rect.height - this._heightStatusBar);
+      // Get inner sizes of this polymer element, then adjust the container div
+      // accordingly.
+      this._editor.setSize('100%', this.clientHeight - this._heightStatusBar);
+      this.$.eStatusBar.style.width = this.clientWidth + 'px';
     },
 
     // Handle code-changed event.
     _onCodeChange: function () {
-      this._updateStatusMessage('post', 'Code changed.');
+      this._updateStatusMessage('post', {
+        message: 'Code changed.'
+      });
 
       this._markAsDirty();
-
       this._notify('canopy-code-changed');
 
       // If the code is dirty, warn user first before closing the tab.
@@ -228,7 +213,6 @@ Example:
       });
 
       this._markAsClean();
-
       this._notify('canopy-render-complete', {
         buffer: buffer
       });
@@ -283,7 +267,7 @@ Example:
 
         setting.sampleRate = sampleRate;
       }
-      
+
       // All good. Render buffer!
       SpiralCoder.runCodeWithRenderSetting(code, setting);
     },
@@ -344,7 +328,7 @@ Example:
     renderAudioBuffer: function () {
       try {
         var code = this._editor.getValue();
-        code = (this._preCode || '') + code + (this._postCode || '');;
+        code = (this._preCode || '') + code + (this._postCode || '');
         this._renderCode(code);
       } catch (error) {
         console.dir(error);
@@ -415,9 +399,8 @@ Example:
     ready: function() {
       this._editor = CodeMirror(this.$.eEditor, this._EDITOR_OPTIONS);
 
-      // HACK: Give 5m delay. |this.$.ePanel| height takes some times to be
-      // initialized properly.
-      this.async(this._initialize, 5);
+      // HACK: Give 1m delay to initialize DOM.
+      this.async(this._initialize, 1);
     }
 
   });

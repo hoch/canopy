@@ -83,21 +83,31 @@
       z-index: 0;
     }
 
-    #eWorkspace {
-      @apply(--layout-flex);
-      min-height: 256px;
-      overflow: hidden;
-    }
-
     #eWaveformView {
       @apply(--layout-vertical);
       display: block;
-      min-height: 256px;
+      min-height: 330px;
+    }
+
+    #eMiniMap {
+      height: 64px;
+    }
+
+    #eWaveform {
+      height: auto;
     }
 
     #eAudioGraphView {
       display: none;
-      min-height: 256px;
+      min-height: 330px;
+    }
+
+    #eAppShell {
+    }
+
+    #ePaneViewer {
+      min-height: 330px;
+      overflow: hidden;
     }
 
     #eSplitter {
@@ -118,18 +128,12 @@
       border-bottom: 1px solid #888888;
     }
 
-    #eAppShell {
-    }
-
     #ePaneEditor {
+      @apply(--layout-flex);
       @apply(--layout-horizontal);
-      min-height: 256px;
+      min-height: 150px;
       overflow: hidden;
       z-index: 0;
-    }
-
-    #eMiniMap {
-      height: 64px;
     }
 
     #eTools {
@@ -138,6 +142,9 @@
       background-color: #506067;
       padding-right: 4px;
       width: 40px;
+    }
+
+    #eCoder {
     }
 
     #eTutorialPages {
@@ -209,8 +216,8 @@
       <!-- workspace -->
       <div main class="workspace">
 
-        <!-- pane::workspace -->
-        <div id="eWorkspace">
+        <!-- pane::viewer -->
+        <div id="ePaneViewer">
 
           <canopy-toolbar>
             <paper-icon-button icon="menu" on-click="_onMenu">
@@ -235,16 +242,18 @@
 
           <div id="eAudioGraphView">
             <spiral-audiograph id="eAudioGraph"></spiral-audiograph>
-          </div>
+          </div> 
 
         </div>
 
+        <!-- splitter -->
         <div id="eSplitter" on-track="_onSplitterDragged">
           <div class="splitter-handle"></div>
         </div>
 
         <!-- pane::editor -->
         <div id="ePaneEditor">
+          
           <div id="eTools">
             <paper-icon-button id="eBtnRender" icon="send" 
               on-click="_onBtnRender"></paper-icon-button>
@@ -256,7 +265,9 @@
               on-click="_onBtnOpenGistLoader">
             </paper-icon-button>
           </div>
-          <spiral-coder id="eCoder"></spiral-coder>
+
+          <spiral-coder id="eCoder" class="flex"></spiral-coder>
+
         </div>
 
       </div>
@@ -387,17 +398,13 @@
           value: 'Waveform'
         },
 
-        _workspaceHeight: {
+        // Height of Waveform + Menu + Splitter.
+        _viewerHeight: {
           type: Number,
-          value: 290
+          value: 270 + 42 + 16
         },
 
         _editorHeight: Number,
-
-        _minPaneHeight: {
-          type: Number,
-          value: 256
-        },
 
         _resizeAsyncTask: Object,
 
@@ -409,7 +416,6 @@
         Polymer.IronResizableBehavior
       ],
 
-
       // =======================================================================
       // Private methods.
       // =======================================================================
@@ -418,7 +424,7 @@
       _initialize: function () {
         console.log('[canopy] initializing application: ' + performance.now());
 
-        // Register children modules to the app shell.
+        // // Register children modules to the app shell.
         this.$.eWaveform.setController(this);
         this.$.eMiniMap.setController(this);
         this.$.eCoder.setController(this);
@@ -449,8 +455,8 @@
 
         // Initialize pane heights. 
         // TODO: This is a hack for 0 bounding box issue of Polymer element.
-        this.async(this._resizePanes, 1);
-
+        this.async(this._initializePaneSize, 1);
+        
         console.log('[canopy] Ready (' + this._version + '): ' 
           + performance.now());
 
@@ -458,52 +464,51 @@
         // this._DEV_activate();
       },
 
-      // Resize components accordingly and propagate resize event to children
-      // elements.
-      _resizePanes: function () {
-        if (this._resizeAsyncTask)
-          this.cancelAsync(this._resizeAsyncTask);
-
-        // Initial resizing: fetch the workspace height and calculate the editor
-        // height.
-        if (!this._editorHeight) {
-          this._editorHeight = this.clientHeight - 42 - 16 - this._workspaceHeight;
-        }
-
-        // workspace H = total H - title bar H - splitter H - editor H.
-        var workspaceHeight = this.clientHeight - 42 - 16 - this._editorHeight;
-
-        this.$.eWorkspace.style.height = workspaceHeight + 'px';
-        this.$.eWaveformView.style.height = workspaceHeight + 'px';
-        this.$.eAudioGraphView.style.height = workspaceHeight + 'px';
-
+      _initializePaneSize: function () {
+        // Initialize pane size with the default viewer height.
+        this._editorHeight = this.clientHeight - this._viewerHeight;
+        this.$.ePaneViewer.style.height = this._viewerHeight + 'px';
         this.$.ePaneEditor.style.height = this._editorHeight + 'px';
-        this.$.eTools.style.height = this._editorHeight + 'px';
+        this.$.eWaveformView.style.height = this._viewerHeight - 42 + 'px';
 
-        this._resizeAsyncTask = this.async(this.notifyResize, 16);
+        // Propagate resizing event.
+        // this._resizeAsyncTask = this.async(this._notifyResizeForModules, 3);
       },
 
-      // Update the editor height based on the splitter movement.
-      _updateEditorHeightByDelta: function (delta) {
-        var maxEditorHeight = this.clientHeight - 42 - 16 - this._minPaneHeight;
-        var newEditorHeight = this._editorHeight - delta;
+      _handlePaneResize: function (detail) {
+        
+        switch (detail.state) {
+          case 'start':
+            this._viewerHeight = this.$.ePaneViewer.clientHeight;
+            this._editorHeight = this.$.ePaneEditor.clientHeight;
+            break;
+          case 'track':
+            // If there is any ongoing resizing task, stop now.
+            if (this._resizeAsyncTask)
+              this.cancelAsync(this._resizeAsyncTask);
 
-        // Cannot exceed the max editor height.
-        if (newEditorHeight >= maxEditorHeight) {
-          this._editorHeight = maxEditorHeight;
-          return;
+            this.$.ePaneViewer.style.height = (this._viewerHeight + detail.dy) + 'px';
+            this.$.ePaneEditor.style.height = (this._editorHeight - detail.dy) + 'px';
+            break;
+          case 'end':
+            this._viewerHeight = this.$.ePaneViewer.clientHeight;
+            this._editorHeight = this.$.ePaneEditor.clientHeight;
+            this._resizeAsyncTask = this.async(this._notifyResizeForModules, 3);
+            break;
         }
-
-        // And cannot exceed the minimum pane height.
-        if (newEditorHeight <= this._minPaneHeight) {
-          this._editorHeight = this._minPaneHeight;
-          return;
-        }
-
-        this._editorHeight = newEditorHeight;
-        this._resizePanes();
       },
 
+      _notifyResizeForModules: function () {
+        // CodeMirror needs to be updated.
+        this.$.eCoder.notifyResize();
+        
+        // Update waveform div container and the spiral element.
+        this.$.eWaveformView.style.height = this._viewerHeight - 42 + 'px';
+        this.$.eWaveform.notifyResize();
+
+        // Other modules? not so much.
+        // this.$.eMiniMap.notifyResize();
+      },
 
       // Activate DEV mode.
       _DEV_activate: function () {
@@ -520,15 +525,7 @@
 
       // When the splitter bar dragged. 
       _onSplitterDragged: function (event) {
-        switch(event.detail.state) {
-          case 'track':
-            this.style.cursor = 'row-resize';
-            this._updateEditorHeightByDelta(event.detail.ddy);
-            break;
-          case 'end':
-            this.style.cursor = 'default';
-            break;
-        }
+        this._handlePaneResize(event.detail);
       },
 
       // When spiral-coder finishes rendering.

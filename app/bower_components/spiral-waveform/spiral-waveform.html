@@ -31,10 +31,21 @@ Example:
       overflow: hidden;
       border: 1px solid var(--google-grey-300);
       background-color: var(--google-grey-100);
+      position: relative;
     }
 
     canvas {
       display: block;
+    }
+
+    #eOverlay {
+      position: absolute;
+      bottom: 10px;
+      right: 20px;
+      width: 300px;
+      height: 48px;
+      background-color: #000;
+      color: #FFF;
     }
 
     #eWaveformContainer {
@@ -45,6 +56,7 @@ Example:
   </style>
 
   <template>
+    <div id="eOverlay"></div>
     <canvas id="eTimeRuler" height="32" on-track="_onTrackWaveform"></canvas>
     <div id="eWaveformContainer">
       <canvas id="eWaveform" height="192" on-track="_onTrackWaveform"></canvas>
@@ -115,6 +127,14 @@ Example:
       _ampRulers: Array,
       _waveformDrawers: Array,
 
+      _hoverPos: {
+        type: Object,
+        value: {
+          x: 0,
+          y: 0
+        }
+      },
+
       _componentId: {
         type: String,
         value: 'spiral-waveform'
@@ -150,6 +170,13 @@ Example:
       // TODO: design behavior of this._heightChannel.
       this._heightChannel = this._minHeightChannel;
 
+      // Attach hovering action to the waveform canvas.
+      this.$.eWaveform.addEventListener('mousemove', 
+        this._displayOverlay.bind(this), false);
+
+      // Forced initial resizing.
+      this.async(this._onResize, 1);
+
       this._isInitialized = true;
     },
 
@@ -177,6 +204,7 @@ Example:
           this._widthAmpRuler, yOffset, this._width, this._heightChannel);
         this._waveformDrawers[i].setSampleData(channelData, this._audioBuffer.sampleRate);
         this._waveformDrawers[i].setTimeRuler(this._timeRuler);
+        this._waveformDrawers[i].setAmpRuler(this._ampRulers[i]);
       }
     },
 
@@ -189,7 +217,7 @@ Example:
       var rect = this.getBoundingClientRect();
       this._width = (rect.width || this._width);
       this._height = this.parentNode.clientHeight;
-      
+
       // TODO: handle the height properly.
       this.$.eWaveformContainer.style.width = this._width + 'px';
 
@@ -197,7 +225,6 @@ Example:
       this.$.eWaveformContainer.style.height = (this._height - this._heightTimeRuler - 64) + 'px';
 
       if (this._audioBuffer) {
-
         // Change the size of TimeRuler canvas and object.
         this._timeRuler.setSize(this._width, this._heightTimeRuler);
 
@@ -219,6 +246,18 @@ Example:
 
     /** Render-related **/
 
+    _displayOverlay: function (event) {
+      if (!this._isInitialized)
+        return;
+
+      this._hoverPos.x = event.clientX;
+      this._hoverPos.y = event.clientY;
+
+      var now = this._timeRuler.getNowFromCurrentX(this._hoverPos.x);
+      this.$.eOverlay.textContent = 'NOW: ' + now.toFixed(4) + '\n';
+      this.$.eOverlay.textContent += 'FRAME: ' + ~~(now * 44100);
+    },
+
     _updateView: function (start, end, absPeak) {
       this._viewStart = (start || this._viewStart);
       this._viewEnd = (end || this._viewEnd);
@@ -226,7 +265,7 @@ Example:
       // If absPeak is not given and the buffer is available, calculate the peak
       // value.
       if (!absPeak && this._audioBuffer)
-        this._absPeak = this._findAbsolutePeak() * 1.075;
+        this._absPeak = this._findAbsolutePeak() * 1.4;
       else
         this._absPeak = absPeak;
 
@@ -380,12 +419,7 @@ Example:
     },
 
     attached: function () {
-      // Initialize and force-resize at startup. This is done asynchronously to
-      // ensure the first redraw.
-      this.async(function () {
-        this._initialize();
-        this._onResize();
-      }, 1);
+      this._initialize();
     },
 
     /**

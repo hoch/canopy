@@ -24,6 +24,8 @@
     this.y = y;
     this.width = (width || STYLE.width);
     this.height = (height || STYLE.height);
+    
+    this.startTime = 0;
     this.gridDuration = 1.0;
     this.currentGridsPos = [];
   };
@@ -57,9 +59,13 @@
     return this.secondPerPixel * pixels;
   };
 
+  TimeRuler.prototype.getNowFromCurrentX = function(pixels) {
+    return this.startTime + this.pixelsToSeconds(pixels);
+  }
+
   TimeRuler.prototype.calculateGrid = function (range) {
     // Convert to msec and divide by the max number of grids.
-    var rangeMsec = (range * 1000) / (~~(this.width / STYLE.gridWidth) - 1);
+    var rangeMsec = (range * 1000) / ~~(this.width / STYLE.gridWidth);
 
     // This is from: http://stackoverflow.com/questions/8506881/
     var exponent = ~~(Math.log10(rangeMsec));
@@ -82,6 +88,8 @@
   TimeRuler.prototype.draw = function (start, end) {
     // TO FIX: optimize this.
     this.calculateGrid(end - start);
+
+    this.startTime = start;
 
     this.secondPerPixel = (end - start) / this.width;
     

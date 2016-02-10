@@ -29,6 +29,7 @@
     // Set font once.
     this.ctx.font = STYLE.font;
     this.gridGain = 0.2;
+    this.currentGridsPos = [];
   };
 
   AmpRuler.prototype.setSize = function (width, height) {
@@ -99,6 +100,7 @@
     // Draw grid.
     this.ctx.beginPath();
     this.ctx.fillStyle = STYLE.colorGrid;
+    this.currentGridsPos.length = 0;
     while (gain <= endGain) {
       yPos = this.gainToPixel(gain, absPeak);
       yNeg = this.gainToPixel(-gain, absPeak);
@@ -108,10 +110,12 @@
           this.ctx.fillText(this.formatGain(gain), this.width * 0.75, yPos + 4);
           this.ctx.moveTo(this.width * 0.85, yPos);
           this.ctx.lineTo(this.width, yPos);
+          this.currentGridsPos.push(yPos);
         }
         this.ctx.fillText(this.formatGain(-gain), this.width * 0.75, yNeg + 4);
         this.ctx.moveTo(this.width * 0.85, yNeg);
         this.ctx.lineTo(this.width, yNeg);
+        this.currentGridsPos.push(yNeg);
       }
 
       gain += this.gridGain;

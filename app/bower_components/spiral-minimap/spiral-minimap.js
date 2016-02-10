@@ -18,17 +18,16 @@
   /**
    * @class MiniMap
    */
-  function MiniMap(ctx, x, y, width, height) {
-    this.initialize(ctx, x, y, width, height);
+  function MiniMap(ctx, width, height) {
+    this._initialize(ctx, width, height);
   }
 
 
-  /** Internal methods */
-
-  MiniMap.prototype.initialize = function(ctx, x, y, width, height) {
-    this.ctx = ctx;
-    this.x = x;
-    this.y = y;
+  // Initialize MiniMap instance.
+  // TODO: the sample rate should be adjustable.
+  MiniMap.prototype._initialize = function(ctx, width, height) {
+    // this.x = x;
+    // this.y = y;
     this.width = (width || STYLE.width);
     this.height = (height || STYLE.height);
     this.yCenter = this.height / 2;
@@ -38,75 +37,71 @@
     this.sampleRate = 44100;
     this.absPeak = 0.0;
 
-    this.ctx.font = 
+    this.ctx = ctx;
     this.ctx.textAlign = 'center';
+
+    // For offscreen rendering.
+    var offscreenCanvas = document.createElement('canvas');
+    offscreenCanvas.width = this.width;
+    offscreenCanvas.height = this.height;
+    this.ctxOS = offscreenCanvas.getContext('2d');
+
+    this._needsRedraw = false;
   };
 
-  MiniMap.prototype.setSize = function (width, height) {
-    this.width = (width || STYLE.width);
-    this.height = (height || STYLE.height);
-    this.yCenter = this.height / 2;
-    this.draw();
-  };
+  // Draw waveform.
+  MiniMap.prototype._drawWaveform = function () {
+    // If redraw is not necessary, simply copy the current buffer to the screen.
+    if (!this._needsRedraw) {
+      this.ctx.drawImage(this.ctxOS.canvas, 0, 0);
+      return;
+    }
 
-  // TODO: use off-screen drawing for higher performance.
-  MiniMap.prototype.drawWaveform = function () {
     var startIndex = 0;
     var endIndex = this.data.length;
 
     // Calculate Sample-Per-Pixel.
     var SPP = (endIndex - startIndex) / this.width;
 
-    // Push down context.
-    this.ctx.save();
-    this.ctx.translate(this.x, this.y);
+    // Clear the current rendering.
+    this.ctxOS.fillStyle = STYLE.colorBackground;
+    this.ctxOS.fillRect(0, 0, this.width, this.height);
 
     // Draw center line.
-    this.ctx.beginPath();
-    this.ctx.strokeStyle = STYLE.colorCenterLine;
-    this.ctx.moveTo(0, this.yCenter);
-    this.ctx.lineTo(this.width, this.yCenter);
-    this.ctx.stroke();
+    this.ctxOS.beginPath();
+    this.ctxOS.strokeStyle = STYLE.colorCenterLine;
+    this.ctxOS.moveTo(0, this.yCenter);
+    this.ctxOS.lineTo(this.width, this.yCenter);
+    this.ctxOS.stroke();
 
-    // Draw waveform. Branch based on the SPP level; if SPP is below than the
-    // threshold, use sub-sampling for optimum visualization.
-    // if (SPP > STYLE.SPPThreshold)
-    this.drawSubSampling(startIndex, endIndex, SPP);
-    // else
-    //   this.drawLinearInterpolation(startIndex, endIndex, SPP);
+    // Draw the actual waveform with subsampling. Note that this assumes that
+    // the number of samples is always bigger than the width pixels on the
+    // viewport.
+    this._drawSubSampling(startIndex, endIndex, SPP);
 
     // Clear residues.
-    this.ctx.strokeStyle = STYLE.colorBorder;
-    this.ctx.strokeRect(0, 0, this.width, this.height);
+    // this.ctxOS.strokeStyle = STYLE.colorBorder;
+    // this.ctxOS.strokeRect(0, 0, this.width, this.height);
 
-    // Pop back up context.
-    this.ctx.restore();
+    // Transfer the new rendering to the screen.
+    this.ctx.drawImage(this.ctxOS.canvas, 0, 0);
+
+    // The buffer has been drawn, no redraw necessary.
+    this._needsRedraw = false;
   };
 
-  MiniMap.prototype.handleInvalidAudioBuffer = function () {
-    this.ctx.textAlign = 'center';
-    this.ctx.font = STYLE.fontInfo;
-    this.ctx.fillText('Nothing to display.', this.width * 0.5, this.yCenter + 5);
-  };
-
-  MiniMap.prototype.drawSubSampling = function (startIndex, endIndex) {
-
-    // For selected regions.
-    // var regionStartIndex = this.regionStart * this.sampleRate;
-    // var regionEndIndex = this.regionEnd * this.sampleRate;
-
-    // For scanning-block.
+  // Drawing subroutine with subsampling technique.
+  MiniMap.prototype._drawSubSampling = function (startIndex, endIndex) {
+    // Subsampling uses block scanning to find the positive max and negative max
+    // for the target region.
     var SPP = (endIndex - startIndex) / this.width;
     var blockStart = startIndex;
     var blockEnd = startIndex + SPP;
     var negMax = 0.0, posMax = 0.0;
 
-    
-    // This is a two-step process: draw the normal region first and then draw
-    // the highlighted region.
-    this.ctx.beginPath();    
+    this.ctxOS.beginPath();
 
-    // Need to draw every pixel: numSamplesToDraw > numPixels.
+    // Need to draw every pixel: almost always numSamplesToDraw > numPixels.
     for (var i = 0; i < this.width; i++) {
 
       // Sub-sampling routine: the range of sub-sampling is
@@ -129,110 +124,61 @@
       negMax = Math.max(-1.0, negMax / this.absPeak);
 
       // Get drawing Y offsets.
-      this.ctx.moveTo(i, (1 - posMax) * this.yCenter);
-      this.ctx.lineTo(i, (1 - negMax) * this.yCenter);
+      this.ctxOS.moveTo(i, (1 - posMax) * this.yCenter);
+      this.ctxOS.lineTo(i, (1 - negMax) * this.yCenter);
 
       blockStart = blockEnd;
       blockEnd += SPP;
     }
 
-    this.ctx.strokeStyle = STYLE.color;
-    this.ctx.stroke();
+    this.ctxOS.strokeStyle = STYLE.color;
+    this.ctxOS.stroke();
   };
 
-  MiniMap.prototype.drawLinearInterpolation = function (startIndex, endIndex) {
-    // For selected regions.
-    var regionStartIndex = this.regionStart * this.sampleRate;
-    var regionEndIndex = this.regionEnd * this.sampleRate;
-
-    // Need to draw only if necessary: numSamplesToDraw < numPixels
-    // Thus SPP < 1.0.
-    var x = 0, px = -1;
-    var index = startIndex;
-    var value, yOffset;
-    var maxValue = 0.0, maxValueIndex = startIndex;
-
-    this.ctx.beginPath();
-
-    // Go by numSamples.
-    for (var i = startIndex; i < endIndex; i++) {
-
-      var value = Math.abs(this.data[i]);
-      if (value > maxValue){
-        maxValue = value;
-        maxValueIndex = i;
-      }
-
-      if (x - px >= 1) {
-        var renderValue = this.data[maxValueIndex] / maxValue;
-        // renderValue = Math.min(1.0, Math.max(-1.0, renderValue));
-        yOffset = (1 - renderValue) * this.yCenter;
-        yOffset = Math.min(this.height - 0.5, Math.max(0.5, yOffset));
-
-        // TODO: optimize this.
-        if (regionStartIndex <= i && regionEndIndex <= i)
-          this.ctx.strokeStyle = STYLE.colorRegion;
-        else
-          this.ctx.strokeStyle = STYLE.color;
-
-        // Handle the first sample.
-        if (x === 0)
-          this.ctx.moveTo(x, yOffset);
-        else
-          this.ctx.lineTo(x, yOffset);
-
-        // Draw a blob head when zoomed-in enough.
-        if (SPP < 1.0)
-          this.ctx.fillRect(x - 1.5, yOffset - 1.5, 3, 3);
-
-        maxValue = 0;
-        maxValueIndex = i;
-        px = x;
-      }
-
-      // advance pixels-per-sample.
-      x += 1 / SPP;
-    }
-
-    this.ctx.stroke();
-  };
-
-  MiniMap.prototype.drawOverlay = function() {
-    
-    // Draw opaque rectangles.
+  // Draw overlay.
+  // TODO: fixed all the hard-coded numbers.
+  MiniMap.prototype._drawOverlay = function() {
     var regionStartPixel = (this.regionStart * this.sampleRate / this.data.length) * this.width;
     var regionEndPixel = (this.regionEnd * this.sampleRate / this.data.length) * this.width;
 
+    // Draw opaque rectangles.
     this.ctx.fillStyle = STYLE.colorOverlayRect;
     this.ctx.fillRect(0, 0, regionStartPixel, this.height);
     this.ctx.fillRect(regionEndPixel, 0, this.width - regionEndPixel, this.height);
 
-    // Draw handles. (boxes)
     this.ctx.fillStyle = STYLE.colorHandle;
+
+    // Center line.
     this.ctx.fillRect(regionStartPixel, this.yCenter, regionEndPixel - regionStartPixel, 1);
-    this.ctx.fillRect(regionStartPixel, 0, 4, this.height);
-    this.ctx.fillRect(regionStartPixel - 40, this.yCenter - 10, 40, 20);
-    this.ctx.fillRect(regionEndPixel - 4, 0, 4, this.height);
-    this.ctx.fillRect(regionEndPixel, this.yCenter - 10, 40, 20);
+    
+    // Left handle.
+    this.ctx.fillRect(regionStartPixel, 0, 2, this.height);
+    this.ctx.fillRect(regionStartPixel, 0, 42, 18);
+    
+    // Right handle.
+    this.ctx.fillRect(regionEndPixel - 2, 0, 2, this.height);
+    this.ctx.fillRect(regionEndPixel - 42, this.height - 18, 42, 18);
 
     // Draw texts.
-    // TODO: fixed all the hard-coded numbers.
     this.ctx.font = STYLE.fontInfo;
     this.ctx.textAlign = 'center';
     this.ctx.fillStyle = STYLE.colorInfo;
-    this.ctx.fillText(this.regionStart.toFixed(3), regionStartPixel - 20, this.yCenter + 4);
-    this.ctx.fillText(this.regionEnd.toFixed(3), regionEndPixel + 20, this.yCenter + 4);
+    this.ctx.fillText(this.regionStart.toFixed(3), regionStartPixel + 20, 12);
+    this.ctx.fillText(this.regionEnd.toFixed(3), regionEndPixel - 20, this.height - 5);
 
     var regionWidth = regionEndPixel - regionStartPixel;
     if (regionWidth > 40) {
       this.ctx.fillStyle = STYLE.colorHandle;
-      this.ctx.fillText((this.regionEnd - this.regionStart).toFixed(3), 
+      this.ctx.fillText((this.regionEnd - this.regionStart).toFixed(3),
         regionStartPixel + regionWidth * 0.5, this.yCenter + 15);
     }
   };
 
-  MiniMap.prototype.drawInfo = function() {
-    // TODO:
+  // Handle invalid audio buffer. Mainly to display warning message.
+  MiniMap.prototype.handleInvalidAudioBuffer = function () {
+    this.ctx.textAlign = 'center';
+    this.ctx.font = STYLE.fontInfo;
+    this.ctx.fillText('Nothing to display.', this.width * 0.5, this.yCenter + 5);
   };
 
 
@@ -265,6 +211,23 @@
     this.regionStart = 0.0;
     this.regionEnd = audioBuffer.duration;
     this.sampleRate = audioBuffer.sampleRate;
+
+    // Mark this buffer as dirty.
+    this._needsRedraw = true;
+    this.draw();
+  };
+
+  MiniMap.prototype.setSize = function (width, height) {
+    this.width = (width || STYLE.width);
+    this.height = (height || STYLE.height);
+    this.ctxOS.canvas.width = this.width;
+    this.ctxOS.canvas.height = this.height;
+
+    // To avoid the smoothing.
+    this.yCenter = ~~(0.5 + this.height / 2);
+
+    this._needsRedraw = true;
+    this.draw();
   };
 
   MiniMap.prototype.draw = function () {
@@ -273,12 +236,8 @@
       return;
     }
 
-    this.ctx.fillStyle = STYLE.colorBackground;
-    this.ctx.fillRect(0, 0, this.width, this.height);
-
-    this.drawWaveform();
-    this.drawOverlay();
-    this.drawInfo();
+    this._drawWaveform();
+    this._drawOverlay();
   };
 
   MiniMap.prototype.setRegion = function (start, end) {
@@ -287,6 +246,7 @@
 
     this.regionStart = Math.max(0, start);
     this.regionEnd = Math.min(this.data.length / this.sampleRate, end);
+    
     this.draw();
   };
 
@@ -297,9 +257,13 @@
     };
   };
 
+  MiniMap.prototype.getCenterCoord = function () {
+    return this.yCenter;
+  };  
+
   // Expose the factory.
-  SpiralMiniMap.create = function (ctx, x, y, width, height) {
-    return new MiniMap(ctx, x, y, width, height);
+  SpiralMiniMap.create = function (ctx, width, height) {
+    return new MiniMap(ctx, width, height);
   };
 
 })(SpiralMiniMap = {});
