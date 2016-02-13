@@ -1,6 +1,5 @@
 <!--
-@license
-MIT License. Copyright (c) 2015 Hongchan Choi. All rights reserved.
+@license MIT License. Copyright (c) 2015 Hongchan Choi. All rights reserved.
 -->
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../paper-styles/paper-styles.html">
@@ -29,8 +28,6 @@ Example:
       display: block;
       box-sizing: border-box;
       overflow: hidden;
-      border: 1px solid var(--google-grey-300);
-      background-color: var(--google-grey-100);
       position: relative;
     }
 
@@ -39,6 +36,7 @@ Example:
     }
 
     #eOverlay {
+      display: none;
       position: absolute;
       bottom: 10px;
       right: 20px;
@@ -46,6 +44,11 @@ Example:
       height: 48px;
       background-color: #000;
       color: #FFF;
+    }
+
+    #eTimeRuler {
+      background-color: #B0BEC5;
+      image-rendering: pixelated;
     }
 
     #eWaveformContainer {
@@ -57,9 +60,9 @@ Example:
 
   <template>
     <div id="eOverlay"></div>
-    <canvas id="eTimeRuler" height="32" on-track="_onTrackWaveform"></canvas>
+    <canvas id="eTimeRuler" on-track="_onTrackWaveform"></canvas>
     <div id="eWaveformContainer">
-      <canvas id="eWaveform" height="192" on-track="_onTrackWaveform"></canvas>
+      <canvas id="eWaveform" on-track="_onTrackWaveform"></canvas>
     </div>
   </template>
 
@@ -80,7 +83,7 @@ Example:
 
       _height: {
         type: Number,
-        value: 192 + 32
+        value: 224 + 32 // time ruler's height
       },
 
       _heightTimeRuler: {
@@ -95,12 +98,17 @@ Example:
 
       _minHeightChannel: {
         type: Number,
-        value: 192
+        value: 224
       },
 
       _heightChannel: {
         type: Number,
-        value: 192
+        value: 224
+      },
+
+      _heightPadding: {
+        type: Number,
+        value: 6
       },
 
       _viewStart: {
@@ -113,9 +121,22 @@ Example:
         value: 1
       },
 
-      _absPeak: {
+      _viewAmpMax: {
         type: Number,
         value: 1
+      },
+
+      _subsampleZoom: {
+        type: Boolean,
+        value: false
+      },
+
+      _overlayPos: {
+        type: Object,
+        value: {
+          x: 0,
+          y: 0
+        }
       },
 
       _ctxTimeRuler: Object,
@@ -126,14 +147,6 @@ Example:
       _timeRuler: Object,
       _ampRulers: Array,
       _waveformDrawers: Array,
-
-      _hoverPos: {
-        type: Object,
-        value: {
-          x: 0,
-          y: 0
-        }
-      },
 
       _componentId: {
         type: String,
@@ -167,23 +180,28 @@ Example:
       this._ctxTimeRuler = this.$.eTimeRuler.getContext('2d');
       this._ctxWaveform = this.$.eWaveform.getContext('2d');
 
+      // To get crisp rendering.
+      this._ctxTimeRuler.imageSmoothingEnabled = false;
+      this._ctxWaveform.imageSmoothingEnabled = false;
+
       // TODO: design behavior of this._heightChannel.
       this._heightChannel = this._minHeightChannel;
 
       // Attach hovering action to the waveform canvas.
-      this.$.eWaveform.addEventListener('mousemove', 
-        this._displayOverlay.bind(this), false);
+      // this.$.eWaveform.addEventListener('mousemove',
+      //   this._displayOverlay.bind(this), false);
+
+      this._isInitialized = true;
 
       // Forced initial resizing.
       this.async(this._onResize, 1);
-
-      this._isInitialized = true;
     },
 
     _createModules: function () {
-      // ASSERT(this._audioBuffer);
-      
-      // Initialize view port.
+      if (!this._isInitialized || !this._audioBuffer)
+        return;
+
+      // Initialize view port (time range).
       this._viewStart = 0;
       this._viewEnd = this._audioBuffer.duration;
 
@@ -192,20 +210,24 @@ Example:
         this._widthAmpRuler, 0, this._width, this._heightTimeRuler);
 
       // Create AmpRulers and WaveformDrawers.
-      var numChannels = this._audioBuffer.numberOfChannels;
       this._ampRulers = [];
       this._waveformDrawers = [];
-      for (var i = 0; i < numChannels; i++) {
-        var channelData = this._audioBuffer.getChannelData(i);
-        var yOffset = i * this._minHeightChannel;
+      for (var i = 0; i < this._audioBuffer.numberOfChannels; i++) {
+        var yOffset = i * (this._heightChannel + this._heightPadding);
         this._ampRulers[i] = SpiralWaveform.createAmpRuler(this._ctxWaveform,
           0, yOffset, this._widthAmpRuler, this._heightChannel);
         this._waveformDrawers[i] = SpiralWaveform.createWaveformDrawer(this._ctxWaveform,
           this._widthAmpRuler, yOffset, this._width, this._heightChannel);
-        this._waveformDrawers[i].setSampleData(channelData, this._audioBuffer.sampleRate);
+
+        // Link amp and time ruler to each waveform drawer.
         this._waveformDrawers[i].setTimeRuler(this._timeRuler);
         this._waveformDrawers[i].setAmpRuler(this._ampRulers[i]);
+        this._waveformDrawers[i].setSampleData(this._audioBuffer.getChannelData(i),
+          this._audioBuffer.sampleRate);
       }
+
+      // The overall size has changed. Force resize.
+      this._onResize();
     },
 
     _onResize: function () {
@@ -213,24 +235,28 @@ Example:
       if (!this._isInitialized)
         return;
 
-      // Get the total size of the element.
-      var rect = this.getBoundingClientRect();
-      this._width = (rect.width || this._width);
-      this._height = this.parentNode.clientHeight;
+      // Update the size of the host element.
+      this._width = this.clientWidth;
+      this._height = this.clientHeight;
 
-      // TODO: handle the height properly.
+      // Adjust TimeRuler's (canvas) size.
+      // TODO: Only for the initial drawing. This is done by .setSize() below
+      // too.
+      this.$.eTimeRuler.width = this._width;
+      this.$.eTimeRuler.height = this._heightTimeRuler;
+
+      // Adjust the size of waveform container div (view port) first.
       this.$.eWaveformContainer.style.width = this._width + 'px';
-
-      // TODO: 64 is hack for minimap element.
-      this.$.eWaveformContainer.style.height = (this._height - this._heightTimeRuler - 64) + 'px';
+      this.$.eWaveformContainer.style.height = (this._height - this._heightTimeRuler) + 'px';
 
       if (this._audioBuffer) {
         // Change the size of TimeRuler canvas and object.
         this._timeRuler.setSize(this._width, this._heightTimeRuler);
 
         // Change the size of Waveform canvas and object.
-        this._ctxWaveform.canvas.width = this.$.eWaveformContainer.clientWidth;
-        this._ctxWaveform.canvas.height = this._audioBuffer.numberOfChannels * this._heightChannel;
+        this._ctxWaveform.canvas.width = this._width;
+        this._ctxWaveform.canvas.height = this._audioBuffer.numberOfChannels *
+          (this._heightChannel + this._heightPadding);
 
         // Set the size of AmpRuler and WaveformDrawer.
         for (var i = 0; i < this._audioBuffer.numberOfChannels; i++) {
@@ -240,7 +266,7 @@ Example:
       }
 
       // Trigger redraw.
-      this._updateView();
+      this._updateView(this._viewStart, this._viewEnd, this._viewAmpMax);
     },
 
 
@@ -258,31 +284,40 @@ Example:
       this.$.eOverlay.textContent += 'FRAME: ' + ~~(now * 44100);
     },
 
-    _updateView: function (start, end, absPeak) {
+    // Update time range and maximum amp for the view.
+    _updateView: function (start, end, ampMax) {
+      if (!this._audioBuffer)
+        return;
+
       this._viewStart = (start || this._viewStart);
       this._viewEnd = (end || this._viewEnd);
 
       // If absPeak is not given and the buffer is available, calculate the peak
       // value.
-      if (!absPeak && this._audioBuffer)
-        this._absPeak = this._findAbsolutePeak() * 1.4;
+      if (ampMax === undefined)
+        this._viewAmpMax = this._findAbsoluteMaxFromChannels() * 1.4;
       else
-        this._absPeak = absPeak;
+        this._viewAmpMax = ampMax;
+
+      // Update ampRuler and timeRuler to get grid information.
+      this._timeRuler.update(this._viewStart, this._viewEnd);
+      for (var i = 0; i < this._audioBuffer.numberOfChannels; i++) {
+        this._ampRulers[i].update(this._viewAmpMax);
+        this._waveformDrawers[i].setTimeGrids(this._timeRuler.getGrids());
+        this._waveformDrawers[i].setAmpGrids(this._ampRulers[i].getGrids());
+      }
 
       this._render();
     },
 
     _render: function () {
-      if (!this._audioBuffer)
-        return;
-      
-      this._timeRuler.draw(this._viewStart, this._viewEnd);
-
       for (var i = 0; i < this._audioBuffer.numberOfChannels; i++) {
-        this._waveformDrawers[i].draw(this._viewStart, this._viewEnd, this._absPeak);
-        this._ampRulers[i].draw(this._absPeak);
+        this._waveformDrawers[i].draw(this._viewStart, this._viewEnd, this._viewAmpMax);
+        this._ampRulers[i].draw();
       }
-      
+
+      this._timeRuler.draw();
+
       // Cleaning up no man's land. (left-upper corder)
       // color: '#CFD8DC',
       // colorShadow: '#607D8B',
@@ -293,39 +328,41 @@ Example:
 
     /** UI helpers */
 
-    _findAbsolutePeak: function () {
+    // Fine the absolute maximum from all the channels.
+    _findAbsoluteMaxFromChannels: function () {
       if (!this._audioBuffer)
         return 0;
 
       var numChannels = this._audioBuffer.numberOfChannels;
-      var absPeak = 0.0;
+      var absMax = 0.0;
       for (var i = 0; i < numChannels; i++) {
         var data = this._audioBuffer.getChannelData(i);
         for (var j = 0; j < data.length; j++) {
           var absValue = Math.abs(data[j]);
-          if (absPeak < absValue)
-            absPeak = absValue;
+          if (absMax < absValue)
+            absMax = absValue;
         }
       }
 
-      return absPeak;
+      return absMax;
     },
 
     _zoomX: function (deltaY, zoomCenter) {
+      // TODO: Arbitrary.
+      var kUserDragFactor = 2.66;
 
-      // Original algorithm.
-      var delta = this._timeRuler.pixelsToSeconds(deltaY) * 2.66;
+      // Anchor zooming algorithm. The starting point of dragging becomes the
+      // anchor of user interaction.
+      var delta = this._timeRuler.pixelsToSeconds(deltaY) * kUserDragFactor;
       var anchor = this._viewStart + this._timeRuler.pixelsToSeconds(zoomCenter - this._widthAmpRuler);
       var r1 = (anchor - this._viewStart) / (this._viewEnd - this._viewStart);
       var r2 = (this._viewEnd - anchor) / (this._viewEnd - this._viewStart);
-      var newStart = this._viewStart + delta * r1;
-      var newEnd = this._viewEnd - delta * r2;
-      newStart = Math.max(newStart, 0);
-      newEnd = Math.min(newEnd, this._audioBuffer.duration);
+      var newStart = Math.max(this._viewStart + delta * r1, 0);
+      var newEnd = Math.min(this._viewEnd - delta * r2, this._audioBuffer.duration);
 
       // Zoom above the maximum zoom range: 0.003 seconds. (3ms ~ 128 samples)
       if (newEnd - newStart > 0.003) {
-        this._updateView(newStart, newEnd, this._absPeak);
+        this._updateView(newStart, newEnd, this._viewAmpMax);
 
         // And notify the controller UI touched.
         this._notify('viewport-change', {
@@ -335,11 +372,15 @@ Example:
       }
     },
 
-    // TODO: why 0.01?
     _zoomY: function (deltaY) {
-      var factor = deltaY * 0.01;
-      var absPeak = Math.max(0.01, this._absPeak + factor);
-      this._updateView(this._viewStart, this._viewEnd, absPeak);
+      // TODO: Arbitrary.
+      var kUserDragFactor = 0.0075;
+      var kMinAmp = 0.001; // -60dB
+
+      // Adjust maximum amplitude to be displayed.
+      var ampMax = Math.max(kMinAmp, this._viewAmpMax + deltaY * kUserDragFactor);
+
+      this._updateView(this._viewStart, this._viewEnd, ampMax);
     },
 
     _panX: function (deltaX) {
@@ -350,7 +391,7 @@ Example:
 
       // Pan only with the valid start/end position.
       if (0 <= start && end < this._audioBuffer.duration) {
-        this._updateView(start, end, this._absPeak);
+        this._updateView(start, end, this._viewAmpMax);
 
         // And notify the controller UI touched.
         this._notify('viewrange-change', {
@@ -409,15 +450,7 @@ Example:
         this._controller.postMessage(this._componentId, eventType, data);
     },
 
-
-    /** Polymer life cycle: created -> ready -> attached **/
-
-    created: function () {
-    },
-
-    ready: function() {
-    },
-
+    // Polymer entry point.
     attached: function () {
       this._initialize();
     },
@@ -440,10 +473,9 @@ Example:
         return;
 
       this._audioBuffer = audioBuffer;
-      
+
       // Create modules with the buffer and resize manually.
       this._createModules();
-      this._onResize();
     },
 
     /**
@@ -452,7 +484,7 @@ Example:
      * @param {Number} end   Region end position in seconds.
      */
     setViewRange: function (start, end) {
-      this._updateView(start, end, this._absPeak);
+      this._updateView(start, end, this._viewAmpMax);
     }
 
   });

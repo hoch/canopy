@@ -78,11 +78,11 @@
     // Draw grid.
     this._drawGrids();
 
-    // Draw center line.
+    // Draw center line. Adding 0.5 is anti-smoothing hack.
     this.ctx.beginPath();
     this.ctx.strokeStyle = STYLE.colorCenterLine;
-    this.ctx.moveTo(0, this.yCenter + 0.5);
-    this.ctx.lineTo(this.width, this.yCenter + 0.5);
+    this.ctx.moveTo(0, this.yCenter);
+    this.ctx.lineTo(this.width, this.yCenter);
     this.ctx.stroke();
 
     this.ctx.fillStyle = this.ctx.strokeStyle = STYLE.color;
@@ -109,21 +109,23 @@
     
     this.ctx.beginPath();
     
+    // Draw time/amp grids with anti-smoothing hack.
     for (var i = 0; i < timeGrids.length; i++) {
-      this.ctx.moveTo(timeGrids[i], 0);
-      this.ctx.lineTo(timeGrids[i], this.height);
+      var x = timeGrids[i] + 0.5;
+      this.ctx.moveTo(x, 0);
+      this.ctx.lineTo(x, this.height);
     }
-    
+
     for (i = 0; i < ampGrids.length; i++) {
-      this.ctx.moveTo(0, ampGrids[i]);
-      this.ctx.lineTo(this.width, ampGrids[i]);
+      var y = ampGrids[i] + 0.5;
+      this.ctx.moveTo(0, y);
+      this.ctx.lineTo(this.width, y);
     }
     
     this.ctx.stroke();
   };
 
   WaveformDrawer.prototype._drawWithSubsampling = function (startIndex, endIndex, SPP, maxPeak) {
-
     // Initial conditions.
     var blockStart = startIndex;
     var blockEnd = startIndex + SPP;
@@ -164,6 +166,7 @@
     this.ctx.stroke();
   };
 
+  // This draws a zoomed-in rendering of waveform.
   WaveformDrawer.prototype._drawWithLinearInterpolation = function (start, end, SPP, maxPeak) {
     // TODO: factorization/optimization.
 
@@ -175,18 +178,24 @@
     var SPS = this.dataDuration / this.data.length;
 
     this.ctx.beginPath();
+
     for (var i = startIndex; i < endIndex; i++) {
       var x = (i * SPS - start) / (end - start) * this.width;
       var y = (1 - (this.data[i] / maxPeak)) * this.yCenter;
 
-      if (x === 0)
+      // If somehow x is smaller than 0, just move to the coord and not to draw
+      // a point.
+      if (x <= 0) {
         this.ctx.moveTo(x, y);
-      else
-        this.ctx.lineTo(x, y);
+        continue;
+      }
+
+      this.ctx.lineTo(x, y);
 
       if (SPP < 1.0)
         this.ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
     }
+
     this.ctx.stroke();
 
   };
