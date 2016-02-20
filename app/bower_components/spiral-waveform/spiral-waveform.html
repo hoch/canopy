@@ -5,6 +5,7 @@
 <link rel="import" href="../paper-styles/paper-styles.html">
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 
+<script src="spiralglobal_waveform.js"></script>
 <script src="timeruler.js"></script>
 <script src="ampruler.js"></script>
 <script src="waveform.js"></script>
@@ -55,6 +56,7 @@ Example:
       width: 100%;
       overflow-y: scroll;
       overflow-x: hidden;
+      background-color: #90A4AE;
     }
   </style>
 
@@ -83,7 +85,7 @@ Example:
 
       _height: {
         type: Number,
-        value: 224 + 32 // time ruler's height
+        value: 256 + 32 // time ruler's height
       },
 
       _heightTimeRuler: {
@@ -93,22 +95,22 @@ Example:
 
       _widthAmpRuler: {
         type: Number,
-        value: 42
+        value: 43
       },
 
       _minHeightChannel: {
         type: Number,
-        value: 224
+        value: 256
       },
 
       _heightChannel: {
         type: Number,
-        value: 224
+        value: 256
       },
 
       _heightPadding: {
         type: Number,
-        value: 6
+        value: 3
       },
 
       _viewStart: {
@@ -121,7 +123,7 @@ Example:
         value: 1
       },
 
-      _viewAmpMax: {
+      _maxDisplayGain: {
         type: Number,
         value: 1
       },
@@ -173,35 +175,36 @@ Example:
       'iron-resize': '_onResize'
     },
 
+
     /** Helpers **/
 
+    // Spiral-element initializer.
     _initialize: function () {
-      // Create contexts.
+      // For the time ruler rendering.
       this._ctxTimeRuler = this.$.eTimeRuler.getContext('2d');
-      this._ctxWaveform = this.$.eWaveform.getContext('2d');
 
-      // To get crisp rendering.
-      this._ctxTimeRuler.imageSmoothingEnabled = false;
-      this._ctxWaveform.imageSmoothingEnabled = false;
+      // For the amp ruler and the waveform.
+      this._ctxWaveform = this.$.eWaveform.getContext('2d');
 
       // TODO: design behavior of this._heightChannel.
       this._heightChannel = this._minHeightChannel;
 
-      // Attach hovering action to the waveform canvas.
+      // TODO: Attach hovering action to the waveform canvas.
       // this.$.eWaveform.addEventListener('mousemove',
       //   this._displayOverlay.bind(this), false);
 
       this._isInitialized = true;
 
-      // Forced initial resizing.
+      // The forced initial resizing.
       this.async(this._onResize, 1);
     },
 
+    // Create submodules: TimeRuler, AmpRuler, Waveform
     _createModules: function () {
       if (!this._isInitialized || !this._audioBuffer)
         return;
 
-      // Initialize view port (time range).
+      // Initialize view port with the default time range.
       this._viewStart = 0;
       this._viewEnd = this._audioBuffer.duration;
 
@@ -209,24 +212,20 @@ Example:
       this._timeRuler = SpiralWaveform.createTimeRuler(this._ctxTimeRuler,
         this._widthAmpRuler, 0, this._width, this._heightTimeRuler);
 
-      // Create AmpRulers and WaveformDrawers.
+      // Create AmpRulers and WaveformDrawers for each channel.
       this._ampRulers = [];
       this._waveformDrawers = [];
       for (var i = 0; i < this._audioBuffer.numberOfChannels; i++) {
         var yOffset = i * (this._heightChannel + this._heightPadding);
         this._ampRulers[i] = SpiralWaveform.createAmpRuler(this._ctxWaveform,
-          0, yOffset, this._widthAmpRuler, this._heightChannel);
+          0, yOffset, this._widthAmmodupRuler, this._heightChannel);
         this._waveformDrawers[i] = SpiralWaveform.createWaveformDrawer(this._ctxWaveform,
           this._widthAmpRuler, yOffset, this._width, this._heightChannel);
-
-        // Link amp and time ruler to each waveform drawer.
-        this._waveformDrawers[i].setTimeRuler(this._timeRuler);
-        this._waveformDrawers[i].setAmpRuler(this._ampRulers[i]);
-        this._waveformDrawers[i].setSampleData(this._audioBuffer.getChannelData(i),
+        this._waveformDrawers[i].setChannelData(this._audioBuffer.getChannelData(i),
           this._audioBuffer.sampleRate);
       }
 
-      // The overall size has changed. Force resize.
+      // The overall size has changed. Forcible resize.
       this._onResize();
     },
 
@@ -266,26 +265,26 @@ Example:
       }
 
       // Trigger redraw.
-      this._updateView(this._viewStart, this._viewEnd, this._viewAmpMax);
+      this._updateView(this._viewStart, this._viewEnd, this._maxDisplayGain);
     },
 
 
     /** Render-related **/
 
     _displayOverlay: function (event) {
-      if (!this._isInitialized)
-        return;
+      // if (!this._isInitialized)
+      //   return;
 
-      this._hoverPos.x = event.clientX;
-      this._hoverPos.y = event.clientY;
+      // this._hoverPos.x = event.clientX;
+      // this._hoverPos.y = event.clientY;
 
-      var now = this._timeRuler.getNowFromCurrentX(this._hoverPos.x);
-      this.$.eOverlay.textContent = 'NOW: ' + now.toFixed(4) + '\n';
-      this.$.eOverlay.textContent += 'FRAME: ' + ~~(now * 44100);
+      // var now = this._timeRuler.getNowFromCurrentX(this._hoverPos.x);
+      // this.$.eOverlay.textContent = 'NOW: ' + now.toFixed(4) + '\n';
+      // this.$.eOverlay.textContent += 'FRAME: ' + ~~(now * 44100);
     },
 
     // Update time range and maximum amp for the view.
-    _updateView: function (start, end, ampMax) {
+    _updateView: function (start, end, maxDisplayGain) {
       if (!this._audioBuffer)
         return;
 
@@ -294,17 +293,20 @@ Example:
 
       // If absPeak is not given and the buffer is available, calculate the peak
       // value.
-      if (ampMax === undefined)
-        this._viewAmpMax = this._findAbsoluteMaxFromChannels() * 1.4;
+      if (maxDisplayGain === undefined)
+        this._maxDisplayGain = this._findAbsoluteMaxFromChannels() * 1.4;
       else
-        this._viewAmpMax = ampMax;
+        this._maxDisplayGain = maxDisplayGain;
 
-      // Update ampRuler and timeRuler to get grid information.
+      // Update the timeRuler to get grid information.
       this._timeRuler.update(this._viewStart, this._viewEnd);
+
       for (var i = 0; i < this._audioBuffer.numberOfChannels; i++) {
-        this._ampRulers[i].update(this._viewAmpMax);
-        this._waveformDrawers[i].setTimeGrids(this._timeRuler.getGrids());
-        this._waveformDrawers[i].setAmpGrids(this._ampRulers[i].getGrids());
+        this._ampRulers[i].update(this._maxDisplayGain);
+        this._waveformDrawers[i].updateGridInfo(
+          this._timeRuler.getCurrentGrids(),
+          this._ampRulers[i].getCurrentGrids()
+        );
       }
 
       this._render();
@@ -312,7 +314,7 @@ Example:
 
     _render: function () {
       for (var i = 0; i < this._audioBuffer.numberOfChannels; i++) {
-        this._waveformDrawers[i].draw(this._viewStart, this._viewEnd, this._viewAmpMax);
+        this._waveformDrawers[i].draw(this._viewStart, this._viewEnd, this._maxDisplayGain);
         this._ampRulers[i].draw();
       }
 
@@ -353,8 +355,8 @@ Example:
 
       // Anchor zooming algorithm. The starting point of dragging becomes the
       // anchor of user interaction.
-      var delta = this._timeRuler.pixelsToSeconds(deltaY) * kUserDragFactor;
-      var anchor = this._viewStart + this._timeRuler.pixelsToSeconds(zoomCenter - this._widthAmpRuler);
+      var delta = this._timeRuler.getSecondsFromDeltaX(deltaY, this._viewStart, this._viewEnd) * kUserDragFactor;
+      var anchor = this._viewStart + this._timeRuler.getSecondsFromDeltaX(zoomCenter - this._widthAmpRuler, this._viewStart, this._viewEnd);
       var r1 = (anchor - this._viewStart) / (this._viewEnd - this._viewStart);
       var r2 = (this._viewEnd - anchor) / (this._viewEnd - this._viewStart);
       var newStart = Math.max(this._viewStart + delta * r1, 0);
@@ -362,7 +364,7 @@ Example:
 
       // Zoom above the maximum zoom range: 0.003 seconds. (3ms ~ 128 samples)
       if (newEnd - newStart > 0.003) {
-        this._updateView(newStart, newEnd, this._viewAmpMax);
+        this._updateView(newStart, newEnd, this._maxDisplayGain);
 
         // And notify the controller UI touched.
         this._notify('viewport-change', {
@@ -378,20 +380,20 @@ Example:
       var kMinAmp = 0.001; // -60dB
 
       // Adjust maximum amplitude to be displayed.
-      var ampMax = Math.max(kMinAmp, this._viewAmpMax + deltaY * kUserDragFactor);
+      var ampMax = Math.max(kMinAmp, this._maxDisplayGain + deltaY * kUserDragFactor);
 
       this._updateView(this._viewStart, this._viewEnd, ampMax);
     },
 
     _panX: function (deltaX) {
       // Calculate deltaX in seconds and new start/end.
-      var deltaSec = this._timeRuler.pixelsToSeconds(deltaX);
+      var deltaSec = this._timeRuler.getSecondsFromDeltaX(deltaX, this._viewStart, this._viewEnd);
       var start = this._viewStart - deltaSec;
       var end = this._viewEnd - deltaSec;
 
       // Pan only with the valid start/end position.
       if (0 <= start && end < this._audioBuffer.duration) {
-        this._updateView(start, end, this._viewAmpMax);
+        this._updateView(start, end, this._maxDisplayGain);
 
         // And notify the controller UI touched.
         this._notify('viewrange-change', {
@@ -400,9 +402,6 @@ Example:
         });
       }
     },
-
-
-    /** Track handlers */
 
     _onTrackWaveform: function (event) {
       if (!this._audioBuffer)
@@ -474,7 +473,10 @@ Example:
 
       this._audioBuffer = audioBuffer;
 
-      // Create modules with the buffer and resize manually.
+      // Update the maximum display gain on the new buffer.
+      this._maxDisplayGain = this._findAbsoluteMaxFromChannels() * 1.4;
+
+      // Create sub-modules and start the procedure.
       this._createModules();
     },
 
@@ -484,7 +486,7 @@ Example:
      * @param {Number} end   Region end position in seconds.
      */
     setViewRange: function (start, end) {
-      this._updateView(start, end, this._viewAmpMax);
+      this._updateView(start, end, this._maxDisplayGain);
     }
 
   });

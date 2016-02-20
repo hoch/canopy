@@ -1,203 +1,253 @@
+/**
+ * @license MIT License. Copyright (c) 2015 Hongchan Choi. All rights reserved.
+ */
+
+/**
+ * @closure WaveformDrawer
+ * @description A submodule class of spiral-waveform for rendering waveform.
+ *              Offers fluid zoom-in/out and x-y grid drawing.
+ */
 (function (SpiralWaveform) {
+
+  'use strict';
 
   var STYLE = {
     width: 400,
-    height: 128,
+    height: 192,
     color: '#2196F3',
     colorClipped: '#E91E63',
     colorBackground: '#ECEFF1',
     colorGridLine: '#B0BEC5',
     colorCenterLine: '#78909C',
     colorBorder: '#546E7A',
-    SPPThreshold: 12.0
+    samplePerPixelThreshold: 12.0
   };
 
-  /**
-   * @class WaveformDrawer
-   */
   function WaveformDrawer(ctx, x, y, width, height) {
-    this.initialize(ctx, x, y, width, height);
+    this._initialize(ctx, x, y, width, height);
   }
 
-  WaveformDrawer.prototype.initialize = function (ctx, x, y, width, height) {
-    this.ctx = ctx;
+  WaveformDrawer.prototype._initialize = function (ctx, x, y, width, height) {
+    this._ctx = ctx;
     this.x = x;
     this.y = y;
     this.width = (width || STYLE.width);
     this.height = (height || STYLE.height);
-    this.yCenter = this.height / 2;
-    this.data = null;
-    this.dataDuration = 0;
-    this.sampleRate = 44100;
-    
-    this.timeRuler = null;
-    this.ampRuler = null;
+
+    this._channelData = null;
+    this._duration = 0;
+    this._sampleRate = null;
+
+    this._timeGridPositions = null;
+    this._ampGridPositions = null;
+
+    this._needsRedraw = true;
+    this._isInitialized = true;
+  };
+
+
+  /** Public **/
+
+  WaveformDrawer.prototype.getSize = function (width, height) {
+    return {
+      x: x,
+      y: y,
+      width: width,
+      height: height
+    };
   };
 
   WaveformDrawer.prototype.setSize = function (width, height) {
-    this.width = (width || STYLE.width);
-    this.height = (height || STYLE.height);
-    this.yCenter = this.height / 2;
-  };
-
-  WaveformDrawer.prototype.setSampleData = function (channelData, sampleRate) {
-    this.data = channelData;
-    this.sampleRate = (sampleRate || 44100);
-    this.dataDuration = this.data.length / this.sampleRate;
-  };
-
-  WaveformDrawer.prototype.setTimeRuler = function (timeRuler) {
-    this.timeRuler = timeRuler;
-  };
-
-  WaveformDrawer.prototype.setAmpRuler = function (ampRuler) {
-    this.ampRuler = ampRuler;
-  };
-
-  // start and end as in seconds.
-  WaveformDrawer.prototype.draw = function (start, end, maxPeak) {
-
-    if (!this.data)
+    if (!this._isInitialized)
       return;
 
-    // Truncated indices.
-    var startIndex = Math.floor(start * this.sampleRate);
-    var endIndex = Math.floor(end * this.sampleRate);
+    this.width = (width || STYLE.width);
+    this.height = (height || STYLE.height);
+  };
 
-    // SamplesPerPixel
-    var SPP = (endIndex - startIndex) / this.width;
+  WaveformDrawer.prototype.setChannelData = function (channelData, sampleRate) {
+    if (!sampleRate) {
+      throw new Error('[SpiralWaveForm::WaveformDrawer::setChannelData]' +
+        ' sampleRate MUST be specified.');
+    }
 
-    // Push down context.
-    this.ctx.save();
-    this.ctx.translate(this.x, this.y);
+    this._channelData = channelData;
+    this._sampleRate = sampleRate;
+    this._duration = this._channelData.length / this._sampleRate;
 
-    // clear background for ruler.
-    this.ctx.fillStyle = STYLE.colorBackground;
-    this.ctx.fillRect(0, 0, this.width, this.height);
+    // The channel data is newly set, should be redrawn.
+    this._needsRedraw = true;
+  };
 
-    // Draw grid.
-    this._drawGrids();
+  WaveformDrawer.prototype.updateGridInfo = function (timeGrids, ampGrids) {
+    // TODO: clone? or just use the reference?
+    this._timeGridPositions = timeGrids;
+    this._ampGridPositions = ampGrids;
 
-    // Draw center line. Adding 0.5 is anti-smoothing hack.
-    this.ctx.beginPath();
-    this.ctx.strokeStyle = STYLE.colorCenterLine;
-    this.ctx.moveTo(0, this.yCenter);
-    this.ctx.lineTo(this.width, this.yCenter);
-    this.ctx.stroke();
+    this._needsRedraw = true;
+  };
 
-    this.ctx.fillStyle = this.ctx.strokeStyle = STYLE.color;
+  // Draw waveform with start, end tiem and the maximum display gain.
+  WaveformDrawer.prototype.draw = function (start, end, maxDisplayGain) {
+    if (!this._needsRedraw || !this._isInitialized || !this._channelData)
+      return;
 
-    // Use subsampling drawer if necessary.
-    if (SPP > STYLE.SPPThreshold)
-      this._drawWithSubsampling(startIndex, endIndex, SPP, maxPeak);
-    else
-      this._drawWithLinearInterpolation(start, end, SPP, maxPeak);
+    // Get sample indice and y-center coord.
+    var startIndex = Math.floor(start * this._sampleRate);
+    var endIndex = Math.floor(end * this._sampleRate);
+    var yCenter = this.height * 0.5;
+
+    // Calculate sample-per-pixel.
+    var samplePerPixel = (endIndex - startIndex) / this.width;
+
+    // Push, translate, clip.
+    this._ctx.save();
+    this._ctx.translate(this.x, this.y);
+    this._ctx.rect(0, 0, this.width, this.height);
+    this._ctx.clip();
+
+    // clear background.
+    this._ctx.fillStyle = STYLE.colorBackground;
+    this._ctx.fillRect(0, 0, this.width, this.height);
+
+    // Draw grids.
+    this._drawTimeAndAmplitudeGrids();
+
+    // Draw center line.
+    this._ctx.beginPath();
+    this._ctx.strokeStyle = STYLE.colorCenterLine;
+    this._ctx.moveTo(0, yCenter);
+    this._ctx.lineTo(this.width, yCenter);
+    this._ctx.stroke();
+
+    this._ctx.fillStyle = this._ctx.strokeStyle = STYLE.color;
+
+    if (samplePerPixel > STYLE.samplePerPixelThreshold) {
+      // If |samplePerPixel| is greater than the threshold (i.e. zoomed out),
+      // use sub-sampling rendering (skipping samples over time) The rendering
+      // reference is the sample index in this case.
+      this._drawWithSubsampling(startIndex, endIndex, samplePerPixel, maxDisplayGain);
+    } else {
+      // Otherwise, use the linear interpolation (i.e. zoomed in). The rendering
+      // reference is the time in this case.
+      this._drawWithLinearInterpolation(start, end, samplePerPixel, maxDisplayGain);
+    }
 
     // clear residues.
-    this.ctx.strokeStyle = STYLE.colorBorder;
-    this.ctx.strokeRect(0, this.height, this.width, 1);
+    // this._ctx.strokeStyle = STYLE.colorBorder;
+    // this._ctx.strokeRect(0, this.height, this.width, 1);
 
     // Pop back up context.
-    this.ctx.restore();
+    this._ctx.restore();
+
+    // It has been drawn, flip the flag.
+    this._needsRedraw = false;
   };
 
-  WaveformDrawer.prototype._drawGrids = function () {
-    var timeGrids = this.timeRuler.currentGridsPos;
-    var ampGrids = this.ampRuler.currentGridsPos;
 
-    this.ctx.strokeStyle = STYLE.colorGridLine;
-    
-    this.ctx.beginPath();
-    
-    // Draw time/amp grids with anti-smoothing hack.
-    for (var i = 0; i < timeGrids.length; i++) {
-      var x = timeGrids[i] + 0.5;
-      this.ctx.moveTo(x, 0);
-      this.ctx.lineTo(x, this.height);
-    }
+  /** Internal helpers **/
 
-    for (i = 0; i < ampGrids.length; i++) {
-      var y = ampGrids[i] + 0.5;
-      this.ctx.moveTo(0, y);
-      this.ctx.lineTo(this.width, y);
-    }
-    
-    this.ctx.stroke();
+  // Draw time and amp grids. This MUST be called inside of _draw() method.
+  WaveformDrawer.prototype._drawTimeAndAmplitudeGrids = function () {
+    if (!this._timeGridPositions || !this._ampGridPositions)
+      return;
+
+    this._ctx.beginPath();
+    this._ctx.strokeStyle = STYLE.colorGridLine;
+
+    // Draw time grid positions first.
+    this._timeGridPositions.forEach(function (x, time) {
+      this._ctx.moveTo(x - 0.5, 0);
+      this._ctx.lineTo(x - 0.5, this.height);
+    }.bind(this));
+
+    this._ampGridPositions.forEach(function (y, gain) {
+      this._ctx.moveTo(0, y + 0.5);
+      this._ctx.lineTo(this.width, y + 0.5);
+    }.bind(this));
+
+    this._ctx.stroke();
   };
 
-  WaveformDrawer.prototype._drawWithSubsampling = function (startIndex, endIndex, SPP, maxPeak) {
-    // Initial conditions.
-    var blockStart = startIndex;
-    var blockEnd = startIndex + SPP;
-    var negMax = 0.0, posMax = 0.0;
+  // Draw waveform with sub-sampling (sample-skipping). This MUST be called
+  // inside of _draw() method.
+  WaveformDrawer.prototype._drawWithSubsampling = function (startIndex, endIndex, samplePerPixel, maxDisplayGain) {
+    // Set up a window for sampling.
+    var windowStart = startIndex;
+    var windowEnd = startIndex + samplePerPixel;
 
-    this.ctx.beginPath();
+    // Positive max and negative max.
+    var negMax = 0.0;
+    var posMax = 0.0;
+
+    this._ctx.beginPath();
 
     // Need to draw every pixel: numSamplesToDraw > numPixels
     for (var i = 0; i < this.width; i++) {
-
       // Sub-sampling routine: the range of sub-sampling is
-      // [floor(blockStart), ceiling(blockEnd)].
-      var index = Math.floor(blockStart);
-      blockEnd = blockEnd;
+      // [floor(windowStart), ceiling(windowEnd)].
+      var index = Math.floor(windowStart);
+      windowEnd = windowEnd;
       negMax = posMax = 0.0;
 
-      while (index < blockEnd) {
-        var value = this.data[index];
-        if (value > posMax)
-          posMax = value;
-        else if (value < negMax)
-          negMax = value;
-        index++;
-      }
+      // Iterate through the sampling window.
+      // while (index < windowEnd) {
+      //   var value = this._channelData[index++];
+      //   if (value > posMax)
+      //     posMax = value;
+      //   else if (value < negMax)
+      //     negMax = value;
+      // }
 
-      // Clip the visualization and scaling.
-      posMax = Math.min(1.0, posMax/maxPeak);
-      negMax = Math.max(-1.0, negMax/maxPeak);
+      // =Compiled version
+      for(;index<windowEnd;){var value=this._channelData[index++];value>posMax?posMax=value:value<negMax&&(negMax=value)};
 
-      // Get drawing Y offsets.
-      this.ctx.moveTo(i, (1 - posMax) * this.yCenter);
-      this.ctx.lineTo(i, (1 - negMax) * this.yCenter);
+      // Clamping and scaling.
+      posMax = Math.min(1.0, posMax / maxDisplayGain);
+      negMax = Math.max(-1.0, negMax / maxDisplayGain);
 
-      blockStart = blockEnd;
-      blockEnd += SPP;
+      // Draw a line from the positive max to the negative max.
+      this._ctx.moveTo(i, (1 - posMax) * this.height * 0.5);
+      this._ctx.lineTo(i, (1 - negMax) * this.height * 0.5);
+
+      windowStart = windowEnd;
+      windowEnd += samplePerPixel;
     }
 
-    this.ctx.stroke();
+    this._ctx.stroke();
   };
 
-  // This draws a zoomed-in rendering of waveform.
-  WaveformDrawer.prototype._drawWithLinearInterpolation = function (start, end, SPP, maxPeak) {
-    // TODO: factorization/optimization.
+  // Draw waveform with linear interpolation. This MUST be called inside of
+  // _draw() method.
+  WaveformDrawer.prototype._drawWithLinearInterpolation = function (start, end, samplePerPixel, maxDisplayGain) {
+    // Set up the parameters.
+    var secondPerSample = this._duration / this._channelData.length;
+    var startIndex = Math.floor(start / secondPerSample);
+    var endIndex = Math.ceil(end / secondPerSample);
 
-    // Get the sample range to draw.
-    var startIndex = Math.floor((start / this.dataDuration) * this.data.length);
-    var endIndex = Math.ceil((end / this.dataDuration) * this.data.length);
+    this._ctx.beginPath();
 
-    // Second per sample.
-    var SPS = this.dataDuration / this.data.length;
-
-    this.ctx.beginPath();
-
+    // The linear interpolation rendering is driven by the number of samples,
+    // not the number of pixels.
     for (var i = startIndex; i < endIndex; i++) {
-      var x = (i * SPS - start) / (end - start) * this.width;
-      var y = (1 - (this.data[i] / maxPeak)) * this.yCenter;
+      var x = (i * secondPerSample - start) / (end - start) * this.width;
+      var y = (1 - (this._channelData[i] / maxDisplayGain)) * this.height * 0.5;
 
-      // If somehow x is smaller than 0, just move to the coord and not to draw
-      // a point.
+      // If somehow x is smaller than 0, just move to the position without
+      // drawing a line.
       if (x <= 0) {
-        this.ctx.moveTo(x, y);
+        this._ctx.moveTo(x, y);
         continue;
       }
 
-      this.ctx.lineTo(x, y);
+      this._ctx.lineTo(x, y);
 
-      if (SPP < 1.0)
-        this.ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
+      // If sample-per-pixel is below 1.0, draw a blob head for each sample.
+      if (samplePerPixel < 1.0)
+        this._ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
     }
 
-    this.ctx.stroke();
-
+    this._ctx.stroke();
   };
 
   SpiralWaveform.createWaveformDrawer = function (ctx, x, y, width, height) {

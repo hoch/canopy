@@ -123,7 +123,7 @@
     .splitter-handle {
       margin: 5px auto;
       height: 3px;
-      width: 100px;
+      width: 256px;
       border-top: 1px solid #888888;
       border-bottom: 1px solid #888888;
     }
@@ -401,7 +401,7 @@
         // Height of Waveform + Menu + Splitter.
         _viewerHeight: {
           type: Number,
-          value: 270 + 42 + 16
+          value: 300 + 42 + 16
         },
 
         _editorHeight: Number,
@@ -466,17 +466,18 @@
 
       _initializePaneSize: function () {
         // Initialize pane size with the default viewer height.
+        // TODO: Fix hard-coded values.
         this._editorHeight = this.clientHeight - this._viewerHeight;
-        this.$.ePaneViewer.style.height = this._viewerHeight + 'px';
+        this.$.ePaneViewer.style.height = this._viewerHeight + 36 + 'px';
         this.$.ePaneEditor.style.height = this._editorHeight + 'px';
-        this.$.eWaveformView.style.height = this._viewerHeight - 42 + 'px';
+        // this.$.eWaveformView.style.height = this._viewerHeight - 42 + 'px';
+        // this.$.eAudioGraphView.style.height = this._viewerHeight - 42 + 'px';
 
         // Propagate resizing event.
-        // this._resizeAsyncTask = this.async(this._notifyResizeForModules, 3);
+        this._resizeAsyncTask = this.async(this._notifyResizeForModules, 3);
       },
 
       _handlePaneResize: function (detail) {
-        
         switch (detail.state) {
           case 'start':
             this._viewerHeight = this.$.ePaneViewer.clientHeight;
@@ -503,10 +504,14 @@
         this.$.eCoder.notifyResize();
         
         // Update waveform div container and the spiral element.
-        this.$.eWaveformView.style.height = this._viewerHeight - 42 + 'px';
+        this.$.eWaveformView.style.height = this._viewerHeight + 'px';
         this.$.eWaveform.notifyResize();
 
-        // Other modules? not so much.
+        // Update audiograph div container and the spiral element.
+        this.$.eAudioGraphView.style.height = this._viewerHeight + 'px';
+        this.$.eAudioGraph.notifyResize();
+
+        // TODO: Perhaps Other modules?
         // this.$.eMiniMap.notifyResize();
       },
 
