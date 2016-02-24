@@ -46,6 +46,7 @@ var SpiralWaveform = {};
 
     // Grid drawing specific.
     this._currentGridPositions = new Map();
+    this._currentGridDuration = null;
 
     this._needsRedraw = true;
     this._isInitialized = true;
@@ -68,10 +69,10 @@ var SpiralWaveform = {};
 
     this.width = (width || STYLE.width);
     this.height = (height || STYLE.height);
-    this._ctx.canvas.width = this.width;
-    this._ctx.canvas.height = this.height;
-    this._ctx.canvas.style.width = this.width + 'px';
-    this._ctx.canvas.style.height = this.height + 'px';
+  };
+
+  TimeRuler.prototype.getGridDuration = function () {
+    return this._currentGridDuration;
   };
 
   // Returns the current grid information.
@@ -115,6 +116,9 @@ var SpiralWaveform = {};
         _secondToPixel(startGrid, start, totalDuration, this.width));
       startGrid += gridDuration;
     }
+
+    // Update the current duration for other elements to use.
+    this._currentGridDuration = gridDuration;
 
     // The grid position is changed, so it needs redraw.
     this._needsRedraw = true;

@@ -5,7 +5,6 @@
 <link rel="import" href="../paper-styles/paper-styles.html">
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 
-<script src="spiralglobal_waveform.js"></script>
 <script src="timeruler.js"></script>
 <script src="ampruler.js"></script>
 <script src="waveform.js"></script>
@@ -36,20 +35,28 @@ Example:
       display: block;
     }
 
-    #eOverlay {
+    #eOverlayInspector {
       display: none;
       position: absolute;
-      bottom: 10px;
-      right: 20px;
-      width: 300px;
-      height: 48px;
-      background-color: #000;
-      color: #FFF;
+      width: 120px;
+      height: 66px;
+      background-color: rgb(54, 73, 82);
+      color: #CDDBE2;
+      font-family: Arial;
+      font-size: 11px;
+      padding: 3px 6px;
+      border-radius: 5px;
+    }
+
+    #eOverlayInspector dt,
+    #eOverlayInspector dd {
+      float: left;
+      width: 60px;
+      margin: 2px 0;
     }
 
     #eTimeRuler {
       background-color: #B0BEC5;
-      image-rendering: pixelated;
     }
 
     #eWaveformContainer {
@@ -61,7 +68,12 @@ Example:
   </style>
 
   <template>
-    <div id="eOverlay"></div>
+    <div id="eOverlayInspector">
+      <dt>Channel</dt><dd id="eInspectorChannel">1</dd>
+      <dt>Time</dt><dd id="eInspectorTime">0.200</dd>
+      <dt>Frame</dt><dd id="eInspectorFrame">4232</dd>
+      <dt>Amplitude</dt><dd id="eInspectorAmplitude">-0.1023</dd>
+    </div>
     <canvas id="eTimeRuler" on-track="_onTrackWaveform"></canvas>
     <div id="eWaveformContainer">
       <canvas id="eWaveform" on-track="_onTrackWaveform"></canvas>
@@ -128,12 +140,7 @@ Example:
         value: 1
       },
 
-      _subsampleZoom: {
-        type: Boolean,
-        value: false
-      },
-
-      _overlayPos: {
+      _mouseHoverPos: {
         type: Object,
         value: {
           x: 0,
@@ -189,9 +196,14 @@ Example:
       // TODO: design behavior of this._heightChannel.
       this._heightChannel = this._minHeightChannel;
 
-      // TODO: Attach hovering action to the waveform canvas.
-      // this.$.eWaveform.addEventListener('mousemove',
-      //   this._displayOverlay.bind(this), false);
+      // Attach hovering action to the waveform canvas.
+      // NOTE: this is done outside of Polymer's gesture event. It may have some
+      // side effects.
+      this.$.eWaveformContainer.addEventListener('mousemove',
+        this._updateOverlayInspector.bind(this), false);
+
+      this.$.eWaveformContainer.addEventListener('mouseout',
+        this._hideOverlayInspector.bind(this), false);
 
       this._isInitialized = true;
 
@@ -208,9 +220,12 @@ Example:
       this._viewStart = 0;
       this._viewEnd = this._audioBuffer.duration;
 
+      // Actual width of waveform.
+      var waveformWidth = this._width - this._widthAmpRuler;
+
       // Create TimeRuler.
       this._timeRuler = SpiralWaveform.createTimeRuler(this._ctxTimeRuler,
-        this._widthAmpRuler, 0, this._width, this._heightTimeRuler);
+        this._widthAmpRuler, 0, waveformWidth, this._heightTimeRuler);
 
       // Create AmpRulers and WaveformDrawers for each channel.
       this._ampRulers = [];
@@ -218,9 +233,9 @@ Example:
       for (var i = 0; i < this._audioBuffer.numberOfChannels; i++) {
         var yOffset = i * (this._heightChannel + this._heightPadding);
         this._ampRulers[i] = SpiralWaveform.createAmpRuler(this._ctxWaveform,
-          0, yOffset, this._widthAmmodupRuler, this._heightChannel);
+          0, yOffset, this._widthAmpRuler, this._heightChannel);
         this._waveformDrawers[i] = SpiralWaveform.createWaveformDrawer(this._ctxWaveform,
-          this._widthAmpRuler, yOffset, this._width, this._heightChannel);
+          this._widthAmpRuler, yOffset, waveformWidth, this._heightChannel);
         this._waveformDrawers[i].setChannelData(this._audioBuffer.getChannelData(i),
           this._audioBuffer.sampleRate);
       }
@@ -243,14 +258,19 @@ Example:
       // too.
       this.$.eTimeRuler.width = this._width;
       this.$.eTimeRuler.height = this._heightTimeRuler;
+      this.$.eTimeRuler.style.width = this._width + 'px';
+      this.$.eTimeRuler.style.height = this._heightTimeRuler + 'px';
 
       // Adjust the size of waveform container div (view port) first.
       this.$.eWaveformContainer.style.width = this._width + 'px';
       this.$.eWaveformContainer.style.height = (this._height - this._heightTimeRuler) + 'px';
 
+      // Actual width of waveform.
+      var waveformWidth = this._width - this._widthAmpRuler;
+
       if (this._audioBuffer) {
-        // Change the size of TimeRuler canvas and object.
-        this._timeRuler.setSize(this._width, this._heightTimeRuler);
+        // Change the size of TimeRuler object.
+        this._timeRuler.setSize(waveformWidth, this._heightTimeRuler);
 
         // Change the size of Waveform canvas and object.
         this._ctxWaveform.canvas.width = this._width;
@@ -260,7 +280,7 @@ Example:
         // Set the size of AmpRuler and WaveformDrawer.
         for (var i = 0; i < this._audioBuffer.numberOfChannels; i++) {
           this._ampRulers[i].setSize(this._widthAmpRuler, this._heightChannel);
-          this._waveformDrawers[i].setSize(this._width, this._heightChannel);
+          this._waveformDrawers[i].setSize(waveformWidth, this._heightChannel);
         }
       }
 
@@ -271,16 +291,74 @@ Example:
 
     /** Render-related **/
 
-    _displayOverlay: function (event) {
-      // if (!this._isInitialized)
-      //   return;
+    // Calculate the current mouse cursor location in terms of the channel,
+    // time, and frames.
+    _getCurrentLocation: function (offsetX, offsetY) {
+      // Try to find the channel. If not found, stop and bail out.
+      for (var i = 0, channel = -1; i < this._waveformDrawers.length; i++) {
+        var channelLane = this._waveformDrawers[i];
+        if (channelLane.y <= offsetY && offsetY <= channelLane.y + channelLane.height) {
+          channel = i;
+          break;
+        }
+      }
 
-      // this._hoverPos.x = event.clientX;
-      // this._hoverPos.y = event.clientY;
+      if (channel === -1)
+        return null;
 
-      // var now = this._timeRuler.getNowFromCurrentX(this._hoverPos.x);
-      // this.$.eOverlay.textContent = 'NOW: ' + now.toFixed(4) + '\n';
-      // this.$.eOverlay.textContent += 'FRAME: ' + ~~(now * 44100);
+      // TODO: this information should be calculated by the service modules.
+      var waveformWidth = this._width - this._widthAmpRuler;
+      var offsetXWaveform = offsetX - this._widthAmpRuler;
+      var viewPortDuration = this._viewEnd - this._viewStart;
+      var time = (offsetXWaveform / waveformWidth) * viewPortDuration + this._viewStart;
+      var frame = ~~(time * this._audioBuffer.sampleRate);
+
+      return {
+        channel: channel,
+        time: time,
+        frame: frame,
+        amplitude: this._audioBuffer.getChannelData(channel)[frame]
+      };
+    },
+
+    // Handle 'mousemove' event on |eWaveform| element.
+    _updateOverlayInspector: function (event) {
+      // NOTE: |event| comes from |eWaveform|.
+      // Without audio buffer loaded, all the submodules are not functioning.
+      if (!this._isInitialized || !this._audioBuffer)
+        return;
+
+      // The zoom level is above 0.001 ms, hide the inspector.
+      // If |x| is in the amp ruler, also hide the inspector.
+      if (this._timeRuler.getGridDuration() > 0.002 || event.offsetX < this._widthAmpRuler) {
+        this._hideOverlayInspector();
+        return;
+      }
+
+      var info = this._getCurrentLocation(event.offsetX, event.offsetY);
+      if (!info)
+        return;
+
+      var x = event.offsetX;
+      var y = event.offsetY - this.$.eWaveformContainer.scrollTop;
+
+      // TODO: fix these hard coded numbers. Optimize them as well.
+      var dispX = x > this.$.eWaveformContainer.clientWidth - 200 ? -160 : 40;
+      var dispY = y > this.$.eWaveformContainer.clientHeight - 120 ? -100 : 60;
+
+      this.$.eOverlayInspector.style.display = 'block';
+      this.$.eOverlayInspector.style.transform = 'translateX(' + (x + dispX) + 'px)' + ' translateY(' + (y + dispY) + 'px)';
+      // this.$.eOverlayInspector.style.left = x + dispX + 'px';
+      // this.$.eOverlayInspector.style.top = y + dispY + 'px';
+
+      this.$.eInspectorChannel.textContent = info.channel;
+      this.$.eInspectorTime.textContent = info.time.toFixed(8);
+      this.$.eInspectorFrame.textContent = info.frame;
+      this.$.eInspectorAmplitude.textContent = info.amplitude.toFixed(7);
+    },
+
+    _hideOverlayInspector: function (event) {
+      this.$.eOverlayInspector.style.display = 'none';
     },
 
     // Update time range and maximum amp for the view.
@@ -351,7 +429,7 @@ Example:
 
     _zoomX: function (deltaY, zoomCenter) {
       // TODO: Arbitrary.
-      var kUserDragFactor = 2.66;
+      var kUserDragFactor = 3.0;
 
       // Anchor zooming algorithm. The starting point of dragging becomes the
       // anchor of user interaction.

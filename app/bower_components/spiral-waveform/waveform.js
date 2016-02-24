@@ -190,7 +190,7 @@
       windowEnd = windowEnd;
       negMax = posMax = 0.0;
 
-      // Iterate through the sampling window.
+      // Iterate through the sampling window. The compiled version below.
       // while (index < windowEnd) {
       //   var value = this._channelData[index++];
       //   if (value > posMax)
@@ -224,27 +224,37 @@
     var secondPerSample = this._duration / this._channelData.length;
     var startIndex = Math.floor(start / secondPerSample);
     var endIndex = Math.ceil(end / secondPerSample);
+    var prevY, x, y;
 
     this._ctx.beginPath();
 
     // The linear interpolation rendering is driven by the number of samples,
     // not the number of pixels.
     for (var i = startIndex; i < endIndex; i++) {
-      var x = (i * secondPerSample - start) / (end - start) * this.width;
-      var y = (1 - (this._channelData[i] / maxDisplayGain)) * this.height * 0.5;
+      x = (i * secondPerSample - start) / (end - start) * this.width;
+      y = (1 - (this._channelData[i] / maxDisplayGain)) * this.height * 0.5;
 
       // If somehow x is smaller than 0, just move to the position without
       // drawing a line.
       if (x <= 0) {
         this._ctx.moveTo(x, y);
+        prevY = y;
         continue;
       }
 
-      this._ctx.lineTo(x, y);
+      if (samplePerPixel > 1.0) {
+        this._ctx.lineTo(x, y);
+        prevY = y;
+        continue;
+      }
 
-      // If sample-per-pixel is below 1.0, draw a blob head for each sample.
-      if (samplePerPixel < 1.0)
-        this._ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
+      // If sample-per-pixel is below 1.0, draw a blob head for each sample and
+      // use stair-step drawing scheme. The size of the blob here is 3 x 3
+      // pixels.
+      this._ctx.lineTo(x, prevY);
+      this._ctx.lineTo(x, y);
+      this._ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
+      prevY = y;
     }
 
     this._ctx.stroke();

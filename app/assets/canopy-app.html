@@ -390,7 +390,7 @@
 
         _version: {
           type: String,
-          value: '0.9.6-dev'
+          value: '0.9.8'
         },
 
         _currentView: {
@@ -435,7 +435,9 @@
 
         // Default code snippet.
         this.$.eCoder.setCode(
-          '// Press ARROW button on the tool bar left.\n' +
+          '// 1. Check the tutorial in the main menu.\n' +
+          '// 2. Then press ARROW button on the tool bar left.\n' +
+          '// 3. Have some WebAudio fun!\n' +
           '//\n' +
           '// @channels 1\n' +
           '// @duration 1.0\n' +
@@ -446,7 +448,7 @@
           'gain.gain.value = 0.5;\n\n' +
           'osc.connect(gain);\n' +
           'gain.connect(context.destination);\n\n' +
-          'osc.start();\n\n'
+          'osc.start();\n'
         );
 
         // Set pre/post code for graph visualization.
