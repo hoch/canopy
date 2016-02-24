@@ -15,9 +15,9 @@ Canopy is a collection of Web Audio API development tools featuring:
   - Ranged playback with looping.
 
 
-## How'd you do it?
+## How did you do?
 
-For the most part, Canopy is built with [Spiral](https://github.com/hoch/spiral) and [Polymer](https://www.polymer-project.org/1.0/). Also a bit of snippet from [WAAX](http://hoch.github.io/WAAX/) as well.
+For the most part, Canopy is built with [Spiral](https://github.com/hoch/spiral) and [Polymer](https://www.polymer-project.org/1.0/). Also a bit of snippets from [WAAX](http://hoch.github.io/WAAX/) as well.
 
 
 ## Aw snap!
