@@ -7,7 +7,7 @@
     color: '#4FC3F7',
     colorBackground: '#ECEFF1',
     colorOverlayRect: 'rgba(240, 240, 240, 0.75)',
-    colorHandle: '#FF5722',
+    colorHandle: '#7C4DFF',
     colorCenterLine: '#37474F',
     colorInfo: '#FFF',
     colorBorder: '#FFF',

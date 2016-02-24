@@ -18,6 +18,7 @@
     colorClipped: '#E91E63',
     colorBackground: '#ECEFF1',
     colorGridLine: '#B0BEC5',
+    colorWarningLine: '#FF6E40',
     colorCenterLine: '#78909C',
     colorBorder: '#546E7A',
     samplePerPixelThreshold: 12.0
@@ -92,10 +93,9 @@
     if (!this._needsRedraw || !this._isInitialized || !this._channelData)
       return;
 
-    // Get sample indice and y-center coord.
+    // Get sample indice;
     var startIndex = Math.floor(start * this._sampleRate);
     var endIndex = Math.floor(end * this._sampleRate);
-    var yCenter = this.height * 0.5;
 
     // Calculate sample-per-pixel.
     var samplePerPixel = (endIndex - startIndex) / this.width;
@@ -111,13 +111,13 @@
     this._ctx.fillRect(0, 0, this.width, this.height);
 
     // Draw grids.
-    this._drawTimeAndAmplitudeGrids();
+    this._drawTimeAndAmplitudeGrids(maxDisplayGain);
 
     // Draw center line.
     this._ctx.beginPath();
     this._ctx.strokeStyle = STYLE.colorCenterLine;
-    this._ctx.moveTo(0, yCenter);
-    this._ctx.lineTo(this.width, yCenter);
+    this._ctx.moveTo(0, this.height * 0.5);
+    this._ctx.lineTo(this.width, this.height * 0.5);
     this._ctx.stroke();
 
     this._ctx.fillStyle = this._ctx.strokeStyle = STYLE.color;
@@ -148,23 +148,49 @@
   /** Internal helpers **/
 
   // Draw time and amp grids. This MUST be called inside of _draw() method.
-  WaveformDrawer.prototype._drawTimeAndAmplitudeGrids = function () {
+  WaveformDrawer.prototype._drawTimeAndAmplitudeGrids = function (maxDisplayGain) {
     if (!this._timeGridPositions || !this._ampGridPositions)
       return;
+
+    var posY, negY;
 
     this._ctx.beginPath();
     this._ctx.strokeStyle = STYLE.colorGridLine;
 
-    // Draw time grid positions first.
+    // Draw grids.
     this._timeGridPositions.forEach(function (x, time) {
       this._ctx.moveTo(x - 0.5, 0);
       this._ctx.lineTo(x - 0.5, this.height);
     }.bind(this));
 
     this._ampGridPositions.forEach(function (y, gain) {
+      if (gain === 1.0) {
+        posY = y;
+        return;
+      }
+
+      if (gain === -1.0) {
+        negY = y;
+        return;
+      }
+
       this._ctx.moveTo(0, y + 0.5);
       this._ctx.lineTo(this.width, y + 0.5);
     }.bind(this));
+
+    this._ctx.stroke();
+
+    // Draw 0 dBFS guide line (|amp| = 1.0).
+    if (!posY || !negY)
+      return;
+
+    this._ctx.beginPath();
+    this._ctx.strokeStyle = STYLE.colorWarningLine;
+
+    this._ctx.moveTo(0, posY + 0.5);
+    this._ctx.lineTo(this.width, posY + 0.5);
+    this._ctx.moveTo(0, negY + 0.5);
+    this._ctx.lineTo(this.width, negY + 0.5);
 
     this._ctx.stroke();
   };
@@ -224,7 +250,7 @@
     var secondPerSample = this._duration / this._channelData.length;
     var startIndex = Math.floor(start / secondPerSample);
     var endIndex = Math.ceil(end / secondPerSample);
-    var prevY, x, y;
+    var x, y;
 
     this._ctx.beginPath();
 
@@ -238,23 +264,15 @@
       // drawing a line.
       if (x <= 0) {
         this._ctx.moveTo(x, y);
-        prevY = y;
         continue;
       }
 
-      if (samplePerPixel > 1.0) {
-        this._ctx.lineTo(x, y);
-        prevY = y;
-        continue;
-      }
-
-      // If sample-per-pixel is below 1.0, draw a blob head for each sample and
-      // use stair-step drawing scheme. The size of the blob here is 3 x 3
-      // pixels.
-      this._ctx.lineTo(x, prevY);
+      // If sample-per-pixel is below 1.0, draw a blob head for each sample.
+      // The size of the blob here is 3 x 3 pixels.
       this._ctx.lineTo(x, y);
-      this._ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
-      prevY = y;
+
+      if (samplePerPixel < 1.0)
+        this._ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
     }
 
     this._ctx.stroke();

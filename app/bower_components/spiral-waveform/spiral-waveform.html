@@ -343,14 +343,12 @@ Example:
       var y = event.offsetY - this.$.eWaveformContainer.scrollTop;
 
       // TODO: fix these hard coded numbers. Optimize them as well.
-      var dispX = x > this.$.eWaveformContainer.clientWidth - 200 ? -160 : 40;
-      var dispY = y > this.$.eWaveformContainer.clientHeight - 120 ? -100 : 60;
+      var dispX = x > this.$.eWaveformContainer.clientWidth - 200 ? -140 : 20;
+      var dispY = y > this.$.eWaveformContainer.clientHeight - 120 ? -50 : 50;
 
       this.$.eOverlayInspector.style.display = 'block';
       this.$.eOverlayInspector.style.transform = 'translateX(' + (x + dispX) + 'px)' + ' translateY(' + (y + dispY) + 'px)';
-      // this.$.eOverlayInspector.style.left = x + dispX + 'px';
-      // this.$.eOverlayInspector.style.top = y + dispY + 'px';
-
+      
       this.$.eInspectorChannel.textContent = info.channel;
       this.$.eInspectorTime.textContent = info.time.toFixed(8);
       this.$.eInspectorFrame.textContent = info.frame;
