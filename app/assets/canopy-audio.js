@@ -13,13 +13,12 @@
 
   var lastRenderedBuffer = null;
   var currentBufferSource = null;
-  
 
   CanopyAudio.loop = false;
 
   CanopyAudio.toggleLoop = function () {
     CanopyAudio.loop = !CanopyAudio.loop;
-    
+
     // If there is an on-going buffer playback, stop playback.
     if (!CanopyAudio.loop && currentBufferSource) {
       currentBufferSource.loop = false;
@@ -64,6 +63,13 @@
   CanopyAudio.setAudioBuffer = function (buffer) {
     lastRenderedBuffer = buffer;
     CanopyAudio.play(0, lastRenderedBuffer.duration);
+  };
+
+  CanopyAudio.getRenderedBuffer = function () {
+    if (!lastRenderedBuffer)
+      return null;
+
+    return lastRenderedBuffer;
   };
 
 })(CanopyAudio = {});

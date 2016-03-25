@@ -246,9 +246,9 @@ Example:
 
       if (durationTokens) {
         var duration = Number(durationTokens[1]);
-        if (duration < 0.5 || duration > 10) {
+        if (duration < 0.5 || duration > 60) {
           this._updateStatusMessage('error', {
-            message: 'Duration is out of range. (0.5 ~ 10sec)'
+            message: 'Duration is out of range. (0.5 ~ 60sec)'
           });
           return;
         }

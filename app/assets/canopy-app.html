@@ -29,6 +29,10 @@
 
 <!-- Canopy specific module -->
 <script src="canopy-audio.js"></script>
+<script src="../js/pcm-exporter.js"></script>
+
+<!-- experimental -->
+<!-- <script src="../experimental/foa-spatializer.js"></script> -->
 
 <!-- dom-module definition -->
 <dom-module id="canopy-app">
@@ -181,6 +185,10 @@
       font-size: 1.2em;
       font-weight: 700;
     }
+
+    a#eDownloadLink {
+      color: inherit;
+    }
   </style>
 
   <template>
@@ -216,27 +224,33 @@
       <!-- workspace -->
       <div main class="workspace">
 
-        <!-- pane::viewer -->
-        <div id="ePaneViewer">
+        <canopy-toolbar>
+          <paper-icon-button icon="menu" on-click="_onMenu">
+          </paper-icon-button>
+          <span class="title">Canopy</span>
+          <paper-icon-button icon="av:stop" on-click="_onAudioStop">
+          </paper-icon-button>
+          <paper-icon-button icon="av:play-arrow" on-click="_onAudioPlay">
+          </paper-icon-button>
+          <paper-icon-button id="eBtnLoop" icon="av:repeat" 
+            on-click="_onAudioToggleLoop">
+          </paper-icon-button>
+          <span class="flex"></span>
+          <paper-icon-button id="eBtnExport" icon="save"
+            on-click="_onAudioExport">
+          </paper-icon-button>
+          <a id="eDownloadLink">
+            <paper-icon-button id="eBtnDownload" icon="file-download"
+              on-click="_onAudioDownload">
+            </paper-icon-button>
+          </a>
+        </canopy-toolbar>
 
-          <canopy-toolbar>
-            <paper-icon-button icon="menu" on-click="_onMenu">
-            </paper-icon-button>
-            <span class="title">Canopy</span>
-            <paper-icon-button icon="av:stop" on-click="_onAudioStop">
-            </paper-icon-button>
-            <paper-icon-button icon="av:play-arrow" on-click="_onAudioPlay">
-            </paper-icon-button>
-            <paper-icon-button id="eBtnLoop" icon="av:repeat" 
-              on-click="_onAudioToggleLoop">
-            </paper-icon-button>
-            <span class="flex"></span>
-          </canopy-toolbar>
+        <!-- pane::viewer -->
+        <div id="ePaneViewer">          
 
           <div id="eWaveformView">
-            <div>
-              <spiral-minimap id="eMiniMap"></spiral-minimap>
-            </div>
+            <spiral-minimap id="eMiniMap"></spiral-minimap>
             <spiral-waveform id="eWaveform"></spiral-waveform>
           </div>
 
@@ -462,6 +476,9 @@
         console.log('[canopy] Ready (' + this._version + '): ' 
           + performance.now());
 
+        this.$.eBtnExport.disabled = true;
+        this.$.eBtnDownload.hidden = true;
+
         // This activates the developer mode.
         // this._DEV_activate();
       },
@@ -470,7 +487,7 @@
         // Initialize pane size with the default viewer height.
         // TODO: Fix hard-coded values.
         this._editorHeight = this.clientHeight - this._viewerHeight;
-        this.$.ePaneViewer.style.height = this._viewerHeight + 36 + 'px';
+        this.$.ePaneViewer.style.height = this._viewerHeight + 'px';
         this.$.ePaneEditor.style.height = this._editorHeight + 'px';
         // this.$.eWaveformView.style.height = this._viewerHeight - 42 + 'px';
         // this.$.eAudioGraphView.style.height = this._viewerHeight - 42 + 'px';
@@ -507,14 +524,16 @@
         
         // Update waveform div container and the spiral element.
         this.$.eWaveformView.style.height = this._viewerHeight + 'px';
+        this.$.eWaveform.style.height = (this._viewerHeight - 64) + 'px';
         this.$.eWaveform.notifyResize();
 
         // Update audiograph div container and the spiral element.
         this.$.eAudioGraphView.style.height = this._viewerHeight + 'px';
+        this.$.eAudioGraph.style.height = this._viewerHeight + 'px';
         this.$.eAudioGraph.notifyResize();
 
         // TODO: Perhaps Other modules?
-        // this.$.eMiniMap.notifyResize();
+        this.$.eMiniMap.notifyResize();
       },
 
       // Activate DEV mode.
@@ -542,11 +561,24 @@
         this.$.eMiniMap.setAudioBuffer(buffer);
         this.$.eMiniMap.setRegion(0, buffer.duration * 0.25);
         CanopyAudio.setAudioBuffer(buffer);
+
+        this.$.eBtnExport.disabled = false;
       },
 
       // When spiral-gistloader loads a user-selected code snippet.
       _onGistLoaded: function (gist) {
         this.$.eCoder.setCode(gist.code);
+
+        this._onCodeChanged();
+      },
+
+      _onCodeChanged: function () {
+        this.$.eBtnRender.disabled = false;
+
+        this.$.eBtnExport.disabled = true;
+        this.$.eBtnExport.hidden = false;
+
+        this.$.eBtnDownload.hidden = true;
       },
 
       // Main menu
@@ -595,14 +627,13 @@
       // Button: View Change
       _onBtnViewChange: function () {
         // Toggle the current view.
-        this._currentView = this._currentView === 'Waveform' ? 
-          'AudioGraph' : 'Waveform';
-        var isWaveform = this._currentView === 'Waveform';
-        this.$.eWaveformView.style.display = isWaveform ? 'block' : 'none';
-        this.$.eAudioGraphView.style.display = isWaveform ? 'none' : 'block';
+        var isWaveformView = (this._currentView === 'Waveform');
+        this._currentView = isWaveformView ? 'AudioGraph' : 'Waveform';
+        this.$.eWaveformView.style.display = isWaveformView ? 'none' : 'block';
+        this.$.eAudioGraphView.style.display = isWaveformView ? 'block' : 'none';
 
         // Forced resize.
-        this.async(this.notifyResize, 1);
+        this._resizeAsyncTask = this.async(this._notifyResizeForModules, 3);
       },
 
       // Button: Gistloader
@@ -630,6 +661,14 @@
           eBtnLoop.style.color = 'orange';
         else
           eBtnLoop.style.color = 'gray';
+      },
+
+      _onAudioExport: function () {
+        PCMExporter.injectLinkToElementFromAudioBuffer(this.$.eDownloadLink,
+          CanopyAudio.getRenderedBuffer());
+
+        this.$.eBtnExport.hidden = true;
+        this.$.eBtnDownload.hidden = false;
       },
 
       created: function () {},
@@ -668,7 +707,7 @@
                 this._onRenderBufferToViews(data.buffer);
                 break;
               case 'canopy-code-changed':
-                this.$.eBtnRender.disabled = false;
+                this._onCodeChanged();
                 break;
             }
         }
