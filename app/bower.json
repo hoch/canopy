@@ -1,6 +1,6 @@
 {
   "name": "canopy",
-  "version": "0.9.2",
+  "version": "0.9.9-rc1",
   "homepage": "https://github.com/hoch/canopy",
   "authors": [
     "Hongchan Choi"
@@ -25,6 +25,7 @@
     "spiral-minimap": "hoch/spiral-minimap#^0.0.4",
     "spiral-waveform": "hoch/spiral-waveform#^0.0.4",
     "iron-pages": "PolymerElements/iron-pages#~1.0.5",
-    "neon-animation": "PolymerElements/neon-animation#~1.0.8"
+    "neon-animation": "PolymerElements/neon-animation#~1.0.8",
+    "paper-spinner": "PolymerElements/paper-spinner#^1.1.1"
   }
 }

@@ -12,10 +12,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
   <link rel="import" href="bower_components/polymer/polymer.html">
+  <link rel="import" href="../bower_components/paper-spinner/paper-spinner.html">
   <script src="assets/canopy-landing.js"></script>
+  <style>
+    body {
+      margin: 0;
+    }
+
+    #eLoadingBox {
+      margin: 10px;
+    }
+
+    #eLoadingBox p {
+      font-family: 'Roboto Condensed';
+      font-size: 13px;
+    }
+  </style>
 </head>
 
 <body class="unresolved fullbleed">
+  <div id="eLoadingBox">
+    <paper-spinner id="eLoadingSpinner" active></paper-spinner>
+    <p>Loading Canopy... <span id="eVersionNumber"></span></p>
+  </div>
   <script>
     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),

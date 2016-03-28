@@ -19,6 +19,7 @@
 
 <!-- Canopy custom element -->
 <link rel="import" href="canopy-toolbar.html">
+<link rel="import" href="spiral-importer.html">
 
 <!-- Spiral elements -->
 <link rel="import" href="../bower_components/spiral-audiograph/spiral-audiograph.html">
@@ -26,6 +27,8 @@
 <link rel="import" href="../bower_components/spiral-gistloader/spiral-gistloader.html">
 <link rel="import" href="../bower_components/spiral-minimap/spiral-minimap.html">
 <link rel="import" href="../bower_components/spiral-waveform/spiral-waveform.html">
+<link rel="import" href="../bower_components/spiral-gistloader/spiral-gistloader.html">
+
 
 <!-- Canopy specific module -->
 <script src="canopy-audio.js"></script>
@@ -39,13 +42,16 @@
 
   <style is="custom-style">
     :host {
-      -webkit-user-select: none;
       display: block;
       position: absolute;
       top: 0;
       right: 0;
       bottom: 0;
       left: 0;
+      opacity: 0;
+      transition: opacity 0.5s;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .drawer {
@@ -144,8 +150,21 @@
       @apply(--layout-vertical);
       color: #B7DAD7;
       background-color: #506067;
-      padding-right: 4px;
+      padding: 0 2px;
       width: 40px;
+    }
+
+    #eTools .divider {
+      height: 1px;
+      width: 34px;
+      margin: 7px 2px;
+      background-color: #6B8490;
+    }
+
+    #eTools #eInputFile {
+      height: 0;
+      width: 0;
+      overflow: hidden;
     }
 
     #eCoder {
@@ -164,9 +183,12 @@
     }
 
     .modal-title {
-      padding: 0 1em;
       font-size: 1.75em;
       font-weight: 700;
+    }
+
+    .model-section {
+
     }
 
     .modal-body ol {
@@ -188,6 +210,15 @@
 
     a#eDownloadLink {
       color: inherit;
+    }
+
+    paper-icon-button[disabled] {
+      color: #6E7A80;
+    }
+
+    @keyframes appFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
   </style>
 
@@ -232,7 +263,7 @@
           </paper-icon-button>
           <paper-icon-button icon="av:play-arrow" on-click="_onAudioPlay">
           </paper-icon-button>
-          <paper-icon-button id="eBtnLoop" icon="av:repeat" 
+          <paper-icon-button id="eBtnLoop" icon="av:repeat"
             on-click="_onAudioToggleLoop">
           </paper-icon-button>
           <span class="flex"></span>
@@ -247,7 +278,7 @@
         </canopy-toolbar>
 
         <!-- pane::viewer -->
-        <div id="ePaneViewer">          
+        <div id="ePaneViewer">
 
           <div id="eWaveformView">
             <spiral-minimap id="eMiniMap"></spiral-minimap>
@@ -256,7 +287,7 @@
 
           <div id="eAudioGraphView">
             <spiral-audiograph id="eAudioGraph"></spiral-audiograph>
-          </div> 
+          </div>
 
         </div>
 
@@ -267,16 +298,26 @@
 
         <!-- pane::editor -->
         <div id="ePaneEditor">
-          
+
           <div id="eTools">
-            <paper-icon-button id="eBtnRender" icon="send" 
+            <paper-icon-button id="eBtnRender" icon="send"
               on-click="_onBtnRender"></paper-icon-button>
-            <paper-icon-button id="eBtnViewChange" icon="visibility" 
+            <paper-icon-button id="eBtnViewChange" icon="visibility"
               on-click="_onBtnViewChange">
             </paper-icon-button>
-            <div class="flex"></div>
-            <paper-icon-button icon="description" 
+            <div class="divider"></div>
+
+            <!-- File Input button -->
+            <input type="file" id="eInputFile" />
+            <paper-icon-button icon="folder-open"
+              on-click="_onBtnOpenLocalFile">
+            </paper-icon-button>
+
+            <paper-icon-button icon="cloud"
               on-click="_onBtnOpenGistLoader">
+            </paper-icon-button>
+            <paper-icon-button icon="settings"
+              on-click="_onBtnOpenEditorSetting" disabled>
             </paper-icon-button>
           </div>
 
@@ -394,6 +435,16 @@
       </div>
     </paper-dialog>
 
+    <!-- Modal: Third-party JS Loader -->
+    <paper-dialog id="eSettingModal" class="modal-container" modal>
+      <div class="modal-title">Editor Settings</div>
+      <spiral-importer id="eLibraryImporter" class="flex"></spiral-importer>
+      <div class="buttons">
+        <paper-button dialog-dismiss>CANCEL</paper-button>
+        <paper-button dialog-confirm autofocus raised>OK</paper-button>
+      </div>
+    </paper-dialog>
+
   </template>
 
   <script>
@@ -404,7 +455,7 @@
 
         _version: {
           type: String,
-          value: '0.9.8'
+          value: '0.9.9-rc1'
         },
 
         _currentView: {
@@ -443,9 +494,10 @@
         this.$.eMiniMap.setController(this);
         this.$.eCoder.setController(this);
 
-        // Define callbacks for onRenderComplete for spiral-coder.
-        // this.$.eCoder.onRenderComplete = this._onRenderComplete.bind(this);
+        // Define callbacks for various event handers.
         this.$.eGistLoader.onGistLoaded = this._onGistLoaded.bind(this);
+        this.$.eInputFile.addEventListener('change',
+          this._onLocalFileLoaded.bind(this), false);
 
         // Default code snippet.
         this.$.eCoder.setCode(
@@ -469,11 +521,11 @@
         this.$.eCoder.setPreCode('SpiralAudioGraphService.trackContext(context);');
         this.$.eCoder.setPostCode('SpiralAudioGraphService.draw();');
 
-        // Initialize pane heights. 
+        // Initialize pane heights.
         // TODO: This is a hack for 0 bounding box issue of Polymer element.
         this.async(this._initializePaneSize, 1);
-        
-        console.log('[canopy] Ready (' + this._version + '): ' 
+
+        console.log('[canopy] Ready (' + this._version + '): '
           + performance.now());
 
         this.$.eBtnExport.disabled = true;
@@ -521,7 +573,7 @@
       _notifyResizeForModules: function () {
         // CodeMirror needs to be updated.
         this.$.eCoder.notifyResize();
-        
+
         // Update waveform div container and the spiral element.
         this.$.eWaveformView.style.height = this._viewerHeight + 'px';
         this.$.eWaveform.style.height = (this._viewerHeight - 64) + 'px';
@@ -542,6 +594,8 @@
 
         // Below you can put any thing that you want to test.
         // this._onMenuTutorial();
+        
+        this.$.eSettingModal.open();
       },
 
 
@@ -549,7 +603,7 @@
       // Event handlers: event, buttons, and interaction.
       // =======================================================================
 
-      // When the splitter bar dragged. 
+      // When the splitter bar dragged.
       _onSplitterDragged: function (event) {
         this._handlePaneResize(event.detail);
       },
@@ -579,6 +633,20 @@
         this.$.eBtnExport.hidden = false;
 
         this.$.eBtnDownload.hidden = true;
+      },
+
+      _onLocalFileLoaded: function (event) {
+        var file = event.target.files[0];
+        if (!file)
+          return;
+
+        var reader = new FileReader();
+        reader.onload = function (onloadevent) {
+          var contents = onloadevent.target.result;
+          this.$.eCoder.setCode(contents);
+        }.bind(this);
+
+        reader.readAsText(file);
       },
 
       // Main menu
@@ -615,6 +683,11 @@
         this.$.eTutorialPages.selected = this._currentTutorialStep;
       },
 
+
+      // -----------------------------------------------------------------------
+      // Button handlers
+      // -----------------------------------------------------------------------
+
       // Button: Render
       _onBtnRender: function () {
         // Clear the previous graph visualization.
@@ -636,9 +709,16 @@
         this._resizeAsyncTask = this.async(this._notifyResizeForModules, 3);
       },
 
-      // Button: Gistloader
+      _onBtnOpenLocalFile: function () {
+        this.$.eInputFile.click();
+      },
+
       _onBtnOpenGistLoader: function () {
         this.$.eLoaderModal.open();
+      },
+
+      _onBtnOpenEditorSetting: function () {
+        this.$.eSettingModal.open();
       },
 
       // Audio: Stop
@@ -671,7 +751,10 @@
         this.$.eBtnDownload.hidden = false;
       },
 
-      created: function () {},
+      created: function () {
+
+      },
+
       ready: function () {},
 
       // Built-in life cycle: entry point.
@@ -692,11 +775,11 @@
        */
       postMessage: function (id, type, data) {
         switch (id) {
-          
+
           case 'spiral-minimap':
             this.$.eWaveform.setViewRange(data.start, data.end);
             break;
-          
+
           case 'spiral-waveform':
             this.$.eMiniMap.setRegion(data.start, data.end);
             break;
@@ -711,6 +794,14 @@
                 break;
             }
         }
+      },
+
+      getVersion: function () {
+        return this._version;
+      },
+
+      startApplication: function () {
+        this.style.opacity = 1.0;
       }
     });
   </script>

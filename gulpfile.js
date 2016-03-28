@@ -1,7 +1,7 @@
 /**
- * Copyright (c) 2015 Hongchan Choi. MIT License.
+ * Copyright (c) 2016 Hongchan Choi. MIT License.
  *
- * Project Gulp file.
+ * Canopy Project Gulp File.
  */
 var gulp        = require('gulp');
 var plugins     = require('gulp-load-plugins')();
@@ -13,7 +13,6 @@ var deploy      = require('gulp-gh-pages');
 
 // serve: launch local dev server.
 gulp.task('serve', function () {
-
   browserSync.init({
     server: {
       baseDir: 'app'
