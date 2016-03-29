@@ -19,7 +19,6 @@
 
 <!-- Canopy custom element -->
 <link rel="import" href="canopy-toolbar.html">
-<link rel="import" href="canopy-tutorial.html">
 
 <!-- Spiral elements -->
 <link rel="import" href="../bower_components/spiral-audiograph/spiral-audiograph.html">
@@ -481,8 +480,7 @@
         this.$.eCoder.setPreCode('SpiralAudioGraphService.trackContext(context);');
         this.$.eCoder.setPostCode('SpiralAudioGraphService.draw();');
 
-        // Initialize pane heights.
-        // TODO: This is a hack for 0 bounding box issue of Polymer element.
+        // Initialize pane heights. Wait 1 ms for the bounding box to be build.
         this.async(this._initializePaneSize, 1);
 
         console.log('[canopy] Ready (' + this._version + '): '
@@ -554,7 +552,7 @@
           
           // Below you can put any thing that you want to test.
           console.log('[canopy] Entering dev mode...');
-          this._onMenuTutorial();
+          // this._onMenuTutorial();
 
         }, 1000);
       },
