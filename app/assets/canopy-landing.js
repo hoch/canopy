@@ -12,10 +12,10 @@
 
   var _canopyVersion = '0.9.9-rc1';
   
-  function handleLanding() {
-    var divLoadingBox = document.querySelector('#eLoadingBox');
-    var spanVersionNumber = document.querySelector('#eVersionNumber');
-    spanVersionNumber.textContent = '(' + _canopyVersion + ')';
+  function _onWebComponentReady() {
+    var _divLoadingBox = document.querySelector('#eLoadingBox');
+    var _spanVersionNumber = document.querySelector('#eVersionNumber');
+    _spanVersionNumber.textContent = '(' + _canopyVersion + ')';
     
     // Detect browser and version.
     var which = (function () {
@@ -40,11 +40,12 @@
 
     // Detect URL has the dev mode query.
     var devMode = window.location.href.split('?q=')[1] === 'dev';
-    
+
     // Not Chrome or dev mode, bailing out.
     if (!browserIsGood && !devMode) {
       Polymer.Base.importHref(['assets/canopy-bailout.html']);
       var bailoutDialog = document.createElement('canopy-bailout');
+      document.body.removeChild(_divLoadingBox);
       document.body.appendChild(bailoutDialog);
       return;
     }
@@ -52,14 +53,14 @@
     // Start loading the application.
     Polymer.Base.importHref(['assets/canopy-app.html'], function () {
       var canopyAppShell = document.createElement('canopy-app');
-      document.body.removeChild(divLoadingBox);
+      document.body.removeChild(_divLoadingBox);
       document.body.appendChild(canopyAppShell);
-      canopyAppShell.startApplication();
     });
   }
 
-  console.log('[canopy] loading components: ' + performance.now());
+  console.log('[canopy] loading components... (' + performance.now() + ')');
 
-  window.addEventListener('WebComponentsReady', handleLanding);
+  // Entry Point.
+  window.addEventListener('WebComponentsReady', _onWebComponentReady);
 
 })(window);

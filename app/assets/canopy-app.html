@@ -19,7 +19,7 @@
 
 <!-- Canopy custom element -->
 <link rel="import" href="canopy-toolbar.html">
-<link rel="import" href="spiral-importer.html">
+<link rel="import" href="canopy-tutorial.html">
 
 <!-- Spiral elements -->
 <link rel="import" href="../bower_components/spiral-audiograph/spiral-audiograph.html">
@@ -28,7 +28,6 @@
 <link rel="import" href="../bower_components/spiral-minimap/spiral-minimap.html">
 <link rel="import" href="../bower_components/spiral-waveform/spiral-waveform.html">
 <link rel="import" href="../bower_components/spiral-gistloader/spiral-gistloader.html">
-
 
 <!-- Canopy specific module -->
 <script src="canopy-audio.js"></script>
@@ -255,40 +254,29 @@
       <!-- workspace -->
       <div main class="workspace">
 
+        <!-- Top tool bar -->
         <canopy-toolbar>
-          <paper-icon-button icon="menu" on-click="_onMenu">
-          </paper-icon-button>
+          <paper-icon-button icon="menu" on-click="_onMenu"></paper-icon-button>
           <span class="title">Canopy</span>
-          <paper-icon-button icon="av:stop" on-click="_onAudioStop">
-          </paper-icon-button>
-          <paper-icon-button icon="av:play-arrow" on-click="_onAudioPlay">
-          </paper-icon-button>
-          <paper-icon-button id="eBtnLoop" icon="av:repeat"
-            on-click="_onAudioToggleLoop">
-          </paper-icon-button>
+          <paper-icon-button icon="av:stop" on-click="_onAudioStop"></paper-icon-button>
+          <paper-icon-button icon="av:play-arrow" on-click="_onAudioPlay"></paper-icon-button>
+          <paper-icon-button id="eBtnLoop" icon="av:repeat" on-click="_onAudioToggleLoop"></paper-icon-button>
           <span class="flex"></span>
-          <paper-icon-button id="eBtnExport" icon="save"
-            on-click="_onAudioExport">
-          </paper-icon-button>
+          <paper-icon-button id="eBtnExport" icon="save" on-click="_onAudioExport"></paper-icon-button>
           <a id="eDownloadLink">
-            <paper-icon-button id="eBtnDownload" icon="file-download"
-              on-click="_onAudioDownload">
-            </paper-icon-button>
+            <paper-icon-button id="eBtnDownload" icon="file-download" on-click="_onAudioDownload"></paper-icon-button>
           </a>
         </canopy-toolbar>
 
         <!-- pane::viewer -->
         <div id="ePaneViewer">
-
           <div id="eWaveformView">
             <spiral-minimap id="eMiniMap"></spiral-minimap>
             <spiral-waveform id="eWaveform"></spiral-waveform>
           </div>
-
           <div id="eAudioGraphView">
             <spiral-audiograph id="eAudioGraph"></spiral-audiograph>
           </div>
-
         </div>
 
         <!-- splitter -->
@@ -298,31 +286,15 @@
 
         <!-- pane::editor -->
         <div id="ePaneEditor">
-
           <div id="eTools">
-            <paper-icon-button id="eBtnRender" icon="send"
-              on-click="_onBtnRender"></paper-icon-button>
-            <paper-icon-button id="eBtnViewChange" icon="visibility"
-              on-click="_onBtnViewChange">
-            </paper-icon-button>
+            <paper-icon-button id="eBtnRender" icon="send" on-click="_onBtnRender"></paper-icon-button>
+            <paper-icon-button id="eBtnViewChange" icon="visibility" on-click="_onBtnViewChange"></paper-icon-button>
             <div class="divider"></div>
-
-            <!-- File Input button -->
-            <input type="file" id="eInputFile" />
-            <paper-icon-button icon="folder-open"
-              on-click="_onBtnOpenLocalFile">
-            </paper-icon-button>
-
-            <paper-icon-button icon="cloud"
-              on-click="_onBtnOpenGistLoader">
-            </paper-icon-button>
-            <paper-icon-button icon="settings"
-              on-click="_onBtnOpenEditorSetting" disabled>
-            </paper-icon-button>
+            <input type="file" id="eInputFile" /><!--invisible file input button -->
+            <paper-icon-button icon="folder-open" on-click="_onBtnOpenLocalFile"></paper-icon-button>
+            <paper-icon-button icon="cloud" on-click="_onBtnOpenGistLoader"></paper-icon-button>
           </div>
-
           <spiral-coder id="eCoder" class="flex"></spiral-coder>
-
         </div>
 
       </div>
@@ -435,16 +407,6 @@
       </div>
     </paper-dialog>
 
-    <!-- Modal: Third-party JS Loader -->
-    <paper-dialog id="eSettingModal" class="modal-container" modal>
-      <div class="modal-title">Editor Settings</div>
-      <spiral-importer id="eLibraryImporter" class="flex"></spiral-importer>
-      <div class="buttons">
-        <paper-button dialog-dismiss>CANCEL</paper-button>
-        <paper-button dialog-confirm autofocus raised>OK</paper-button>
-      </div>
-    </paper-dialog>
-
   </template>
 
   <script>
@@ -470,9 +432,7 @@
         },
 
         _editorHeight: Number,
-
         _resizeAsyncTask: Object,
-
         _currentTutorialStep: Number
 
       },
@@ -531,18 +491,17 @@
         this.$.eBtnExport.disabled = true;
         this.$.eBtnDownload.hidden = true;
 
+        this.style.opacity = 1.0;
+
         // This activates the developer mode.
-        // this._DEV_activate();
+        this._DEV_activate();
       },
 
       _initializePaneSize: function () {
         // Initialize pane size with the default viewer height.
-        // TODO: Fix hard-coded values.
         this._editorHeight = this.clientHeight - this._viewerHeight;
         this.$.ePaneViewer.style.height = this._viewerHeight + 'px';
         this.$.ePaneEditor.style.height = this._editorHeight + 'px';
-        // this.$.eWaveformView.style.height = this._viewerHeight - 42 + 'px';
-        // this.$.eAudioGraphView.style.height = this._viewerHeight - 42 + 'px';
 
         // Propagate resizing event.
         this._resizeAsyncTask = this.async(this._notifyResizeForModules, 3);
@@ -575,6 +534,7 @@
         this.$.eCoder.notifyResize();
 
         // Update waveform div container and the spiral element.
+        // TODO: why -64?
         this.$.eWaveformView.style.height = this._viewerHeight + 'px';
         this.$.eWaveform.style.height = (this._viewerHeight - 64) + 'px';
         this.$.eWaveform.notifyResize();
@@ -584,54 +544,46 @@
         this.$.eAudioGraph.style.height = this._viewerHeight + 'px';
         this.$.eAudioGraph.notifyResize();
 
-        // TODO: Perhaps Other modules?
+        // Notify resize for all children.
         this.$.eMiniMap.notifyResize();
       },
 
       // Activate DEV mode.
       _DEV_activate: function () {
-        console.log('[canopy] Entering dev mode...');
+        this.async(function () {
+          
+          // Below you can put any thing that you want to test.
+          console.log('[canopy] Entering dev mode...');
+          this._onMenuTutorial();
 
-        // Below you can put any thing that you want to test.
-        // this._onMenuTutorial();
-        
-        this.$.eSettingModal.open();
+        }, 1000);
       },
 
 
       // =======================================================================
-      // Event handlers: event, buttons, and interaction.
-      // =======================================================================
+      // System-callback event handlers.
+      // =======================================================================      
 
-      // When the splitter bar dragged.
-      _onSplitterDragged: function (event) {
-        this._handlePaneResize(event.detail);
-      },
-
-      // When spiral-coder finishes rendering.
       _onRenderBufferToViews: function (buffer) {
         this.$.eWaveform.setAudioBuffer(buffer);
         this.$.eWaveform.setViewRange(0, buffer.duration * 0.25);
         this.$.eMiniMap.setAudioBuffer(buffer);
         this.$.eMiniMap.setRegion(0, buffer.duration * 0.25);
+        
         CanopyAudio.setAudioBuffer(buffer);
 
         this.$.eBtnExport.disabled = false;
       },
 
-      // When spiral-gistloader loads a user-selected code snippet.
       _onGistLoaded: function (gist) {
         this.$.eCoder.setCode(gist.code);
-
         this._onCodeChanged();
       },
 
       _onCodeChanged: function () {
         this.$.eBtnRender.disabled = false;
-
         this.$.eBtnExport.disabled = true;
         this.$.eBtnExport.hidden = false;
-
         this.$.eBtnDownload.hidden = true;
       },
 
@@ -647,6 +599,70 @@
         }.bind(this);
 
         reader.readAsText(file);
+      },
+
+
+      // -----------------------------------------------------------------------
+      // UI handlers: UI element, buttons
+      // -----------------------------------------------------------------------
+
+      // Audio: Stop
+      _onAudioStop: function () {
+        CanopyAudio.stop();
+      },
+
+      // Audio: Play
+      _onAudioPlay: function () {
+        var region = this.$.eMiniMap.getRegion();
+        if (region)
+          CanopyAudio.play(region.start, region.end);
+      },
+
+      // Audio: Loop Toggle
+      _onAudioToggleLoop: function () {
+        CanopyAudio.toggleLoop();
+
+        if (CanopyAudio.loop)
+          eBtnLoop.style.color = 'orange';
+        else
+          eBtnLoop.style.color = 'gray';
+      },
+
+      _onSplitterDragged: function (event) {
+        this._handlePaneResize(event.detail);
+      },
+
+      // Button: Render
+      _onBtnRender: function () {
+        // Clear the previous graph visualization.
+        SpiralAudioGraphService.clear();
+        this.$.eBtnRender.disabled = true;
+
+        this.$.eCoder.renderAudioBuffer();
+      },
+
+      // Button: View Change
+      _onBtnViewChange: function () {
+        // Toggle the current view.
+        var isWaveformView = (this._currentView === 'Waveform');
+        this._currentView = isWaveformView ? 'AudioGraph' : 'Waveform';
+        this.$.eWaveformView.style.display = isWaveformView ? 'none' : 'block';
+        this.$.eAudioGraphView.style.display = isWaveformView ? 'block' : 'none';
+
+        // Forced resize.
+        this._resizeAsyncTask = this.async(this._notifyResizeForModules, 3);
+      },
+
+      _onBtnOpenLocalFile: function () {
+        this.$.eInputFile.click();
+      },
+
+      _onBtnOpenGistLoader: function () {
+        this.$.eLoaderModal.open();
+      },
+
+      _onBtnOpenEditorSetting: function () {
+        this.$.eSettingModal.open();
       },
 
       // Main menu
@@ -683,66 +699,6 @@
         this.$.eTutorialPages.selected = this._currentTutorialStep;
       },
 
-
-      // -----------------------------------------------------------------------
-      // Button handlers
-      // -----------------------------------------------------------------------
-
-      // Button: Render
-      _onBtnRender: function () {
-        // Clear the previous graph visualization.
-        SpiralAudioGraphService.clear();
-        this.$.eBtnRender.disabled = true;
-
-        this.$.eCoder.renderAudioBuffer();
-      },
-
-      // Button: View Change
-      _onBtnViewChange: function () {
-        // Toggle the current view.
-        var isWaveformView = (this._currentView === 'Waveform');
-        this._currentView = isWaveformView ? 'AudioGraph' : 'Waveform';
-        this.$.eWaveformView.style.display = isWaveformView ? 'none' : 'block';
-        this.$.eAudioGraphView.style.display = isWaveformView ? 'block' : 'none';
-
-        // Forced resize.
-        this._resizeAsyncTask = this.async(this._notifyResizeForModules, 3);
-      },
-
-      _onBtnOpenLocalFile: function () {
-        this.$.eInputFile.click();
-      },
-
-      _onBtnOpenGistLoader: function () {
-        this.$.eLoaderModal.open();
-      },
-
-      _onBtnOpenEditorSetting: function () {
-        this.$.eSettingModal.open();
-      },
-
-      // Audio: Stop
-      _onAudioStop: function () {
-        CanopyAudio.stop();
-      },
-
-      // Audio: Play
-      _onAudioPlay: function () {
-        var region = this.$.eMiniMap.getRegion();
-        if (region)
-          CanopyAudio.play(region.start, region.end);
-      },
-
-      // Audio: Loop Toggle
-      _onAudioToggleLoop: function () {
-        CanopyAudio.toggleLoop();
-
-        if (CanopyAudio.loop)
-          eBtnLoop.style.color = 'orange';
-        else
-          eBtnLoop.style.color = 'gray';
-      },
-
       _onAudioExport: function () {
         PCMExporter.injectLinkToElementFromAudioBuffer(this.$.eDownloadLink,
           CanopyAudio.getRenderedBuffer());
@@ -751,13 +707,13 @@
         this.$.eBtnDownload.hidden = false;
       },
 
-      created: function () {
 
-      },
+      // -----------------------------------------------------------------------
+      // Element life cycle
+      // -----------------------------------------------------------------------
+      // created: function () {},
+      // ready: function () {},
 
-      ready: function () {},
-
-      // Built-in life cycle: entry point.
       attached: function () {
         this._initialize();
       },
@@ -798,10 +754,6 @@
 
       getVersion: function () {
         return this._version;
-      },
-
-      startApplication: function () {
-        this.style.opacity = 1.0;
       }
     });
   </script>
