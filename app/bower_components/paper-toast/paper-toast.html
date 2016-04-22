@@ -11,7 +11,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../iron-a11y-announcer/iron-a11y-announcer.html">
 <link rel="import" href="../iron-overlay-behavior/iron-overlay-behavior.html">
-<link rel="import" href="../paper-styles/typography.html">
 
 <!--
 Material design: [Snackbards & toasts](https://www.google.com/design/spec/components/snackbars-toasts.html)
@@ -29,8 +28,14 @@ Also `open()` or `show()` can be used to show the toast:
 
 Example:
 
-    <paper-toast id="toast0" text="Welcome back!"></paper-toast>
-    <button onclick="document.querySelector('#toast0').open()">Login</button>
+    <paper-button on-click="openToast">Open Toast</paper-button>
+    <paper-toast id="toast" text="Hello world!"></paper-toast>
+
+    ...
+
+    openToast: function() {
+      this.$.toast.open();
+    }
 
 Set `duration` to 0, a negative number or Infinity to persist the toast on screen:
 
@@ -49,6 +54,9 @@ Custom property | Description | Default
 `--paper-toast-background-color` | The paper-toast background-color | `#323232`
 `--paper-toast-color` | The paper-toast color | `#f1f1f1`
 
+This element applies the mixin `--paper-font-common-base` but does not import `paper-styles/typography.html`.
+In order to apply the `Roboto` font to this element, make sure you've imported `paper-styles/typography.html`.
+
 @group Paper Elements
 @element paper-toast
 @demo demo/index.html
@@ -65,7 +73,7 @@ Custom property | Description | Default
         color: var(--paper-toast-color, #f1f1f1);
         min-height: 48px;
         min-width: 288px;
-        padding: 16px 24px 12px;
+        padding: 16px 24px;
         box-sizing: border-box;
         box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
         border-radius: 2px;
@@ -74,12 +82,12 @@ Custom property | Description | Default
         margin: 12px;
         font-size: 14px;
         cursor: default;
-        -webkit-transition: visibility 0.3s, -webkit-transform 0.3s, opacity 0.3s;
-        transition: visibility 0.3s, transform 0.3s, opacity 0.3s;
-        visibility: hidden;
+        -webkit-transition: -webkit-transform 0.3s, opacity 0.3s;
+        transition: transform 0.3s, opacity 0.3s;
         opacity: 0;
         -webkit-transform: translateY(100px);
         transform: translateY(100px);
+        @apply(--paper-font-common-base);
       }
 
       :host(.capsule) {
@@ -94,7 +102,6 @@ Custom property | Description | Default
       }
 
       :host(.paper-toast-open) {
-        visibility: visible;
         opacity: 1;
         -webkit-transform: translateY(0px);
         transform: translateY(0px);
@@ -144,6 +151,20 @@ Custom property | Description | Default
             type: Boolean,
             value: true
           },
+
+          /**
+           * Overridden from `IronOverlayBehavior`.
+           * Set to true to disable auto-focusing the toast or child nodes with
+           * the `autofocus` attribute` when the overlay is opened.
+           */
+          noAutoFocus: {
+            type: Boolean,
+            value: true
+          }
+        },
+
+        listeners: {
+          'transitionend': '__onTransitionEnd'
         },
 
         /**
@@ -165,13 +186,28 @@ Custom property | Description | Default
         },
 
         created: function() {
+          this._autoClose = null;
           Polymer.IronA11yAnnouncer.requestAvailability();
         },
 
         /**
-         * Show the toast. Same as `open()` from `IronOverlayBehavior`.
+         * Show the toast. Without arguments, this is the same as `open()` from `IronOverlayBehavior`.
+         * @param {(Object|string)=} properties Properties to be set before opening the toast.
+         * e.g. `toast.show('hello')` or `toast.show({text: 'hello', duration: 3000})`
          */
-        show: function() {
+        show: function(properties) {
+          if (typeof properties == 'string') {
+            properties = { text: properties };
+          }
+          for (var property in properties) {
+            if (property.indexOf('_') === 0) {
+              console.warn('The property "' + property + '" is private and was not set.');
+            } else if (property in this) {
+              this[property] = properties[property];
+            } else {
+              console.warn('The property "' + property + '" is not valid.');
+            }
+          }
           this.open();
         },
 
@@ -183,10 +219,46 @@ Custom property | Description | Default
         },
 
         /**
+         * Overridden from `IronFitBehavior`.
+         * Positions the toast at the bottom left of fitInto.
+         */
+        center: function () {
+          if (this.fitInto === window) {
+            this.style.bottom = this.style.left = '';
+          } else {
+            var rect = this.fitInto.getBoundingClientRect();
+            this.style.left = rect.left + 'px';
+            this.style.bottom = (window.innerHeight - rect.bottom) + 'px';
+          }
+        },
+
+        /**
+         * Called on transitions of the toast, indicating a finished animation
+         * @private
+         */
+        __onTransitionEnd: function(e) {
+          // there are different transitions that are happening when opening and
+          // closing the toast. The last one so far is for `opacity`.
+          // This marks the end of the transition, so we check for this to determine if this
+          // is the correct event.
+          if (e && e.target === this && e.propertyName === 'opacity') {
+            if (this.opened) {
+              this._finishRenderOpened();
+            } else {
+              this._finishRenderClosed();
+            }
+          }
+        },
+
+        /**
          * Overridden from `IronOverlayBehavior`.
          * Called when the value of `opened` changes.
          */
         _openedChanged: function() {
+          if (this._autoClose !== null) {
+            this.cancelAsync(this._autoClose);
+            this._autoClose = null;
+          }
           if (this.opened) {
             if (currentToast && currentToast !== this) {
               currentToast.close();
@@ -196,7 +268,7 @@ Custom property | Description | Default
               text: this.text
             });
             if (this._canAutoClose) {
-              this.debounce('close', this.close, this.duration);
+              this._autoClose = this.async(this.close, this.duration);
             }
           } else if (currentToast === this) {
             currentToast = null;
@@ -235,8 +307,7 @@ Custom property | Description | Default
          * Fired when `paper-toast` is opened.
          *
          * @event 'iron-announce'
-         * @param {Object} detail
-         * @param {String} detail.text The text that will be announced.
+         * @param {{text: string}} detail Contains text that will be announced.
          */
       });
     })();

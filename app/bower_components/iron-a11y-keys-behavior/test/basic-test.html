@@ -97,7 +97,9 @@ suite('Polymer.IronA11yKeysBehavior', function() {
       ],
 
       keyBindings: {
-        'space': '_keyHandler'
+        'space': '_keyHandler',
+        '@': '_keyHandler',
+        'esc': '_keyHandler'
       }
     });
 
@@ -169,12 +171,28 @@ suite('Polymer.IronA11yKeysBehavior', function() {
       MockInteractions.pressSpace(keys);
 
       expect(keys.keyCount).to.be.equal(1);
+
+      MockInteractions.pressAndReleaseKeyOn(keys, 27, [], 'Esc');
+      expect(keys.keyCount).to.be.equal(2);
+
+      MockInteractions.pressAndReleaseKeyOn(keys, 27, [], 'Escape');
+      expect(keys.keyCount).to.be.equal(3);
+
+      MockInteractions.pressAndReleaseKeyOn(keys, 27, []);
+      expect(keys.keyCount).to.be.equal(4);
     });
 
     test('trigger the handler when the specified key is pressed together with a modifier', function() {
       var event = new CustomEvent('keydown');
       event.ctrlKey = true;
       event.keyCode = event.code = 32;
+      keys.dispatchEvent(event);
+      expect(keys.keyCount).to.be.equal(1);
+    });
+
+    test('handles special character @', function() {
+      var event = new CustomEvent('keydown');
+      event.key = '@';
       keys.dispatchEvent(event);
       expect(keys.keyCount).to.be.equal(1);
     });
@@ -265,6 +283,20 @@ suite('Polymer.IronA11yKeysBehavior', function() {
         expect(keys.keyboardEventMatchesKeys(event, 'up')).to.be.equal(true);
       });
     });
+
+    suite('matching keyboard events to top row and number pad digit keys', function() {
+      test('top row can be done imperatively', function() {
+        var event = new CustomEvent('keydown');
+        event.keyCode = 49;
+        expect(keys.keyboardEventMatchesKeys(event, '1')).to.be.equal(true);
+      });
+
+      test('number pad digits can be done imperatively', function() {
+        var event = new CustomEvent('keydown');
+        event.keyCode = 97;
+        expect(keys.keyboardEventMatchesKeys(event, '1')).to.be.equal(true);
+      });
+    });
   });
 
   suite('combo keys', function() {
@@ -277,6 +309,19 @@ suite('Polymer.IronA11yKeysBehavior', function() {
 
       event.ctrlKey = true;
       event.shiftKey = true;
+      event.keyCode = event.code = 65;
+
+      keys.dispatchEvent(event);
+
+      expect(keys.keyCount).to.be.equal(1);
+    });
+
+    test('check if KeyBoardEvent.key is alpha-numberic', function() {
+      var event = new CustomEvent('keydown');
+
+      event.ctrlKey = true;
+      event.shiftKey = true;
+      event.key = 'å';
       event.keyCode = event.code = 65;
 
       keys.dispatchEvent(event);
@@ -305,6 +350,7 @@ suite('Polymer.IronA11yKeysBehavior', function() {
       expect(shiftEnterSpy.called).to.be.true;
       expect(enterSpy.calledAfter(shiftEnterSpy)).to.be.true;
     });
+
   });
 
   suite('alternative event keys', function() {

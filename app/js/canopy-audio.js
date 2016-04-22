@@ -1,75 +1,104 @@
 /**
- * Canopy Real-time audio engine.
+ * @license Copyright (c) 2015 Hongchan Choi. MIT License.
+ * @fileOverview Canopy audio previewer with realtime audio context.
  */
-
-(function (CanopyAudio) {
+(function (Canopy) {
 
   'use strict';
 
-  var context = new AudioContext();
-  var masterGain = context.createGain();
+  var Audio = {};
 
-  masterGain.connect(context.destination);
+  var _context = new AudioContext();
+  var _masterGain = _context.createGain();
+  var _lastRenderedBuffer = null;
+  var _currentBufferSource = null;
 
-  var lastRenderedBuffer = null;
-  var currentBufferSource = null;
+  _masterGain.connect(_context.destination);
 
-  CanopyAudio.loop = false;
+  /**
+   * [loop description]
+   * @type {Boolean}
+   */
+  Audio.loop = false;
 
-  CanopyAudio.toggleLoop = function () {
-    CanopyAudio.loop = !CanopyAudio.loop;
+  /**
+   * [toggleLoop description]
+   * @return {[type]} [description]
+   */
+  Audio.toggleLoop = function () {
+    Audio.loop = !Audio.loop;
 
     // If there is an on-going buffer playback, stop playback.
-    if (!CanopyAudio.loop && currentBufferSource) {
-      currentBufferSource.loop = false;
-      currentBufferSource.stop();
+    if (!Audio.loop && _currentBufferSource) {
+      _currentBufferSource.loop = false;
+      _currentBufferSource.stop();
     }
   };
 
-  CanopyAudio.play = function (start, end) {
-    if (!lastRenderedBuffer) {
-      console.log('[CanopyAudio] Playback failed due to invalid buffer.');
+  /**
+   * [play description]
+   * @param  {[type]} start [description]
+   * @param  {[type]} end   [description]
+   * @return {[type]}       [description]
+   */
+  Audio.play = function (start, end) {
+    if (!_lastRenderedBuffer) {
+      Canopy.LOG('/audio/ Playback failed. (invalid AudioBuffer)');
       return;
     }
 
     // If there is an on-going buffer source, stop it.
-    if (currentBufferSource) {
-      currentBufferSource.stop();
-      currentBufferSource = null;
+    if (_currentBufferSource) {
+      _currentBufferSource.stop();
+      _currentBufferSource = null;
     }
 
-    currentBufferSource = context.createBufferSource();
-    currentBufferSource.buffer = lastRenderedBuffer;
-    currentBufferSource.loop = CanopyAudio.loop;
-    currentBufferSource.connect(masterGain);
+    _currentBufferSource = _context.createBufferSource();
+    _currentBufferSource.buffer = _lastRenderedBuffer;
+    _currentBufferSource.loop = Audio.loop;
+    _currentBufferSource.connect(_masterGain);
 
     // The behavior depends on the loop flag.
-    if (!CanopyAudio.loop) {
-      currentBufferSource.start(context.currentTime, start, end - start);
+    if (!Audio.loop) {
+      _currentBufferSource.start(_context.currentTime, start, end - start);
     } else {
-      currentBufferSource.loopStart = start;
-      currentBufferSource.loopEnd = end;
-      currentBufferSource.start(context.currentTime, start);
+      _currentBufferSource.loopStart = start;
+      _currentBufferSource.loopEnd = end;
+      _currentBufferSource.start(_context.currentTime, start);
     }
   };
 
-  CanopyAudio.stop = function () {
-    if (currentBufferSource) {
-      currentBufferSource.stop();
-      currentBufferSource = null;
+  /**
+   * [stop description]
+   * @return {[type]} [description]
+   */
+  Audio.stop = function () {
+    if (_currentBufferSource) {
+      _currentBufferSource.stop();
+      _currentBufferSource = null;
     }
   };
 
-  CanopyAudio.setAudioBuffer = function (buffer) {
-    lastRenderedBuffer = buffer;
-    CanopyAudio.play(0, lastRenderedBuffer.duration);
+  /**
+   * [setAudioBuffer description]
+   * @param {[type]} buffer [description]
+   */
+  Audio.setAudioBuffer = function (buffer) {
+    _lastRenderedBuffer = buffer;
+    Audio.play(0, _lastRenderedBuffer.duration);
   };
 
-  CanopyAudio.getRenderedBuffer = function () {
-    if (!lastRenderedBuffer)
+  /**
+   * [getRenderedBuffer description]
+   * @return {[type]} [description]
+   */
+  Audio.getRenderedBuffer = function () {
+    if (!_lastRenderedBuffer)
       return null;
 
-    return lastRenderedBuffer;
+    return _lastRenderedBuffer;
   };
 
-})(CanopyAudio = {});
+  Canopy.Audio = Audio;
+
+})(Canopy);

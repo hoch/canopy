@@ -9,12 +9,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../iron-behaviors/iron-control-state.html">
-<link rel="import" href="../iron-behaviors/iron-button-state.html">
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../paper-styles/typography.html">
-<link rel="import" href="../paper-styles/color.html">
-<link rel="import" href="../paper-styles/default-theme.html">
 <link rel="import" href="paper-item-behavior.html">
 <link rel="import" href="paper-item-shared-styles.html">
 
@@ -40,6 +36,7 @@ The following custom properties and mixins are available for styling:
 Custom property               | Description                                    | Default
 ------------------------------|------------------------------------------------|----------
 `--paper-item-icon-width`     | Width of the icon area                         | `56px`
+`--paper-item-icon`           | Mixin applied to the icon area                 | `{}`
 `--paper-icon-item`           | Mixin applied to the item                      | `{}`
 `--paper-item-selected-weight`| The font weight of a selected item             | `bold`
 `--paper-item-selected`       | Mixin applied to selected paper-items                | `{}`
@@ -63,9 +60,11 @@ Custom property               | Description                                    |
       }
 
       .content-icon {
-        width: var(--paper-item-icon-width, 56px);
         @apply(--layout-horizontal);
         @apply(--layout-center);
+
+        width: var(--paper-item-icon-width, 56px);
+        @apply(--paper-item-icon);
       }
     </style>
 
