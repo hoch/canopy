@@ -125,7 +125,7 @@ Example:
         value: {
           minSampleRate: 3000,
           maxSampleRate: 192000,
-          minDuration: 0.25,
+          minDuration: 0.01,
           maxDuration: 10.00,
           minNumChannels: 1,
           maxNumChannels: 8
@@ -246,9 +246,9 @@ Example:
 
       if (durationTokens) {
         var duration = Number(durationTokens[1]);
-        if (duration < 0.5 || duration > 60) {
+        if (duration < 0.01 || duration > 60) {
           this._updateStatusMessage('error', {
-            message: 'Duration is out of range. (0.5 ~ 60sec)'
+            message: 'Duration is out of range. (0.01 ~ 60 sec)'
           });
           return;
         }
@@ -260,7 +260,7 @@ Example:
         var sampleRate = Number(sampleRateTokens[1]);
         if (sampleRate < 3000 || sampleRate > 192000) {
           this._updateStatusMessage('error', {
-            message: 'Sample rate is out of range. (3000 ~ 192000Hz)'
+            message: 'Sample rate is out of range. (3000 Hz ~ 192000 Hz)'
           });
           return;
         }
