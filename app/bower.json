@@ -1,9 +1,9 @@
 {
   "name": "canopy",
-  "version": "0.9.9-rc1",
+  "version": "0.9.9-rc2",
   "homepage": "https://github.com/hoch/canopy",
   "authors": [
-    "Hongchan Choi"
+    "Hongchan Choi (hongchan@chromium.org)"
   ],
   "license": "MIT",
   "ignore": [
