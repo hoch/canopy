@@ -1,0 +1,210 @@
+<link rel="import" href="bower_components/polymer/polymer.html">
+<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="bower_components/neon-animation/neon-animatable.html">
+<link rel="import" href="bower_components/neon-animation/neon-animated-pages.html">
+<link rel="import" href="bower_components/neon-animation/neon-animations.html">
+<link rel="import" href="bower_components/paper-button/paper-button.html">
+<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="bower_components/paper-styles/paper-styles.html">
+
+<dom-module id="canopy-tutorial">
+  <style is="custom-style">
+    :host {
+      @apply(--layout);
+      width: 100%;
+    }
+
+    #eModalDialog {
+      border-radius: 0.3em;
+      padding: 0.9em;
+    }
+
+    .tutorial-title {
+      @apply(--layout-horizontal);
+      height: 40px;
+      font-size: 1.75em;
+      font-weight: 100;
+      line-height: 40px;
+    }
+
+    .tutorial-container {
+      width: 500px;
+      height: 288px;
+      margin: 24px;
+      overflow: hidden;
+    }
+
+    .tutorial-step {
+      @apply(--layout-horizontal);
+    }
+
+    .tutorial-step img {
+      width: 288px;
+      height: 288px;
+      margin-right: 1em;
+    }
+
+    .tutorial-step-title {
+      color: #9E9E9E;
+      font-size: 1.15em;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .tutorial-step-text {
+      line-height: 22px;
+      font-size: 1.05em;
+    }
+
+    .tutorial-buttons {
+      padding-top: 40px;
+    }
+  </style>
+
+  <template>
+    <!-- dialog container -->
+    <paper-dialog id="eModalDialog" modal>
+
+      <!-- tutorial title -->
+      <div class="tutorial-title">
+        How to use Canopy
+        <span class="flex"></span>
+        <paper-icon-button icon="close" class="btn-close" dialog-dismiss></paper-icon-button>
+      </div>
+
+      <!-- tutorial body -->
+      <neon-animated-pages id="eTutorialSteps" class="tutorial-container" selected="0">
+        <template is="dom-repeat" items="{{_data}}">
+          <neon-animatable>
+            <div class="tutorial-step">
+              <img src="{{item.imageUrl}}">
+              <div>
+                <p class="tutorial-step-title">{{item.title}}</p>
+                <p class="tutorial-step-text">{{item.text}}</p>
+              </div>
+            </div>
+          </neon-animatable>
+        </template>
+      </neon-animated-pages>
+
+      <div class="buttons">
+        <paper-button id="eBtnPrev" raised on-click="previousStep">Previous</paper-button>
+        <paper-button id="eBtnNext" autofocus raised on-click="nextStep">Next</paper-button>
+      </div>
+
+    </paper-dialog>
+  </template>
+
+  <script>
+    Polymer({
+      is: 'canopy-tutorial',
+
+      properties: {
+
+        _data: {
+          type: Array,
+          value: [{
+            title: 'Write code or load a Gist.',
+            imageUrl: 'images/step-1.png',
+            text: 'Load a code snippet from GitHub Gist by clicking the document icon at the bottom left. Or you can just write code in the editor.'
+          },{
+            title: 'Render the code.',
+            imageUrl: 'images/step-2.png',
+            text: 'Once you have valid codes in the editor, click the arrow icon to render it to the audio buffer. This will play the sound and draw the visualization.'
+          }, {
+            title: 'Inspect waveform.',
+            imageUrl: 'images/step-3.png',
+            text: 'Drag vertically to zoom in and out the time line, and horizontally to pan the view port.'
+          }, {
+            title: 'Navigate waveform.',
+            imageUrl: 'images/step-4.png',
+            text: 'You can use the mini map to navigate the waveform faster.'
+          }, {
+            title: 'Play sound.',
+            imageUrl: 'images/step-5.png',
+            text: 'The rendered audio buffer can be played without re-rendering. You can also loop the range selected by the view port.'
+          }, {
+            title: 'Change view mode.',
+            imageUrl: 'images/step-6.png',
+            text: 'You can also inspect the graph after rendering the code. Clicking the eye icon will toggle the view mode between the waveform and the audio graph.'
+          }, {
+            title: 'Inspect audiograph.',
+            imageUrl: 'images/step-7.png',
+            text: 'In the audio graph mode, you can zoom in and out by the mouse wheel, move by dragging and click a node or an edge to inspect AudioNode, AudioParam or even the connection.'
+          }, {
+            title: 'That`s it!',
+            imageUrl: 'images/step-1.png',
+            text: 'Have fun with Canopy!'
+          }]
+        },
+
+        _currentStep: {
+          type: Number,
+          value: 0
+        }
+
+      },
+
+      // -----------------------------------------------------------------------
+      // Private methods.
+      // -----------------------------------------------------------------------
+
+      _initialize: function () {
+        this._setCurrentStep(0);
+      },
+
+      _setCurrentStep: function (stepIndex) {
+        // Work on current step. (clamp, direction)
+        var direction = stepIndex < this._currentStep ? 'left' : 'right';
+        this._currentStep = Math.max(0, Math.min(this._data.length - 1, stepIndex));
+
+        // Make transition.
+        this.$.eTutorialSteps.entryAnimation = 'slide-from-' + direction + '-animation';
+        this.$.eTutorialSteps.exitAnimation = 'fade-out-animation';        
+        this.$.eTutorialSteps.selected = this._currentStep;
+
+        // Update button state.
+        if (this._currentStep === 0) {
+          this.$.eBtnPrev.disabled = true;
+          return;
+        } else if (this._currentStep === this._data.length - 1) {
+          this.$.eBtnNext.disabled = true;
+          return;
+        } else {
+          this.$.eBtnPrev.disabled = false;
+          this.$.eBtnNext.disabled = false;
+        }
+      },
+
+      // -----------------------------------------------------------------------
+      // System-event handlers.
+      // -----------------------------------------------------------------------
+      
+      attached: function () {
+        this._initialize();
+      },
+      
+      // -----------------------------------------------------------------------
+      // Public methods
+      // -----------------------------------------------------------------------
+      
+      open: function () {
+        this.$.eModalDialog.open();
+      },
+
+      close: function () {
+        this.$.eModalDialog.close();
+      },
+
+      previousStep: function () {
+        this._setCurrentStep(this._currentStep - 1);
+      },
+
+      nextStep: function () {
+        this._setCurrentStep(this._currentStep + 1);
+      }
+
+    });
+  </script>
+</dom-module>

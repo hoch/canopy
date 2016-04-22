@@ -1,0 +1,332 @@
+<!--
+@license
+MIT License. Copyright (c) 2015 Hongchan Choi. All rights reserved.
+-->
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/paper-styles/paper-styles.html">
+<link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+
+<script src="spiral-minimap.js"></script>
+
+<!--
+Draws the time-domain representation of <code>AudioBuffer</code> which
+can be navigated by adjusting the two handles. The region can be
+translated by dragging the center of the region.
+
+This element is designed to be used with <code>spiral-waveform</code> element.
+
+Example:
+
+    <spiral-minimap></spiral-minimap>
+
+@demo
+-->
+<dom-module id="spiral-minimap">
+
+  <style>
+    :host {
+      position: relative;
+      display: block;
+      box-sizing: border-box;
+      overflow: hidden;
+      background-color: var(--google-grey-100);
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+
+  <template>
+    <canvas id="canvas" on-track="_onTrack"></canvas>
+  </template>
+
+</dom-module>
+
+<script>
+
+  Polymer({
+
+    is: 'spiral-minimap',
+
+    properties: {
+
+      _width: {
+        type: Number,
+        value: 480
+      },
+
+      _height: {
+        type: Number,
+        value: 48
+      },
+
+      _regionStart: Number,
+      _reiognEnd: Number,
+
+      _ctx: Object,
+      _audioBuffer: Object,
+      _miniMapDrawer: Object,
+      _controller: Object,
+
+      _componentId: {
+        type: String,
+        value: 'spiral-minimap'
+      },
+
+      _uiMode: {
+        type: String,
+        value: 'IDLE'
+      }
+
+    },
+
+    behaviors: [
+      Polymer.IronResizableBehavior
+    ],
+
+    listeners: {
+      'iron-resize': '_onResize'
+    },
+
+
+    /** Helpers **/
+
+    _initialize: function () {
+      // Create context.
+      this._ctx = this.$.canvas.getContext('2d');
+
+      // Create minimap drawer instance.
+      this._miniMapDrawer = SpiralMiniMap.create(this._ctx, this._width, this._height);
+
+      // Initial forced resize.
+      this._onResize();
+    },
+
+    _onResize: function () {
+      // If the context or the drawer is not ready, stop now.
+      if (!this._ctx || !this._miniMapDrawer)
+        return;
+
+      // Adjust canvas size with the parent node's inner size.
+      this._width = this.$.canvas.width = this.$.canvas.offsetWidth;
+      this._height = this.$.canvas.height = this.$.canvas.offsetHeight;
+
+      // Update the dimension of minimap drawer.
+      this._miniMapDrawer.setSize(this._width, this._height);
+    },
+
+    _convertSecondToPixel: function (second) {
+      if (!this._audioBuffer)
+        return 0;
+
+      return (second / this._audioBuffer.duration) * this._width;
+    },
+
+    _convertPixelToSecond: function (pixel) {
+      if (!this._audioBuffer || this.width === 0)
+        return 0;
+
+      return (pixel / this._width) * this._audioBuffer.duration;
+    },
+
+
+    /** Render-related **/
+
+    _updateView: function () {
+      if (!this._audioBuffer)
+        return;
+
+      this._render();
+    },
+
+    _render: function () {
+      if (!this._audioBuffer)
+        return;
+
+      this._miniMapDrawer.draw();
+    },
+
+
+    /** UI helpers */
+
+    // TODO: abstract track handlers.
+    // _onLeftHandleDragged: function (deltaX) {},
+    // _onRightHandleDragged: function (deltaX) {},
+    // _onRegionDragged: function (deltaX) {},
+    // _onDragged: function (deltaX) {},
+
+    /** Track handlers */
+
+    _updateRegion: function (handleL, handleR) {
+      var start = this._convertPixelToSecond(handleL);
+      var end = this._convertPixelToSecond(handleR);
+
+      if (start < end)
+        this._miniMapDrawer.setRegion(start, end);
+      else
+        this._miniMapDrawer.setRegion(end, start);
+
+      this._notify('region-change', {
+        start: start,
+        end: end
+      });
+    },
+
+    _onTrack: function (event) {
+      if (!this._audioBuffer)
+        return;
+
+      // uiMode:
+      // { CREATE_REGION, MOVE_HANDLE_L, MOVE_HANDLE_R, MOVE_REGION, IDLE }
+
+      var pos = event.detail;
+
+      // Pure x, y coordinates should be contained inside the target element
+      // without padding or margin.
+      pos.x = event.detail.sourceEvent.offsetX;
+      pos.y = event.detail.sourceEvent.offsetY;
+
+      // Calculate current region area by pixels.
+      var needsUpdate = false;
+      var region = this._miniMapDrawer.getRegion();
+      var handleL = this._convertSecondToPixel(region.start);
+      var handleR = this._convertSecondToPixel(region.end);
+      var centerLine = this._miniMapDrawer.getCenterCoord();
+
+      switch(pos.state) {
+
+        // TODO: check pos.y for the better user interaction. If pos.y is above
+        // the center line, select handleL, otherwise select handleR.
+        // TODO: use dy rather than ddy.
+        case 'start':
+          if (handleL - 10 <= pos.x && pos.x <= handleL + 40) {
+            this._uiMode = 'MOVE_HANDLE_L';
+          } else if (handleR - 40 <= pos.x && pos.x <= handleR + 10) {
+            this._uiMode = 'MOVE_HANDLE_R';
+          } else if (handleL + 40 < pos.x && pos.x < handleR - 40) {
+            this._uiMode = 'MOVE_REGION';
+          } else {
+            this._uiMode = 'CREATE_REGION';
+            handleL = pos.x;
+            handleR = pos.x;
+            needsUpdate = true;
+          }
+          break;
+
+        case 'track':
+          switch (this._uiMode) {
+            case 'MOVE_HANDLE_L':
+              handleL += pos.ddx;
+              if (0 <= handleL)
+                needsUpdate = true;
+              break;
+            case 'MOVE_HANDLE_R':
+              handleR += pos.ddx;
+              if (handleR <= this._width)
+                needsUpdate = true;
+              break;
+            case 'MOVE_REGION':
+              handleL += pos.ddx;
+              handleR += pos.ddx;
+              if (0 <= handleL && handleR <= this._width)
+                needsUpdate = true;
+              break;
+            case 'CREATE_REGION':
+              if (pos.ddx > 0 && pos.x > handleR)
+                handleR = pos.x;
+              else if (pos.ddx < 0 && pos.x < handleL)
+                handleL = pos.x;
+              needsUpdate = true;
+              break;
+          }
+          break;
+
+        case 'end':
+          this._uiMode = 'IDLE';
+          break;
+      }
+
+      if (needsUpdate)
+        this._updateRegion(handleL, handleR);
+    },
+
+
+    /** communication */
+
+    _notify: function (eventType, data) {
+      if (this._controller)
+        this._controller.postMessage(this._componentId, eventType, data);
+    },
+
+
+    /** Polymer life cycle: created -> ready -> attached **/
+
+    created: function () {},
+    ready: function() {},
+
+    attached: function () {
+      // Initialize and force-resize at startup. This is done asynchronously to
+      // ensure the first redraw.
+      this.async(this._initialize, 1);
+    },
+
+    /**
+     * Sets the controller object for reporting the local state change.
+     * @param {Object} controller A controller (message router).
+     */
+    setController: function (controller) {
+      this._controller = controller;
+    },
+
+    /**
+     * Sets the height of the instance. This triggers the redraw of visualization.
+     * @param {Number} height Height in pixel.
+     */
+    setHeight: function (height) {
+      this._height = height;
+
+      // Force resize.
+      this._onResize();
+    },
+
+    /**
+     * Sets the audio buffer object to visualize.
+     * @param {Object} audioBuffer AudioBuffer object to be rendered.
+     */
+    setAudioBuffer: function (audioBuffer) {
+      if (!audioBuffer)
+        return;
+
+      this._audioBuffer = audioBuffer;
+      this._miniMapDrawer.setAudioBuffer(this._audioBuffer);
+    },
+
+    /**
+     * Sets start and end points of user-defined region.
+     * @param {Number} start Region start position in seconds.
+     * @param {Number} end   Region end position in seconds.
+     */
+    setRegion: function (start, end) {
+      if (!this._miniMapDrawer)
+        return;
+
+      this._miniMapDrawer.setRegion(start, end);
+    },
+
+    /**
+     * Gets start and end points of user-defined region.
+     * @return {Object} Region start and end points in seconds.
+     */
+    getRegion: function () {
+      if (!this._audioBuffer)
+        return null;
+
+      return this._miniMapDrawer.getRegion();
+    }
+
+  });
+
+</script>

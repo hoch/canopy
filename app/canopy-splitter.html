@@ -1,0 +1,46 @@
+<link rel="import" href="bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+
+<dom-module id="canopy-splitter" attributes="direction locked minSize allowOverflow"
+  ontrack="{{track}}">
+
+  <style>
+  </style>
+
+  <template>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'canopy-splitter',
+
+      properties: {
+        
+        minSize: {
+          type: Number,
+          value: 128
+        }
+
+      },
+
+      behaviors: [ 
+        Polymer.IronResizableBehavior
+      ],
+
+      ready: function () {
+        console.log(this.nextElementSibling);
+        console.log(this.previousElementSibling);
+      },
+
+      track: function (event) {
+        console.log(event);
+      },
+
+      preventSelection: function (event) {
+        e.preventDefault();
+      }
+
+    });
+  </script>
+
+</dom-module>

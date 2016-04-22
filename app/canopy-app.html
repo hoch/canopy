@@ -1,0 +1,723 @@
+<!--
+  @license Copyright (c) 2015 Hongchan Choi. MIT License.
+  @description: Main app shell for Canopy.
+ -->
+
+<!-- Polymer vanilla elements -->
+<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="bower_components/iron-icons/av-icons.html">
+<link rel="import" href="bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="bower_components/neon-animation/neon-animatable.html">
+<link rel="import" href="bower_components/neon-animation/neon-animated-pages.html">
+<link rel="import" href="bower_components/neon-animation/neon-animations.html">
+<link rel="import" href="bower_components/paper-button/paper-button.html">
+<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="bower_components/paper-drawer-panel/paper-drawer-panel.html">
+<link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="bower_components/paper-styles/paper-styles.html">
+<link rel="import" href="bower_components/paper-tooltip/paper-tooltip.html">
+
+<!-- Canopy custom element -->
+<link rel="import" href="canopy-toolbar.html">
+<link rel="import" href="canopy-tutorial.html">
+
+<!-- Spiral elements -->
+<link rel="import" href="spiral-elements/spiral-audiograph/spiral-audiograph.html">
+<link rel="import" href="spiral-elements/spiral-coder/spiral-coder.html">
+<link rel="import" href="spiral-elements/spiral-gistloader/spiral-gistloader.html">
+<link rel="import" href="spiral-elements/spiral-minimap/spiral-minimap.html">
+<link rel="import" href="spiral-elements/spiral-waveform/spiral-waveform.html">
+
+<!-- Canopy specific module -->
+<script src="js/canopy-audio.js"></script>
+<script src="js/pcm-exporter.js"></script>
+
+<!-- experimental -->
+<!-- <script src="_experimental/foa-spatializer.js"></script> -->
+
+<!-- dom-module definition -->
+<dom-module id="canopy-app">
+
+  <style is="custom-style">
+    :host {
+      display: block;
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      opacity: 0;
+      transition: opacity 0.5s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .drawer {
+      @apply(--layout-vertical);
+      z-index: 9999;
+    }
+
+    .drawer .app-title {
+      font-family: 'Roboto Condensed';
+      font-size: 2.2em;
+      font-weight: 100;
+      color: #00695C;
+      background-color: #B2DFDB;
+      padding: 0.5em;
+      margin-bottom: 0.5em;
+    }
+
+    .drawer .app-title .version {
+      font-size: 0.5em;
+    }
+
+    .drawer .about {
+      @apply(--layout-horizontal);
+      border-top: 1px solid #E8EAF6;
+      height: 64px;
+    }
+
+    .drawer .about > paper-item {
+      font-size: 0.85em;
+    }
+
+    .drawer .about > paper-item > a {
+      color: #455A64;
+      text-decoration: none;
+    }
+
+    .workspace {
+      @apply(--layout-vertical);
+      z-index: 0;
+    }
+
+    #eWaveformView {
+      @apply(--layout-vertical);
+      display: block;
+      min-height: 330px;
+    }
+
+    #eMiniMap {
+      height: 64px;
+    }
+
+    #eWaveform {
+      @apply(--layout-flex);
+    }
+
+    #eAudioGraphView {
+      display: none;
+      min-height: 330px;
+    }
+
+    #eAppShell {
+    }
+
+    #ePaneViewer {
+      min-height: 330px;
+      overflow: hidden;
+    }
+
+    #eSplitter {
+      height: 16px;
+      min-height: 16px;
+      background-color: #484847;
+      box-shadow:
+        inset 0px 7px 5px -7px hsla(0, 100%, 100%, 0.45),
+        inset 0px -12px 1px -11px rgba(0,0,0,0.5);
+      cursor: row-resize;
+    }
+
+    .splitter-handle {
+      margin: 5px auto;
+      height: 3px;
+      width: 256px;
+      border-top: 1px solid #888888;
+      border-bottom: 1px solid #888888;
+    }
+
+    #ePaneEditor {
+      @apply(--layout-flex);
+      @apply(--layout-horizontal);
+      min-height: 150px;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    #eTools {
+      @apply(--layout-vertical);
+      color: #B7DAD7;
+      background-color: #506067;
+      padding: 0 2px;
+      width: 40px;
+    }
+
+    #eTools .divider {
+      height: 1px;
+      width: 34px;
+      margin: 7px 2px;
+      background-color: #6B8490;
+    }
+
+    #eTools #eInputFile {
+      height: 0;
+      width: 0;
+      overflow: hidden;
+    }
+
+    #eCoder {
+    }
+
+    #eTutorialPages {
+      width: 600px;
+      height: 300px;
+      overflow: hidden;
+    }
+
+    .modal-container {
+      border-radius: 0.3em;
+      padding: 0.5em;
+    }
+
+    .modal-title {
+      @apply(--layout-horizontal);
+      height: 40px;
+      font-size: 1.75em;
+      font-weight: 700;
+      line-height: 40px;
+      margin-left: 8px;
+    }
+
+    .modal-body ol {
+      margin: 0 0 0 1em;
+      padding: 0;
+    }
+
+    .version {
+      text-align: center;
+      font-size: 1em;
+      font-weight: 100;
+      width: 100%;
+    }
+
+    .tutorial-page {
+      @apply(--layout-horizontal);
+      margin: 0 8px;
+    }
+
+    .tutorial-page img {
+      width: 288px;
+      height: 288px;
+      margin-right: 1em;
+    }
+
+    .tutorial-title {
+      font-size: 1.2em;
+      font-weight: 700;
+      margin: 0 0 1em 0;
+    }
+
+    a#eDownloadLink {
+      color: inherit;
+    }
+
+    paper-icon-button[disabled] {
+      color: #6E7A80;
+    }
+
+    paper-tooltip {
+      --paper-tooltip-background: #263238;
+      --paper-tooltip-opacity: 0.95;
+    }
+
+    @keyframes appFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+  </style>
+
+  <template>
+
+    <!-- wrapper -->
+    <paper-drawer-panel id="eAppShell" force-narrow="true" drawer-width="256px"
+      disable-swipe="true" disable-edge-swipe="true">
+
+      <!-- drawer -->
+      <div drawer class="drawer vertical layout">
+        <div class="app-title">Canopy</div>
+        <div class="flex">
+          <paper-item on-click="_onMenuAbout">About</paper-item>
+          <paper-item disabled>Canopy In-depth</paper-item>
+        </div>
+        <div class="about">
+          <paper-item>
+            <a href="https://github.com/hoch/canopy" target="_blank">
+              <iron-icon icon="home" item-icon></iron-icon>
+              <span>GitHub</span>
+            </a>
+          </paper-item>
+          <paper-item>
+            <a href="https://github.com/hoch/canopy/issues" target="_blank">
+              <iron-icon icon="report-problem" item-icon></iron-icon>
+              <span>Issue Tracker</span>
+            </a>
+          </paper-item>
+        </div>
+      </div>
+
+      <!-- workspace -->
+      <div main class="workspace">
+
+        <!-- Top tool bar -->
+        <canopy-toolbar>
+          <paper-icon-button icon="menu" on-click="_onMenu"></paper-icon-button>
+          <span class="title">Canopy</span>
+          <paper-icon-button id="eBtnStop" icon="av:stop" on-click="_onAudioStop"></paper-icon-button>
+          <paper-icon-button id="eBtnPlay" icon="av:play-arrow" on-click="_onAudioPlay"></paper-icon-button>
+          <paper-icon-button id="eBtnLoop" icon="av:repeat" on-click="_onAudioToggleLoop"></paper-icon-button>
+          <span class="flex"></span>
+          <paper-icon-button id="eBtnExport" icon="save" on-click="_onAudioExport"></paper-icon-button>
+          <a id="eDownloadLink">
+            <paper-icon-button id="eBtnDownload" icon="file-download" on-click="_onAudioDownload"></paper-icon-button>
+          </a>
+        </canopy-toolbar>
+
+        <!-- pane::viewer -->
+        <div id="ePaneViewer">
+          <div id="eWaveformView">
+            <spiral-minimap id="eMiniMap"></spiral-minimap>
+            <spiral-waveform id="eWaveform"></spiral-waveform>
+          </div>
+          <div id="eAudioGraphView">
+            <spiral-audiograph id="eAudioGraph"></spiral-audiograph>
+          </div>
+        </div>
+
+        <!-- splitter -->
+        <div id="eSplitter" on-track="_onSplitterDragged">
+          <div class="splitter-handle"></div>
+        </div>
+
+        <!-- pane::editor -->
+        <div id="ePaneEditor">
+          <div id="eTools">
+            <paper-icon-button id="eBtnRender" icon="send" on-click="_onBtnRender"></paper-icon-button>
+            <paper-icon-button id="eBtnViewChange" icon="visibility" on-click="_onBtnViewChange"></paper-icon-button>
+            <div class="divider"></div>
+            <input type="file" id="eInputFile" /><!--invisible file input button -->
+            <paper-icon-button id="eBtnOpenLocalFile" icon="folder-open" on-click="_onBtnOpenLocalFile"></paper-icon-button>
+            <paper-icon-button id="eBtnOpenGist" icon="cloud" on-click="_onBtnOpenGistLoader"></paper-icon-button>
+            <div class="flex"></div>
+            <paper-icon-button id="eBtnOpenHelp" icon="help" on-click="_onMenuTutorial"></paper-icon-button>
+          </div>
+          <spiral-coder id="eCoder" class="flex"></spiral-coder>
+        </div>
+
+      </div>
+
+    </paper-drawer-panel>
+
+    <!-- Modal: About -->
+    <paper-dialog id="eAboutModal" class="modal-container" modal>
+      <div class="modal-title">About</div>
+      <div class="modal-body">
+        <p><a href="https://github.com/hoch/canopy" target="_blank">Canopy</a>
+          is a set of Web Audio API programming tools. It offers:</p>
+        <ul>
+          <li>Interactive Waveform inspector with seamless zoom in/out.</li>
+          <li>Interactive audiograph visualization.</li>
+          <li>Web Audio API code editor with:
+            <ul>
+              <li>Auto completion</li>
+              <li>Gist integration</li>
+              <li>Embedded AudioContext configuration</li>
+            </ul>
+          </li>
+          <li>Ranged playback with looping.</li>
+        </ul>
+        <p><a href="https://github.com/hoch/canopy" target="_blank">Canopy</a>
+          is created by <a href="http://hoch.io" target="_blank">Hongchan Choi
+          </a>for Chromium Web Audio API project with
+          <a href="https://www.polymer-project.org/1.0/">Polymer</a> and
+          <a href="https://github.com/hoch/spiral">Spiral</a>.</p>
+        <p>For feedback, question, contribution or concern, please use
+          <a href="https://github.com/hoch/canopy/issues" target="_blank">
+          GitHub issue tracker</a>.</p>
+        <div class="version">{{_version}}</div>
+      </div>
+      <div class="buttons">
+        <paper-button dialog-confirm autofocus raised>Got it!</paper-button>
+      </div>
+    </paper-dialog>
+
+    <!-- Modal: GistLoader -->
+    <paper-dialog id="eLoaderModal" class="modal-container" modal>
+      <div class="modal-title">Loading Gist</div>
+      <spiral-gistloader id="eGistLoader" class="flex"></spiral-gistloader>
+      <div class="buttons">
+        <paper-button dialog-confirm autofocus raised>CLOSE</paper-button>
+      </div>
+    </paper-dialog>
+
+    <!-- Modal: Tutorial -->
+    <canopy-tutorial id="eTutorial"></canopy-tutorial>
+
+    <!-- Tooltips -->
+    <paper-tooltip for="eBtnStop" position="bottom">
+      Stop audio.
+    </paper-tooltip>
+    <paper-tooltip for="eBtnPlay" position="bottom">
+      Play rendered AudioBuffer.
+    </paper-tooltip>
+    <paper-tooltip for="eBtnLoop" position="bottom">
+      Toggle looping.
+    </paper-tooltip>
+    <paper-tooltip for="eBtnExport" position="left">
+      Export and save current AudioBuffer to WAV file.
+    </paper-tooltip>
+    <paper-tooltip for="eBtnRender" position="right">
+      Render AudioBuffer from code editor.
+    </paper-tooltip>
+    <paper-tooltip for="eBtnViewChange" position="right">
+      Toggle view mode between Waveform and AudioGraph.
+    </paper-tooltip>
+    <paper-tooltip for="eBtnOpenLocalFile" position="right">
+      Open Web Audio API JS source code from local drive.
+    </paper-tooltip>
+    <paper-tooltip for="eBtnOpenGist" position="right">
+      Open Web Audio API JS source code from Gist repo.
+    </paper-tooltip>
+
+  </template>
+
+  <script>
+    Polymer({
+      is: 'canopy-app',
+
+      properties: {
+
+        _version: {
+          type: String,
+          value: Canopy.VERSION
+        },
+
+        _currentView: {
+          type: String,
+          value: 'Waveform'
+        },
+
+        // Height of Waveform + Menu + Splitter.
+        _viewerHeight: {
+          type: Number,
+          value: 300 + 42 + 16
+        },
+
+        _editorHeight: Number,
+        _resizeAsyncTask: Object,
+        _currentTutorialStep: Number,
+
+        _defaultCodeSnippet: {
+          type: String,
+          value: '// 1. Check the tutorial in the main menu.\n'
+          + '// 2. Then press ARROW button on the tool bar left.\n'
+          + '// 3. Have some WebAudio fun!\n'
+          + '//\n'
+          + '// @channels 1\n'
+          + '// @duration 1.0\n'
+          + '// @sampleRate 44100\n\n'
+          + 'var osc = context.createOscillator();\n'
+          + 'var gain = context.createGain();\n\n'
+          + 'osc.frequency.setValueAtTime(261.6, 0.0);\n'
+          + 'gain.gain.value = 0.5;\n\n'
+          + 'osc.connect(gain);\n'
+          + 'gain.connect(context.destination);\n\n'
+          + 'osc.start();\n'
+        }
+
+      },
+
+      // =======================================================================
+      // Private methods.
+      // =======================================================================
+
+      // Initialize application.
+      _initialize: function () {
+        Canopy.LOG('Initializing application... ');
+
+        // // Register children modules to the app shell.
+        this.$.eWaveform.setController(this);
+        this.$.eMiniMap.setController(this);
+        this.$.eCoder.setController(this);
+
+        // Define callbacks for various event handers.
+        this.$.eGistLoader.onGistLoaded = this._onGistLoaded.bind(this);
+        this.$.eInputFile.addEventListener('change',
+          this._onLocalFileLoaded.bind(this), false);
+
+        // Default code snippet.
+        this.$.eCoder.setCode(this._defaultCodeSnippet);
+
+        // Set pre/post code for graph visualization.
+        this.$.eCoder.setPreCode('SpiralAudioGraphService.trackContext(context);');
+        this.$.eCoder.setPostCode('SpiralAudioGraphService.draw();');
+
+        // Initialize pane heights. Wait 1 ms for the bounding box to be build.
+        this.async(this._initializePaneSize, 1);
+
+        this.$.eBtnExport.disabled = true;
+        this.$.eBtnDownload.hidden = true;
+
+        // Fade in the application view.
+        this.style.opacity = 1.0;
+
+        Canopy.LOG('Ready. (' + this._version + ')');
+
+        // This activates the developer mode.
+        // this._DEV_activate();
+      },
+
+      _initializePaneSize: function () {
+        // Initialize pane size with the default viewer height.
+        this._editorHeight = this.clientHeight - this._viewerHeight;
+        this.$.ePaneViewer.style.height = this._viewerHeight + 'px';
+        this.$.ePaneEditor.style.height = this._editorHeight + 'px';
+
+        // Propagate resizing event.
+        this._resizeAsyncTask = this.async(this._notifyResizeForModules, 3);
+      },
+
+      _handlePaneResize: function (detail) {
+        switch (detail.state) {
+          case 'start':
+            this._viewerHeight = this.$.ePaneViewer.clientHeight;
+            this._editorHeight = this.$.ePaneEditor.clientHeight;
+            break;
+          case 'track':
+            // If there is any ongoing resizing task, stop now.
+            if (this._resizeAsyncTask)
+              this.cancelAsync(this._resizeAsyncTask);
+
+            this.$.ePaneViewer.style.height = (this._viewerHeight + detail.dy) + 'px';
+            this.$.ePaneEditor.style.height = (this._editorHeight - detail.dy) + 'px';
+            break;
+          case 'end':
+            this._viewerHeight = this.$.ePaneViewer.clientHeight;
+            this._editorHeight = this.$.ePaneEditor.clientHeight;
+            this._resizeAsyncTask = this.async(this._notifyResizeForModules, 3);
+            break;
+        }
+      },
+
+      _notifyResizeForModules: function () {
+        // CodeMirror needs to be updated.
+        this.$.eCoder.notifyResize();
+
+        // Update waveform div container and the spiral element.
+        // TODO: why -64?
+        this.$.eWaveformView.style.height = this._viewerHeight + 'px';
+        this.$.eWaveform.style.height = (this._viewerHeight - 64) + 'px';
+        this.$.eWaveform.notifyResize();
+
+        // Update audiograph div container and the spiral element.
+        this.$.eAudioGraphView.style.height = this._viewerHeight + 'px';
+        this.$.eAudioGraph.style.height = this._viewerHeight + 'px';
+        this.$.eAudioGraph.notifyResize();
+
+        // Notify resize for all children.
+        this.$.eMiniMap.notifyResize();
+      },
+
+      // Activate DEV mode.
+      _DEV_activate: function () {
+        console.log('[canopy] Entering dev mode...');
+        this.async(function () {
+
+          // Below you can put any thing that you want to test.
+          this._onMenuTutorial();
+
+        }, 1000);
+      },
+
+
+      // =======================================================================
+      // System-callback event handlers.
+      // =======================================================================
+
+      _onRenderBufferToViews: function (buffer) {
+        this.$.eWaveform.setAudioBuffer(buffer);
+        this.$.eWaveform.setViewRange(0, buffer.duration * 0.25);
+        this.$.eMiniMap.setAudioBuffer(buffer);
+        this.$.eMiniMap.setRegion(0, buffer.duration * 0.25);
+
+        CanopyAudio.setAudioBuffer(buffer);
+
+        this.$.eBtnExport.disabled = false;
+      },
+
+      _onGistLoaded: function (gist) {
+        this.$.eCoder.setCode(gist.code);
+        this._onCodeChanged();
+      },
+
+      _onCodeChanged: function () {
+        this.$.eBtnRender.disabled = false;
+        this.$.eBtnExport.disabled = true;
+        this.$.eBtnExport.hidden = false;
+        this.$.eBtnDownload.hidden = true;
+      },
+
+      _onLocalFileLoaded: function (event) {
+        var file = event.target.files[0];
+        if (!file)
+          return;
+
+        var reader = new FileReader();
+        reader.onload = function (onloadevent) {
+          var contents = onloadevent.target.result;
+          this.$.eCoder.setCode(contents);
+        }.bind(this);
+
+        reader.readAsText(file);
+      },
+
+
+      // -----------------------------------------------------------------------
+      // UI handlers: UI element, buttons
+      // -----------------------------------------------------------------------
+
+      // Audio: Stop
+      _onAudioStop: function () {
+        CanopyAudio.stop();
+      },
+
+      // Audio: Play
+      _onAudioPlay: function () {
+        var region = this.$.eMiniMap.getRegion();
+        if (region)
+          CanopyAudio.play(region.start, region.end);
+      },
+
+      // Audio: Loop Toggle
+      _onAudioToggleLoop: function () {
+        CanopyAudio.toggleLoop();
+
+        if (CanopyAudio.loop)
+          eBtnLoop.style.color = 'orange';
+        else
+          eBtnLoop.style.color = 'gray';
+      },
+
+      _onSplitterDragged: function (event) {
+        this._handlePaneResize(event.detail);
+      },
+
+      // Button: Render
+      _onBtnRender: function () {
+        // Clear the previous graph visualization.
+        SpiralAudioGraphService.clear();
+        this.$.eBtnRender.disabled = true;
+
+        this.$.eCoder.renderAudioBuffer();
+      },
+
+      // Button: View Change
+      _onBtnViewChange: function () {
+        // Toggle the current view.
+        var isWaveformView = (this._currentView === 'Waveform');
+        this._currentView = isWaveformView ? 'AudioGraph' : 'Waveform';
+        this.$.eWaveformView.style.display = isWaveformView ? 'none' : 'block';
+        this.$.eAudioGraphView.style.display = isWaveformView ? 'block' : 'none';
+
+        // Forced resize.
+        this._resizeAsyncTask = this.async(this._notifyResizeForModules, 3);
+      },
+
+      _onBtnOpenLocalFile: function () {
+        this.$.eInputFile.click();
+      },
+
+      _onBtnOpenGistLoader: function () {
+        this.$.eLoaderModal.open();
+      },
+
+      _onBtnOpenEditorSetting: function () {
+        this.$.eSettingModal.open();
+      },
+
+      // Main menu
+      _onMenu: function () {
+        this.$.eAppShell.openDrawer();
+      },
+
+      // Main menu > About
+      _onMenuAbout: function () {
+        this.$.eAboutModal.open();
+      },
+
+      // TODO: Carve out tutorial as a separate element.
+      _onMenuTutorial: function () {
+        this.$.eTutorial.open();
+      },
+
+      _onAudioExport: function () {
+        PCMExporter.injectLinkToElementFromAudioBuffer(this.$.eDownloadLink,
+          CanopyAudio.getRenderedBuffer());
+
+        this.$.eBtnExport.hidden = true;
+        this.$.eBtnDownload.hidden = false;
+      },
+
+
+      // -----------------------------------------------------------------------
+      // Element life cycle
+      // -----------------------------------------------------------------------
+
+      created: function () {
+        if (!Canopy) {
+          console.error('Canopy name space error.');
+          return;
+        }
+      },
+
+      attached: function () {
+        this._initialize();
+      },
+
+
+      // =======================================================================
+      // Public methods.
+      // =======================================================================
+
+      /**
+       * The app router. Receives posted messages from other Spiral elements.
+       * @param  {String} id   Spiral component ID
+       * @param  {String} type Event type
+       * @param  {Object} data Data
+       */
+      postMessage: function (id, type, data) {
+        switch (id) {
+
+          case 'spiral-minimap':
+            this.$.eWaveform.setViewRange(data.start, data.end);
+            break;
+
+          case 'spiral-waveform':
+            this.$.eMiniMap.setRegion(data.start, data.end);
+            break;
+
+          case 'spiral-coder':
+            switch(type) {
+              case 'canopy-render-complete':
+                this._onRenderBufferToViews(data.buffer);
+                break;
+              case 'canopy-code-changed':
+                this._onCodeChanged();
+                break;
+            }
+        }
+      }
+
+    });
+  </script>
+
+</dom-module>

@@ -1,6 +1,10 @@
+# Directories
+.publish/
+app/_data/
+app/_experimental/
+resources/
+node_modules/
+
+# Files
 .DS_Store
-.publish
-node_modules
-archive
-test
 NOTES.md
