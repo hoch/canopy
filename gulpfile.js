@@ -1,7 +1,6 @@
 /**
- * Copyright (c) 2016 Hongchan Choi. MIT License.
- *
- * Canopy Project Gulp File.
+ * @license MIT License. Copyright (c) 2015 - 2016 Hongchan Choi.
+ * @fileOverview Canopy Project Gulp File.
  */
 var gulp        = require('gulp');
 var plugins     = require('gulp-load-plugins')();
@@ -9,7 +8,6 @@ var runSequence = require('run-sequence');
 var del         = require('del');
 var browserSync = require('browser-sync').create();
 var deploy      = require('gulp-gh-pages');
-
 
 // serve: launch local dev server.
 gulp.task('serve', function () {
@@ -21,13 +19,12 @@ gulp.task('serve', function () {
   });
 
   gulp.watch([
-    'app/index.html',
-    'app/assets/**/*',
-    'bower_components/spiral-audiograph/**/*',
-    'bower_components/spiral-code/**/*',
-    'bower_components/spiral-gistloader/**/*',
-    'bower_components/spiral-minimap/**/*',
-    'bower_components/spiral-waveform/**/*',
+    'app/*.html',
+    'spiral-elements/spiral-audiograph/**/*',
+    'spiral-elements/spiral-code/**/*',
+    'spiral-elements/spiral-gistloader/**/*',
+    'spiral-elements/spiral-minimap/**/*',
+    'spiral-elements/spiral-waveform/**/*',
   ], browserSync.reload);
 });
 

@@ -33,4 +33,4 @@ Please use [GitHub issue tracker](https://github.com/hoch/canopy/issues) for any
 
 ## LICENSE
 
-The MIT License. Copyright (c) 2016 Hongchan Choi.
+The MIT License. Copyright (c) 2015 - 2016 Hongchan Choi.
