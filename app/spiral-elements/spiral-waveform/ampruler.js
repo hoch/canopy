@@ -138,7 +138,10 @@
     this._ctx.fillStyle = STYLE.colorGrid;
 
     this._currentGridPositions.forEach(function (y, gain) {
-      this._ctx.fillText(gain.toFixed(3), this.width * 0.8, y + 3);
+      var gainText = (Math.abs(gain) < 1e-3 && gain !== 0)
+        ? gain.toExponential(1) 
+        : gain.toFixed(3);
+      this._ctx.fillText(gainText, this.width * 0.8, y + 3);
       this._ctx.moveTo(this.width * 0.875, y);
       this._ctx.lineTo(this.width, y);
     }.bind(this));
@@ -172,6 +175,8 @@
   //
   // Largely based on: http://stackoverflow.com/questions/8506881
   function _calculateGridUnit(maxDisplayGain, height, gridHeight) {
+    // TODO: if the range goes below 1e-8, the scale becomes weird.
+
     // An maximum display gain divided by the max number of grids. |height|
     // needs to be half because the drawer will use the half to mirror across
     // y = 0.

@@ -348,11 +348,16 @@ Example:
 
       this.$.eOverlayInspector.style.display = 'block';
       this.$.eOverlayInspector.style.transform = 'translateX(' + (x + dispX) + 'px)' + ' translateY(' + (y + dispY) + 'px)';
-      
+
       this.$.eInspectorChannel.textContent = info.channel;
       this.$.eInspectorTime.textContent = info.time.toFixed(8);
       this.$.eInspectorFrame.textContent = info.frame;
-      this.$.eInspectorAmplitude.textContent = info.amplitude.toFixed(7);
+
+      if (Math.abs(info.amplitude) > 1e-7) {
+        this.$.eInspectorAmplitude.textContent = info.amplitude.toFixed(7);
+      } else {
+        this.$.eInspectorAmplitude.textContent = info.amplitude.toExponential(3);
+      }
     },
 
     _hideOverlayInspector: function (event) {
@@ -426,7 +431,9 @@ Example:
     },
 
     _zoomX: function (deltaY, zoomCenter) {
-      // TODO: Arbitrary.
+      // |deltaY| here is a delta from the previous point, not the interaction
+      // origin.
+
       var kUserDragFactor = 3.0;
 
       // Anchor zooming algorithm. The starting point of dragging becomes the
@@ -451,12 +458,12 @@ Example:
     },
 
     _zoomY: function (deltaY) {
-      // TODO: Arbitrary.
-      var kUserDragFactor = 0.0075;
-      var kMinAmp = 0.001; // -60dB
+      // Experimentally determined.
+      var kScaleFactor = 0.01;
+      var kMinAmp = 1e-8;
 
       // Adjust maximum amplitude to be displayed.
-      var ampMax = Math.max(kMinAmp, this._maxDisplayGain + deltaY * kUserDragFactor);
+      var ampMax = Math.max(kMinAmp, this._maxDisplayGain * (1 + deltaY * kScaleFactor));
 
       this._updateView(this._viewStart, this._viewEnd, ampMax);
     },
