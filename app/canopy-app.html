@@ -564,6 +564,7 @@
           return;
 
         var reader = new FileReader();
+        this.$.eInputFile.value = '';
         reader.onload = function (onloadevent) {
           var contents = onloadevent.target.result;
           this.$.eCoder.setCode(contents);
