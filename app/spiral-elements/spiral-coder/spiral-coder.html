@@ -146,10 +146,8 @@ Example:
       _lastRenderedAudioBuffer: Object,
       _preCode: String,
       _postCode: String,
-      _isDirty: Boolean,
 
-      _isDirtyAfterLoad: Boolean,
-      _isDirtyAfterRender: Boolean,
+      _textBufferState: Boolean,
 
       _componentId: {
         type: String,
@@ -164,14 +162,6 @@ Example:
 
     listeners: {
       'iron-resize': '_onResize'
-    },
-
-    _markAsDirty: function () {
-      this._isDirty = true;
-    },
-
-    _markAsClean: function () {
-      this._isDirty = false;
     },
 
     // Display autocompletion on type with CodeMirror.
@@ -192,31 +182,63 @@ Example:
       this.$.eStatusBar.style.width = this.clientWidth + 'px';
     },
 
-    // Handle code-changed event.
-    _onCodeChange: function () {
-      this._updateStatusMessage('post', {
-        message: 'Code changed.'
-      });
+    // Code change pre-processor.
+    _onBeforeCodeChange: function (codeMirror, changeObj) {
+      // Any origin other than setValue is considered a user-invoked change.
+      if (changeObj.origin !== 'setValue') {
+        
+        // Set the navigate-away warning.
+        if (!window.onbeforeunload) {
+          window.onbeforeunload = function () {
+            return 'Your work on Canopy editor will be lost.';
+          };  
+        }
+        
+        this._textBufferState = 'touched';
+      } else {
 
-      this._markAsDirty();
-      this._notify('canopy-code-changed');
+        // setValue is called when the text buffer is touched.
+        if (this._textBufferState === 'touched') {
+          if (!confirm('You will lose edits you made. Okay?')) {
+            changeObj.cancel();
+            return;
+          }
+        }
 
-      // If the code is dirty, warn user first before closing the tab.
-      if (!window.onbeforeunload) {
-        window.onbeforeunload = function () {
-          return 'Your work on Canopy editor will be lost.';
-        };
+        // Reset the navigate-away warning since a new text buffer is loaded.
+        window.onbeforeunload = null;
+
+        this._textBufferState = 'loaded';
+      }
+    },
+
+    // Code change passed the pre-processor. Update the editor status.
+    _onCodeChange: function (codeMirror) {
+      switch (this._textBufferState) {
+        case 'loaded':
+          this._updateStatusMessage('post', {
+            message: 'Code loaded.'
+          });
+          this._notify('canopy-code-loaded');
+          break;
+        case 'touched':
+          this._updateStatusMessage('post', {
+            message: 'Code edited.'
+          });
+          this._notify('canopy-code-edited');
+          break;
       }
     },
 
     // Handler render-complete event
     _onRenderComplete: function (buffer) {
       this._updateLastRenderedBuffer(buffer);
+
+      this._textBufferState = 'rendered';
+
       this._updateStatusMessage('post', {
         message: 'Successfully rendered.'
       });
-
-      this._markAsClean();
       this._notify('canopy-render-complete', {
         buffer: buffer
       });
@@ -308,14 +330,17 @@ Example:
       this._onResize();
 
       // Binding event with CodeMirror editor.
+      this._editor.on('beforeChange', this._onBeforeCodeChange.bind(this));
       this._editor.on('change', this._onCodeChange.bind(this));
       this._editor.on('inputRead', this._showAutoCompletionIfPossible.bind(this));
 
+      this._textBufferState = 'loaded';
+      
       this._updateStatusMessage('post', {
         message: '<spiral-coder> is ready.'
       });
 
-      this._markAsClean();
+      console.log(this._textBufferState);
     },
 
     // Spiral element internal method for communication to app router.
@@ -327,14 +352,6 @@ Example:
 
 
     /**
-     * Indicates if the code is touched after the load.
-     * @return {Boolean}
-     */
-    isDirty: function () {
-      return this._isDirty;
-    },
-
-    /**
      * Render an AudioBuffer with the current code.
      */
     renderAudioBuffer: function () {
@@ -343,7 +360,7 @@ Example:
         code = (this._preCode || '') + code + (this._postCode || '');
         this._renderCode(code);
       } catch (error) {
-        console.dir(error);
+        console.log(error);
         var message = '[' + error.name + '] ' + error.message + '.';
         this._updateStatusMessage('error', message);
       }
@@ -358,21 +375,11 @@ Example:
     },
 
     /**
-     * Set the code content.
+     * Set the code text buffer. Used for loading a remote or local file.
      * @param {String} code Codes as string.
      */
     setCode: function (code) {
-      // If the code is not touched after the load, we can safely overwrite
-      // the text buffer.
-      if (!this._isDirty) {
-        this._editor.setValue(code);
-        return;
-      }
-
-      // Ask the confirmation before loading the new text.
-      if (confirm('You will lose the current text buffer. Okay?')) {
-        this._editor.setValue(code);
-      }
+      this._editor.setValue(code);
     },
 
     /**
@@ -409,14 +416,6 @@ Example:
 
       return this._lastRenderedAudioBuffer;
     },
-
-    /**
-     * TODO: Save the current buffer to the local cache.
-     */
-    // saveCodeToCache: function () {
-    //   // TODO: http://jsfiddle.net/UselessCode/qm5AG/
-    //   // var code = this._editor.getValue();
-    // },
 
     ready: function() {
       this._editor = CodeMirror(this.$.eEditor, this._EDITOR_OPTIONS);
