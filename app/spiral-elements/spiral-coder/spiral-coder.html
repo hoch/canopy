@@ -141,11 +141,12 @@ Example:
         }
       },
 
-      _isDirty: Boolean,
       _editor: Object,
+
       _lastRenderedAudioBuffer: Object,
       _preCode: String,
       _postCode: String,
+      _isDirty: Boolean,
 
       _componentId: {
         type: String,
@@ -323,6 +324,14 @@ Example:
 
 
     /**
+     * Indicates if the code is touched after the load.
+     * @return {Boolean}
+     */
+    isDirty: function () {
+      return this._isDirty;
+    },
+
+    /**
      * Render an AudioBuffer with the current code.
      */
     renderAudioBuffer: function () {
@@ -350,7 +359,17 @@ Example:
      * @param {String} code Codes as string.
      */
     setCode: function (code) {
-      this._editor.setValue(code);
+      // If the code is not touched after the load, we can safely overwrite
+      // the text buffer.
+      if (!this._isDirty) {
+        this._editor.setValue(code);
+        return;
+      }
+
+      // Ask the confirmation before loading the new text.
+      if (confirm('You will lose the current text buffer. Okay?')) {
+        this._editor.setValue(code);
+      }
     },
 
     /**
