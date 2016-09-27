@@ -148,6 +148,11 @@ Example:
         }
       },
 
+      _isMouseOver: {
+        type: Boolean,
+        value: false
+      },
+
       _ctxTimeRuler: Object,
       _ctxWaveform: Object,
       _audioBuffer: Object,
@@ -204,6 +209,9 @@ Example:
 
       this.$.eWaveformContainer.addEventListener('mouseout',
         this._hideOverlayInspector.bind(this), false);
+
+      this.$.eWaveformContainer.addEventListener('mousewheel',
+        this._handleWheelEvent.bind(this), false);
 
       this._isInitialized = true;
 
@@ -364,6 +372,16 @@ Example:
       this.$.eOverlayInspector.style.display = 'none';
     },
 
+    // Handle zooming with |shift + wheel| action.
+    _handleWheelEvent: function (event) {
+      if (!this._isInitialized || !this._audioBuffer)
+        return;
+
+      // When shift key is pressed, delta X-Y is reversed.
+      if (event.shiftKey)
+        this._zoomX(event.deltaX, event.offsetX);
+    },
+
     // Update time range and maximum amp for the view.
     _updateView: function (start, end, maxDisplayGain) {
       if (!this._audioBuffer)
@@ -487,6 +505,7 @@ Example:
     },
 
     _onTrackWaveform: function (event) {
+      // If there is no audio buffer loaded, do nothing.
       if (!this._audioBuffer)
         return;
 
