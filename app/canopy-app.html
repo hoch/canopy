@@ -536,6 +536,10 @@
       // =======================================================================
 
       _onRenderBufferToViews: function (buffer) {
+
+        // Get current viewport from waveform and minimap.
+        // Use them if they are valid.
+
         this.$.eWaveform.setAudioBuffer(buffer);
         this.$.eWaveform.setViewRange(0, buffer.duration * 0.25);
         this.$.eMiniMap.setAudioBuffer(buffer);

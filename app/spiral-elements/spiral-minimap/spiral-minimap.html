@@ -126,7 +126,7 @@ Example:
     },
 
     _convertPixelToSecond: function (pixel) {
-      if (!this._audioBuffer || this.width === 0)
+      if (!this._audioBuffer || this._width === 0)
         return 0;
 
       return (pixel / this._width) * this._audioBuffer.duration;
@@ -202,17 +202,21 @@ Example:
         // the center line, select handleL, otherwise select handleR.
         // TODO: use dy rather than ddy.
         case 'start':
-          if (handleL - 10 <= pos.x && pos.x <= handleL + 40) {
-            this._uiMode = 'MOVE_HANDLE_L';
-          } else if (handleR - 40 <= pos.x && pos.x <= handleR + 10) {
-            this._uiMode = 'MOVE_HANDLE_R';
-          } else if (handleL + 40 < pos.x && pos.x < handleR - 40) {
+          if (event.detail.sourceEvent.altKey) {
             this._uiMode = 'MOVE_REGION';
           } else {
-            this._uiMode = 'CREATE_REGION';
-            handleL = pos.x;
-            handleR = pos.x;
-            needsUpdate = true;
+            if (handleL - 10 <= pos.x && pos.x <= handleL + 40) {
+              this._uiMode = 'MOVE_HANDLE_L';
+            } else if (handleR - 40 <= pos.x && pos.x <= handleR + 10) {
+              this._uiMode = 'MOVE_HANDLE_R';
+            } else if (handleL + 40 < pos.x && pos.x < handleR - 40) {
+              this._uiMode = 'MOVE_REGION';
+            } else {
+              this._uiMode = 'CREATE_REGION';
+              handleL = pos.x;
+              handleR = pos.x;
+              needsUpdate = true;
+            }
           }
           break;
 

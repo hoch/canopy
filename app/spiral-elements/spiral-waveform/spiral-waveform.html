@@ -361,10 +361,10 @@ Example:
       this.$.eInspectorTime.textContent = info.time.toFixed(8);
       this.$.eInspectorFrame.textContent = info.frame;
 
-      if (Math.abs(info.amplitude) > 1e-7) {
+      if (Math.abs(info.amplitude) > 1e-4) {
         this.$.eInspectorAmplitude.textContent = info.amplitude.toFixed(7);
       } else {
-        this.$.eInspectorAmplitude.textContent = info.amplitude.toExponential(3);
+        this.$.eInspectorAmplitude.textContent = info.amplitude.toExponential(4);
       }
     },
 
@@ -372,14 +372,15 @@ Example:
       this.$.eOverlayInspector.style.display = 'none';
     },
 
-    // Handle zooming with |shift + wheel| action.
+    // Handle zooming with |alt + wheel| action.
     _handleWheelEvent: function (event) {
       if (!this._isInitialized || !this._audioBuffer)
         return;
 
-      // When shift key is pressed, delta X-Y is reversed.
-      if (event.shiftKey)
-        this._zoomX(event.deltaX, event.offsetX);
+      // When alt key is pressed, do the zooming.
+      if (event.altKey) {
+        this._zoomX(event.deltaY, event.offsetX);
+      }
     },
 
     // Update time range and maximum amp for the view.

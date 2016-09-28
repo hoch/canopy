@@ -186,14 +186,14 @@ Example:
     _onBeforeCodeChange: function (codeMirror, changeObj) {
       // Any origin other than setValue is considered a user-invoked change.
       if (changeObj.origin !== 'setValue') {
-        
+
         // Set the navigate-away warning.
         if (!window.onbeforeunload) {
           window.onbeforeunload = function () {
             return 'Your work on Canopy editor will be lost.';
-          };  
+          };
         }
-        
+
         this._textBufferState = 'touched';
       } else {
 
@@ -324,6 +324,12 @@ Example:
       this.$.eStatusMessage.textContent = data.message + ' (' + now + ')';
     },
 
+    _handleDragAndDrop: function (editor, event) {
+      // Clear out the current text buffer. By default event, the text buffer
+      // will fill up with the new text afterward.
+      this._editor.setValue('');
+    },
+
     // Spiral: initialize element.
     _initialize: function () {
       // Forced resize.
@@ -333,9 +339,10 @@ Example:
       this._editor.on('beforeChange', this._onBeforeCodeChange.bind(this));
       this._editor.on('change', this._onCodeChange.bind(this));
       this._editor.on('inputRead', this._showAutoCompletionIfPossible.bind(this));
+      this._editor.on('drop', this._handleDragAndDrop.bind(this));
 
       this._textBufferState = 'loaded';
-      
+
       this._updateStatusMessage('post', {
         message: '<spiral-coder> is ready.'
       });
