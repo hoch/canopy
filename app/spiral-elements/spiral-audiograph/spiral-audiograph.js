@@ -180,9 +180,8 @@
   Object.defineProperties(AudioContext.prototype, contextExtension);
   wrapContextForAudioNodeFactory('AudioContext');
 
-  // TODO: this is not necessary.
-  // Object.defineProperties(OfflineAudioContext.prototype, contextExtension);
-  // wrapContextForAudioNodeFactory('OfflineAudioContext');
+  Object.defineProperties(OfflineAudioContext.prototype, contextExtension);
+  wrapContextForAudioNodeFactory('OfflineAudioContext');
 
 
   // Public methods.

@@ -202,7 +202,7 @@ Example:
         // the center line, select handleL, otherwise select handleR.
         // TODO: use dy rather than ddy.
         case 'start':
-          if (event.detail.sourceEvent.altKey) {
+          if (event.detail.sourceEvent.shiftKey) {
             this._uiMode = 'MOVE_REGION';
           } else {
             if (handleL - 10 <= pos.x && pos.x <= handleL + 40) {
