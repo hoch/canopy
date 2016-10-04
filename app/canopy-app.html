@@ -593,6 +593,7 @@
         }.bind(this);
 
         reader.readAsText(file);
+        this._onCodeChanged();
       },
 
       _updateViewRegionChange: function (start, end) {
