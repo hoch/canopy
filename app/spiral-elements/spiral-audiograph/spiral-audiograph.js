@@ -177,12 +177,16 @@
     this.context._removeConnection(this, arguments[0]);
   });
 
+  // TODO: this means OfflineAudioContext is needs patching due to the
+  // BaseAudioContext class.
+  if (!AudioContext.prototype.hasOwnProperty('createGain')) {
+    Object.defineProperties(OfflineAudioContext.prototype, contextExtension);
+    wrapContextForAudioNodeFactory('OfflineAudioContext');
+  }
+
+  // Then patch AudioContext.
   Object.defineProperties(AudioContext.prototype, contextExtension);
   wrapContextForAudioNodeFactory('AudioContext');
-
-  Object.defineProperties(OfflineAudioContext.prototype, contextExtension);
-  wrapContextForAudioNodeFactory('OfflineAudioContext');
-
 
   // Public methods.
   Object.defineProperties(SpiralAudioGraph, {

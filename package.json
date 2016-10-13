@@ -1,6 +1,6 @@
 {
   "name": "canopy",
-  "version": "0.9.11",
+  "version": "0.9.12",
   "author": "Hongchan Choi (hongchan.choi@gmail.com)",
   "devDependencies": {
     "browser-sync": "~2.7.13",
