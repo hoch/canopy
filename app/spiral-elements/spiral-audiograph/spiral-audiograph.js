@@ -8,6 +8,30 @@
     OfflineAudioContext: OfflineAudioContext
   };
 
+  const audioNodeNames = [
+    "BufferSource", 
+    "ConstantSource", 
+    "Gain", 
+    "Delay", 
+    "BiquadFilter", 
+    "IIRFilter", 
+    "WaveShaper", 
+    "Panner", 
+    "Convolver", 
+    "DynamicsCompressor", 
+    "Analyser", 
+    "ScriptProcessor",
+    "StereoPanner",
+    "Oscillator", 
+    "ChannelSplitter", 
+    "ChannelMerger", 
+    "MediaElementSource", 
+    "MediaStreamSource", 
+    "MediaStreamDestination"
+  ];
+
+  let constructors = {};
+
   // The current context being tracked.
   var currentContext = null;
 
@@ -154,6 +178,44 @@
     };
   }
 
+  // Minitask for replacing constructor method.
+  function replaceConstructor(nodeName) {
+    switch (nodeName) {
+      case 'BufferSource':
+        nodeName = 'AudioBufferSourceNode';
+      case 'ScriptProcessor':
+        // ScriptProcessor does not have a constructor.
+        nodeName = null;
+        break;
+      default:
+        nodeName += 'Node';
+        break;
+    }
+
+    if (!nodeName)
+      return;
+
+    console.log(nodeName);
+
+    constructors[nodeName] = window[nodeName];
+    window[nodeName] = function (baseAudioContext, options) {
+      var node = new constructors[nodeName](baseAudioContext, options);
+
+      // Find AudioParam objects and assign the node reference.
+      for (var property in node) {
+        if (node[property] instanceof AudioParam) {
+          node[property].parentNode = node;
+          node[property].paramName = property;
+        }
+      }
+
+      // Add the node to the context's storage and fire event.
+      baseAudioContext._addNode(node);
+
+      return node;
+    };
+  }
+
   // Wrap context constructor with additional features.
   function wrapContextForAudioNodeFactory(contextName) {
     var prototype = AG[contextName].prototype;
@@ -167,9 +229,16 @@
     }
   }
 
+  function wrapAudioNodeConstructor() {
+    for (let index in audioNodeNames)
+      replaceConstructor(audioNodeNames[index]);
+  }
+
   overridePrototype(AudioNode.prototype, 'connect', function () {
     this._connect.apply(this, arguments);
     this.context._addConnection(this, arguments[0]);
+    if (arguments[0] instanceof AudioNode)
+      return arguments[0];
   });
 
   overridePrototype(AudioNode.prototype, 'disconnect', function () {
@@ -187,6 +256,9 @@
   // Then patch AudioContext.
   Object.defineProperties(AudioContext.prototype, contextExtension);
   wrapContextForAudioNodeFactory('AudioContext');
+
+  // Wrap AudioNode constructors.
+  wrapAudioNodeConstructor();
 
   // Public methods.
   Object.defineProperties(SpiralAudioGraph, {
