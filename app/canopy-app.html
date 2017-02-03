@@ -422,12 +422,11 @@
           + '// @channels 1\n'
           + '// @duration 1.0\n'
           + '// @sampleRate 44100\n\n'
-          + 'var osc = context.createOscillator();\n'
+          + 'var osc = new OscillatorNode(context);\n'
           + 'var gain = context.createGain();\n\n'
           + 'osc.frequency.setValueAtTime(261.6, 0.0);\n'
           + 'gain.gain.value = 0.5;\n\n'
-          + 'osc.connect(gain);\n'
-          + 'gain.connect(context.destination);\n\n'
+          + 'osc.connect(gain).connect(context.destination);\n\n'
           + 'osc.start();\n'
         }
 
