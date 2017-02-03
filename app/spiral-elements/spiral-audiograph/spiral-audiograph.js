@@ -195,8 +195,6 @@
     if (!nodeName)
       return;
 
-    console.log(nodeName);
-
     constructors[nodeName] = window[nodeName];
     window[nodeName] = function (baseAudioContext, options) {
       var node = new constructors[nodeName](baseAudioContext, options);
