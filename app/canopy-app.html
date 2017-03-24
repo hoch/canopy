@@ -336,18 +336,15 @@
     <paper-dialog id="eExporderModal" class="modal-container" modal>
       <div class="modal-title">Export</div>
       <div class="modal-body">
-        <p>Choose format...</p>
-        <paper-menu>
-          <paper-item disabled>WAV (RIFF) 16-bit PCM</paper-item>
-          <paper-item disabled>WAV (RIFF) 24-bit PCM</paper-item>
-          <paper-item>WAV (RIFF) 32-bit PCM (float)</paper-item>
+        <p>Choose PCM format:</p>
+        <paper-menu id="eExportMenu" selected="0">
+          <paper-item>WAV 16-bit PCM (truncated integer)</paper-item>
+          <paper-item>WAV 32-bit PCM (float)</paper-item>
         </paper-menu>
       </div>
       <div class="buttons">
         <paper-button dialog-dismiss>Close</paper-button>
-        <a id="eDownloadLink">
-          <paper-button dialog-confirm autofocus raised>Save</paper-button>
-        </a>
+        <paper-button dialog-confirm autofocus raised on-click="_onExportSave">Save</paper-button>
       </div>
     </paper-dialog>
 
@@ -679,13 +676,14 @@
       },
 
       _onAudioExport: function () {
-        Canopy.Exporter.createLinkFromAudioBuffer(this.$.eDownloadLink
-          , Canopy.Audio.getRenderedBuffer());
-
         this.$.eExporderModal.open();
+      },
 
-        // this.$.eBtnExport.hidden = true;
-        // this.$.eBtnDownload.hidden = false;
+      _onExportSave: function () {
+        var as32BitFloat = this.$.eExportMenu.selected ? true : false;
+        Canopy.Exporter.createLinkFromAudioBuffer(
+          Canopy.Audio.getRenderedBuffer(), 
+          as32BitFloat);
       },
 
 
