@@ -33,7 +33,9 @@ gulp.task('serve', function () {
 // deploy: deploy current build to the gh-pages branch.
 gulp.task('deploy', function () {
   return gulp.src('app/**/*')
-    .pipe(deploy());
+    .pipe(deploy({
+      'remoteUrl' : 'git@github.com:hoch/canopy.git'
+    }));
 });
 
 

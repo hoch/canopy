@@ -83,7 +83,7 @@
       value: function (node) {
         if (node.context !== currentContext)
           return;
-        
+
         node._uid = this._getUID();
         this._nodes.push(node);
         this._dispatchEvent('created', node);
@@ -183,6 +183,7 @@
     switch (nodeName) {
       case 'BufferSource':
         nodeName = 'AudioBufferSourceNode';
+        break;
       case 'ScriptProcessor':
         // ScriptProcessor does not have a constructor.
         nodeName = null;
