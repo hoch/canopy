@@ -361,11 +361,11 @@ Example:
       this.$.eInspectorTime.textContent = info.time.toFixed(8);
       this.$.eInspectorFrame.textContent = info.frame;
 
-      if (Math.abs(info.amplitude) > 1e-4) {
-        this.$.eInspectorAmplitude.textContent = info.amplitude.toFixed(7);
-      } else {
-        this.$.eInspectorAmplitude.textContent = info.amplitude.toExponential(4);
-      }
+      var absAmplitude = Math.abs(info.amplitude);
+      this.$.eInspectorAmplitude.textContent =
+          (absAmplitude > 1e-4 || absAmplitude < 1e4)
+          ? info.amplitude.toPrecision(7)
+          : info.amplitude.toExponential(4);
     },
 
     _hideOverlayInspector: function (event) {
