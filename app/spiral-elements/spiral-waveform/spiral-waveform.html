@@ -38,7 +38,7 @@ Example:
     #eOverlayInspector {
       display: none;
       position: absolute;
-      width: 120px;
+      width: 135px;
       height: 66px;
       background-color: rgb(54, 73, 82);
       color: #CDDBE2;
@@ -435,18 +435,26 @@ Example:
       if (!this._audioBuffer)
         return 0;
 
-      var numChannels = this._audioBuffer.numberOfChannels;
-      var absMax = 0.0;
-      for (var i = 0; i < numChannels; i++) {
-        var data = this._audioBuffer.getChannelData(i);
-        for (var j = 0; j < data.length; j++) {
-          var absValue = Math.abs(data[j]);
-          if (absMax < absValue)
-            absMax = absValue;
+      var absMaxValue = 0;
+      var absValue;
+      for (var i = 0; i < this._audioBuffer.numberOfChannels; ++i) {
+        var channelData = this._audioBuffer.getChannelData(i);
+        for (var j = 0; j < channelData.length; ++j) {
+          absValue = Math.abs(channelData[j]);
+          // If the number is NaN or Infinity, ignore it.
+          if (!isFinite(absValue))
+            continue;
+          // If the absolute value is greater than the maximum number possible,
+          // stop now.
+          // if (absValue >= Number.MAX_VALUE)
+          //   absMaxValue = Number.MAX_VALUE;
+          //   break;
+          if (absMaxValue < absValue)
+            absMaxValue = absValue;
         }
       }
 
-      return absMax;
+      return absMaxValue;
     },
 
     _zoomX: function (deltaY, zoomCenter) {

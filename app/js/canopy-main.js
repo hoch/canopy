@@ -6,16 +6,16 @@
  *     might not be fully functioning.
  */
 (function (window) {
-  
+
   'use strict';
 
   var Canopy = {};
 
-  Canopy.VERSION = '0.9.13';
+  Canopy.VERSION = '0.9.2';
 
   // Canopy system Log.
   Canopy.LOG = function (message) {
-    console.log('%c[Canopy]%c ' 
+    console.log('%c[Canopy]%c '
       + message + ' %c@' + performance.now().toFixed(3) + ' ms'
       , 'background:#82B1FF; color:#0D47A1;'
       , 'background:none; color:#000;'
@@ -29,7 +29,7 @@
     var _divLoadingBox = document.querySelector('#eLoadingBox');
     var _spanVersionNumber = document.querySelector('#eVersionNumber');
     _spanVersionNumber.textContent = '(' + Canopy.VERSION + ')';
-    
+
     // Detect browser and version.
     var which = (function () {
       var ua = navigator.userAgent, tem,
@@ -49,7 +49,7 @@
       return M;
     })();
 
-    var browserIsGood = which[0] === 'Chrome';
+    var browserIsGood = (which[0] === 'Chrome' || which[0] === 'Firefox');
 
     // Detect URL has the dev mode query.
     var devMode = window.location.href.split('?q=')[1] === 'dev';
@@ -57,7 +57,7 @@
     // Not Chrome or dev mode, bailing out.
     if (!browserIsGood && !devMode) {
       Canopy.LOG('Compat check failed. Quitting...');
-      
+
       Polymer.Base.importHref(['canopy-bailout.html']);
       var bailoutDialog = document.createElement('canopy-bailout');
       document.body.removeChild(_divLoadingBox);

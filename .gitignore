@@ -7,4 +7,5 @@ node_modules
 
 # Files
 .DS_Store
+twistd.pid
 NOTES.md

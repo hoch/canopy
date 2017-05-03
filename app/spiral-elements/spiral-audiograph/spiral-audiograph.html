@@ -206,15 +206,18 @@ Example:
         if (!this._initialized)
           return;
 
-        var rect = this.getBoundingClientRect();
+        try {
+          var rect = this.getBoundingClientRect();
+          this._width = (rect.width || this._width || this.parentNode.clientWidth);
+          this._height = this.parentNode.clientHeight;
+          this.$.eSVG.setAttribute('width', this._width);
+          this.$.eSVG.setAttribute('height', this._height);
 
-        this._width = (rect.width || this._width || this.parentNode.clientWidth);
-        this._height = this.parentNode.clientHeight;
-
-        this.$.eSVG.setAttribute('width', this._width);
-        this.$.eSVG.setAttribute('height', this._height);
-
-        this._renderGraph(this._svgGroup, this._g);
+          this._renderGraph(this._svgGroup, this._g);
+        } catch (error) {
+          console.log(
+              'ERROR::[spiral-audiograph] onResize() failed. (dagre-d3)');
+        }
       },
 
       _onGraphChange: function (event) {
@@ -314,8 +317,13 @@ Example:
        * Draw the current graph configuration.
        */
       draw: function () {
-        this._hideInspector();
-        this._updateGraph();
+        // Catch when DagreD3 fails, but don't stop the app.
+        try {
+          this._hideInspector();
+          this._updateGraph();
+        } catch (error) {
+          console.log('ERROR::[spiral-audiograph] draw() failed. (dagre-d3)');
+        }
       },
 
       /**

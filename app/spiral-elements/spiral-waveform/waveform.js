@@ -15,7 +15,7 @@
     width: 400,
     height: 192,
     color: '#2196F3',
-    colorClipped: '#E91E63',
+    colorInvalid: '#E91E63',
     colorBackground: '#ECEFF1',
     colorGridLine: '#B0BEC5',
     colorWarningLine: '#FF6E40',
@@ -72,7 +72,8 @@
         ' sampleRate MUST be specified.');
     }
 
-    this._channelData = channelData;
+    // Assigning |channelData| directly to the other object won't work on FF.
+    this._channelData = new Float32Array(channelData);
     this._sampleRate = sampleRate;
     this._duration = this._channelData.length / this._sampleRate;
 
@@ -120,8 +121,6 @@
     this._ctx.lineTo(this.width, this.height * 0.5);
     this._ctx.stroke();
 
-    this._ctx.fillStyle = this._ctx.strokeStyle = STYLE.color;
-
     if (samplePerPixel > STYLE.samplePerPixelThreshold) {
       // If |samplePerPixel| is greater than the threshold (i.e. zoomed out),
       // use sub-sampling rendering (skipping samples over time) The rendering
@@ -132,10 +131,6 @@
       // reference is the time in this case.
       this._drawWithLinearInterpolation(start, end, samplePerPixel, maxDisplayGain);
     }
-
-    // clear residues.
-    // this._ctx.strokeStyle = STYLE.colorBorder;
-    // this._ctx.strokeRect(0, this.height, this.width, 1);
 
     // Pop back up context.
     this._ctx.restore();
@@ -186,47 +181,43 @@
 
     this._ctx.beginPath();
     this._ctx.strokeStyle = STYLE.colorWarningLine;
-
     this._ctx.moveTo(0, posY + 0.5);
     this._ctx.lineTo(this.width, posY + 0.5);
     this._ctx.moveTo(0, negY + 0.5);
     this._ctx.lineTo(this.width, negY + 0.5);
-
     this._ctx.stroke();
   };
 
   // Draw waveform with sub-sampling (sample-skipping). This MUST be called
   // inside of _draw() method.
-  WaveformDrawer.prototype._drawWithSubsampling = function (startIndex, endIndex, samplePerPixel, maxDisplayGain) {
+  WaveformDrawer.prototype._drawWithSubsampling =
+      function (startIndex, endIndex, samplePerPixel, maxDisplayGain) {
     // Set up a window for sampling.
     var windowStart = startIndex;
     var windowEnd = startIndex + samplePerPixel;
 
-    // Positive max and negative max.
     var negMax = 0.0;
     var posMax = 0.0;
-
-    this._ctx.beginPath();
+    var value;
 
     // Need to draw every pixel: numSamplesToDraw > numPixels
+    this._ctx.beginPath();
+    this._ctx.fillStyle = this._ctx.strokeStyle = STYLE.color;
     for (var i = 0; i < this.width; i++) {
       // Sub-sampling routine: the range of sub-sampling is
       // [floor(windowStart), ceiling(windowEnd)].
       var index = Math.floor(windowStart);
-      windowEnd = windowEnd;
+      // windowEnd = windowEnd;
       negMax = posMax = 0.0;
 
       // Iterate through the sampling window. The compiled version below.
-      // while (index < windowEnd) {
-      //   var value = this._channelData[index++];
-      //   if (value > posMax)
-      //     posMax = value;
-      //   else if (value < negMax)
-      //     negMax = value;
-      // }
-
-      // =Compiled version
-      for(;index<windowEnd;){var value=this._channelData[index++];value>posMax?posMax=value:value<negMax&&(negMax=value)};
+      while (index < windowEnd) {
+        value = this._channelData[index++];
+        if (value > posMax)
+          posMax = value;
+        else if (value < negMax)
+          negMax = value;
+      }
 
       // Clamping and scaling.
       posMax = Math.min(1.0, posMax / maxDisplayGain);
@@ -239,42 +230,64 @@
       windowStart = windowEnd;
       windowEnd += samplePerPixel;
     }
-
     this._ctx.stroke();
   };
 
   // Draw waveform with linear interpolation. This MUST be called inside of
   // _draw() method.
-  WaveformDrawer.prototype._drawWithLinearInterpolation = function (start, end, samplePerPixel, maxDisplayGain) {
+  WaveformDrawer.prototype._drawWithLinearInterpolation =
+      function (start, end, samplePerPixel, maxDisplayGain) {
+
     // Set up the parameters.
     var secondPerSample = this._duration / this._channelData.length;
     var startIndex = Math.floor(start / secondPerSample);
     var endIndex = Math.ceil(end / secondPerSample);
-    var x, y;
-
-    this._ctx.beginPath();
+    var point;
 
     // The linear interpolation rendering is driven by the number of samples,
-    // not the number of pixels.
-    for (var i = startIndex; i < endIndex; i++) {
-      x = (i * secondPerSample - start) / (end - start) * this.width;
-      y = (1 - (this._channelData[i] / maxDisplayGain)) * this.height * 0.5;
+    // not the number of pixels. First, get x/y coordinate and the validity of
+    // sample.
+    var windowArray = [];
+    for (var i = startIndex; i < endIndex; ++i) {
+      windowArray.push([
+          (i * secondPerSample - start) / (end - start) * this.width,
+          (1 - (this._channelData[i] / maxDisplayGain)) * this.height * 0.5,
+          isFinite(this._channelData[i])
+        ]);
+    }
 
-      // If somehow x is smaller than 0, just move to the position without
-      // drawing a line.
-      if (x <= 0) {
-        this._ctx.moveTo(x, y);
+    // Draw valid samples first.
+    this._ctx.beginPath();
+    this._ctx.fillStyle = this._ctx.strokeStyle = STYLE.color;
+    for (var i = 0; i < windowArray.length; ++i) {
+      point = windowArray[i];
+      // If somehow x is smaller than 0 or y is invalid, move to the time
+      // position without drawing a line.
+      if (point[0] <= 0 || !point[2]) {
+        this._ctx.moveTo(point[0], point[1]);
         continue;
       }
 
+      this._ctx.lineTo(point[0], point[1]);
+
       // If sample-per-pixel is below 1.0, draw a blob head for each sample.
       // The size of the blob here is 3 x 3 pixels.
-      this._ctx.lineTo(x, y);
-
       if (samplePerPixel < 1.0)
-        this._ctx.fillRect(x - 1.5, y - 1.5, 3, 3);
+        this._ctx.fillRect(point[0] - 1.5, point[1] - 1.5, 3, 3);
     }
+    this._ctx.stroke();
 
+    // Then draw invalid samples.
+    this._ctx.beginPath();
+    this._ctx.fillStyle = this._ctx.strokeStyle = STYLE.colorInvalid;
+    for (var i = 0; i < windowArray.length; ++i) {
+      point = windowArray[i];
+      // If the point is a valid data, skip this.
+      if (point[2])
+        continue;
+
+      this._ctx.fillRect(point[0] - 1, this.height * 0.5 - 1, 2, 2);
+    }
     this._ctx.stroke();
   };
 
