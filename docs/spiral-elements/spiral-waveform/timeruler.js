@@ -95,7 +95,8 @@ var SpiralWaveform = {};
       return;
 
     // Calculate a nicely arranged grid unit.
-    var gridDuration = _calculateGridUnit(start, end, this.width, STYLE.gridWidth);
+    var gridDuration =
+        _calculateGridUnit(start, end, this.width, STYLE.gridWidth);
     var totalDuration = end - start;
 
     // The time position of start and end grids.

@@ -1,9 +1,7 @@
 # Directories
-.publish
-app/_data
-app/_experimental
-resources
 node_modules
+pvt
+resources
 
 # Files
 .DS_Store

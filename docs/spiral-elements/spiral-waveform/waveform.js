@@ -1,9 +1,5 @@
 /**
- * @license MIT License. Copyright (c) 2015 Hongchan Choi. All rights reserved.
- */
-
-/**
- * @closure WaveformDrawer
+ * @fileOverview <spiral-waveform> helper module.
  * @description A submodule class of spiral-waveform for rendering waveform.
  *              Offers fluid zoom-in/out and x-y grid drawing.
  */
@@ -20,6 +16,7 @@
     colorGridLine: '#B0BEC5',
     colorWarningLine: '#FF6E40',
     colorCenterLine: '#78909C',
+    colorRenderQuantaGridLine: '#F48FB1',
     colorBorder: '#546E7A',
     samplePerPixelThreshold: 12.0
   };
@@ -72,7 +69,7 @@
         ' sampleRate MUST be specified.');
     }
 
-    // Assigning |channelData| directly to the other object won't work on FF.
+    // The ChannelData array is neutered after playback, so cloning is needed.
     this._channelData = new Float32Array(channelData);
     this._sampleRate = sampleRate;
     this._duration = this._channelData.length / this._sampleRate;
@@ -89,12 +86,12 @@
     this._needsRedraw = true;
   };
 
-  // Draw waveform with start, end tiem and the maximum display gain.
+  // Draw waveform with start, end time and the maximum display gain.
   WaveformDrawer.prototype.draw = function (start, end, maxDisplayGain) {
     if (!this._needsRedraw || !this._isInitialized || !this._channelData)
       return;
 
-    // Get sample indice;
+    // Get sample indices.
     var startIndex = Math.floor(start * this._sampleRate);
     var endIndex = Math.floor(end * this._sampleRate);
 
@@ -125,11 +122,14 @@
       // If |samplePerPixel| is greater than the threshold (i.e. zoomed out),
       // use sub-sampling rendering (skipping samples over time) The rendering
       // reference is the sample index in this case.
-      this._drawWithSubsampling(startIndex, endIndex, samplePerPixel, maxDisplayGain);
+      this._drawWithSubsampling(
+          startIndex, endIndex, samplePerPixel, maxDisplayGain);
     } else {
+      this._drawRenderQuantaGrid(start, end, samplePerPixel);
       // Otherwise, use the linear interpolation (i.e. zoomed in). The rendering
       // reference is the time in this case.
-      this._drawWithLinearInterpolation(start, end, samplePerPixel, maxDisplayGain);
+      this._drawWithLinearInterpolation(
+          start, end, samplePerPixel, maxDisplayGain);
     }
 
     // Pop back up context.
@@ -143,7 +143,8 @@
   /** Internal helpers **/
 
   // Draw time and amp grids. This MUST be called inside of _draw() method.
-  WaveformDrawer.prototype._drawTimeAndAmplitudeGrids = function (maxDisplayGain) {
+  WaveformDrawer.prototype._drawTimeAndAmplitudeGrids =
+      function (maxDisplayGain) {
     if (!this._timeGridPositions || !this._ampGridPositions)
       return;
 
@@ -185,6 +186,31 @@
     this._ctx.lineTo(this.width, posY + 0.5);
     this._ctx.moveTo(0, negY + 0.5);
     this._ctx.lineTo(this.width, negY + 0.5);
+    this._ctx.stroke();
+  };
+
+  // Draw render quantum.
+  WaveformDrawer.prototype._drawRenderQuantaGrid =
+      function (start, end, samplePerPixel) {
+    var renderQuantum = 128;
+    var secondPerSample = this._duration / this._channelData.length;
+    var startIndex = Math.floor(start / secondPerSample);
+    var endIndex = Math.ceil(end / secondPerSample);
+
+    var renderQuantumGrids = [];
+    for (var rq = startIndex - (startIndex % renderQuantum) + renderQuantum;
+         rq < endIndex;
+         rq += renderQuantum) {
+      renderQuantumGrids.push(
+        (rq * secondPerSample - start) / (end - start) * this.width);
+    }
+
+    this._ctx.beginPath();
+    this._ctx.strokeStyle = STYLE.colorRenderQuantaGridLine;
+    renderQuantumGrids.forEach(function (x) {
+        this._ctx.moveTo(x - 0.5, 0);
+        this._ctx.lineTo(x - 0.5, this.height);
+      }.bind(this));
     this._ctx.stroke();
   };
 
