@@ -38,7 +38,7 @@ Example:
     #eOverlayInspector {
       display: none;
       position: absolute;
-      width: 135px;
+      width: 120px;
       height: 66px;
       background-color: rgb(54, 73, 82);
       color: #CDDBE2;
@@ -361,11 +361,11 @@ Example:
       this.$.eInspectorTime.textContent = info.time.toFixed(8);
       this.$.eInspectorFrame.textContent = info.frame;
 
-      var absAmplitude = Math.abs(info.amplitude);
-      this.$.eInspectorAmplitude.textContent =
-          (absAmplitude > 1e-4 || absAmplitude < 1e4)
-          ? info.amplitude.toPrecision(7)
-          : info.amplitude.toExponential(4);
+      if (Math.abs(info.amplitude) > 1e-4) {
+        this.$.eInspectorAmplitude.textContent = info.amplitude.toFixed(7);
+      } else {
+        this.$.eInspectorAmplitude.textContent = info.amplitude.toExponential(4);
+      }
     },
 
     _hideOverlayInspector: function (event) {
@@ -435,26 +435,18 @@ Example:
       if (!this._audioBuffer)
         return 0;
 
-      var absMaxValue = 0;
-      var absValue;
-      for (var i = 0; i < this._audioBuffer.numberOfChannels; ++i) {
-        var channelData = this._audioBuffer.getChannelData(i);
-        for (var j = 0; j < channelData.length; ++j) {
-          absValue = Math.abs(channelData[j]);
-          // If the number is NaN or Infinity, ignore it.
-          if (!isFinite(absValue))
-            continue;
-          // If the absolute value is greater than the maximum number possible,
-          // stop now.
-          // if (absValue >= Number.MAX_VALUE)
-          //   absMaxValue = Number.MAX_VALUE;
-          //   break;
-          if (absMaxValue < absValue)
-            absMaxValue = absValue;
+      var numChannels = this._audioBuffer.numberOfChannels;
+      var absMax = 0.0;
+      for (var i = 0; i < numChannels; i++) {
+        var data = this._audioBuffer.getChannelData(i);
+        for (var j = 0; j < data.length; j++) {
+          var absValue = Math.abs(data[j]);
+          if (absMax < absValue)
+            absMax = absValue;
         }
       }
 
-      return absMaxValue;
+      return absMax;
     },
 
     _zoomX: function (deltaY, zoomCenter) {
