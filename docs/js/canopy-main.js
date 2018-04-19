@@ -11,7 +11,7 @@
 
   var Canopy = {};
 
-  Canopy.VERSION = '0.9.3';
+  Canopy.VERSION = '0.9.4';
 
   // Canopy system Log.
   Canopy.LOG = function (message) {

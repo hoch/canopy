@@ -13,6 +13,7 @@
   var _lastRenderedBuffer = null;
   var _currentBufferSource = null;
 
+  _context.suspend();
   _masterGain.connect(_context.destination);
 
   /**
@@ -20,6 +21,12 @@
    * @type {Boolean}
    */
   Audio.loop = false;
+
+  /**
+   * [isStarted description]
+   * @type {Boolean}
+   */
+  Audio.isStarted = false;
 
   /**
    * [toggleLoop description]
@@ -65,6 +72,13 @@
       _currentBufferSource.loopStart = start;
       _currentBufferSource.loopEnd = end;
       _currentBufferSource.start(_context.currentTime, start);
+    }
+  };
+
+  Audio.start = function () {
+    if (!Audio.isStarted) {
+      _context.resume();
+      Audio.isStarted = true;
     }
   };
 

@@ -629,6 +629,8 @@
 
       // Button: Render
       _onBtnRender: function () {
+        Canopy.Audio.start();
+
         // Clear the previous graph visualization.
         SpiralAudioGraphService.clear();
         this.$.eBtnRender.disabled = true;
