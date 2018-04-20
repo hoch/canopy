@@ -46,9 +46,10 @@
    * [play description]
    * @param  {[type]} start [description]
    * @param  {[type]} end   [description]
+   * @param  ([type]) shiftKey true if shift key was pressed
    * @return {[type]}       [description]
    */
-  Audio.play = function (start, end) {
+  Audio.play = function (start, end, shiftKey) {
     if (!_lastRenderedBuffer) {
       Canopy.LOG('/audio/ Playback failed. (invalid AudioBuffer)');
       return;
@@ -64,6 +65,13 @@
     _currentBufferSource.buffer = _lastRenderedBuffer;
     _currentBufferSource.loop = Audio.loop;
     _currentBufferSource.connect(_masterGain);
+
+    // If shift key was also pressed, play the entire buffer, ignoring
+    // the region.
+    if (shiftKey) {
+      start = 0;
+      end = _lastRenderedBuffer.duration;
+    }
 
     // The behavior depends on the loop flag.
     if (!Audio.loop) {

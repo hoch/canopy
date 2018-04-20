@@ -607,10 +607,10 @@
       },
 
       // Audio: Play
-      _onAudioPlay: function () {
+      _onAudioPlay: function (event) {
         var region = this.$.eMiniMap.getRegion();
         if (region)
-          Canopy.Audio.play(region.start, region.end);
+          Canopy.Audio.play(region.start, region.end, event.shiftKey);
       },
 
       // Audio: Loop Toggle
