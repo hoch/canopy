@@ -1,3 +1,5 @@
+NOTE: The project is not actively maintained at the moment.
+
 # Canopy
 
 When you build something bigger than a toy demo with Web Audio API, being able to test and verify is crucial. Canopy provide you with visual tools for prototyping, testing and verification for Web Audio development.
